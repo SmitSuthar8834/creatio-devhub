@@ -39,20 +39,23 @@ The main milestones are complete:
 
 ## Verified release state
 
-Release `v0.2.1` was built and published by GitHub Actions.
+Release `v0.2.4` was built and published by GitHub Actions (2026-07-18).
 
-- Workflow: `.github/workflows/release.yml`
-- Release: `DevHub v0.2.1`
+- Workflow: `.github/workflows/release.yml` (run 29652069821, conclusion: success)
+- Release: `DevHub v0.2.4`
 - Update endpoint:
   `https://github.com/SmitSuthar8834/creatio-devhub/releases/latest/download/latest.json`
-- Endpoint verification: HTTP 200
 - Published artifacts:
-  - NSIS setup executable
-  - NSIS signature
-  - MSI installer
-  - MSI signature
+  - `creatio-devhub_0.2.4_x64-setup.exe` (NSIS setup executable)
+  - `creatio-devhub_0.2.4_x64-setup.exe.sig` (NSIS signature)
+  - `creatio-devhub_0.2.4_x64_en-US.msi` (MSI installer)
+  - `creatio-devhub_0.2.4_x64_en-US.msi.sig` (MSI signature)
   - `latest.json`
-- `latest.json` reports version `0.2.1` and includes signed NSIS/MSI Windows entries.
+- `latest.json` reports version `0.2.4` with signed `windows-x86_64`, `windows-x86_64-nsis`,
+  and `windows-x86_64-msi` entries.
+
+(The first published/verified release was `v0.2.1`; the signed updater flow has been stable
+across v0.2.1 → v0.2.4.)
 
 The repository Actions secret `TAURI_SIGNING_PRIVATE_KEY` is configured. The private key is not in
 Git and must remain private. On the original development machine it is stored at:
