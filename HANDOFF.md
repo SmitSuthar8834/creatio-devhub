@@ -2,11 +2,16 @@
 
 Last verified: **2026-07-18**
 
-Current version: **0.2.1**
+Current version: **0.2.3**
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.2.1>
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.2.3>
+(v0.2.3 adds branding icons + light sidebar and persistent job history. There is no v0.2.2:
+that tag's workflow failed because the version bump wrote a UTF-8 BOM into package.json /
+tauri.conf.json — Windows PowerShell `Set-Content -Encoding utf8` writes a BOM; use
+`[System.IO.File]::WriteAllText` with `UTF8Encoding($false)` for JSON the toolchain parses.
+The broken tag was deleted, never reused.)
 
 ## Current state
 
