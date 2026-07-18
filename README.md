@@ -65,6 +65,9 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
 - Reopen pages and restart DevHub without waiting for another clio/server request.
 - Display the cache timestamp so users know how current the data is.
 - Use **Refresh** to explicitly retrieve the latest server state and replace the saved entry.
+- **Automatically capture** the active environment's package and application state in the
+  background on launch and whenever the default environment changes, so screens are ready
+  instantly. Open Applications/Packages screens reload from the freshened cache automatically.
 - Store catalog metadata only; credentials and clio environment secrets are never cached.
 
 ### Jobs and safety
@@ -76,6 +79,9 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
 - Server-side installation, compilation, Git push, and other unsafe phases cannot be terminated
   after they begin.
 - Desktop notifications report completed jobs when DevHub is not focused.
+- A global **job indicator** in the top-right corner shows running jobs from any screen (with
+  phase and environment), flashes each job's outcome when it finishes, and links to the Jobs
+  screen on click.
 
 ### Updates
 

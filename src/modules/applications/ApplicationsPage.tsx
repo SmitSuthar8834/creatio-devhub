@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ApplicationInfo, deployApplicationBetweenEnvironments, EnvSummary,
-  listApplications, listEnvironments,
+  listApplications, listEnvironments, onCatalogUpdated,
 } from "../../lib/ipc";
 
 export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => void }) {
@@ -44,6 +44,12 @@ export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => voi
   };
 
   useEffect(() => { refresh(false); }, [sourceEnv]);
+
+  // When the background prefetch freshens this environment's cache, reload from it.
+  useEffect(() => {
+    const un = onCatalogUpdated((env) => { if (env === sourceEnv) refresh(false); });
+    return () => { un.then((f) => f()); };
+  }, [sourceEnv]);
 
   const visible = useMemo(() => {
     const query = filter.trim().toLowerCase();

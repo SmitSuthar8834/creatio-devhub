@@ -1,5 +1,6 @@
 mod applications;
 mod cache;
+mod catalog;
 mod clio;
 mod git;
 mod github;
@@ -31,6 +32,7 @@ pub fn run() {
             applications::deploy_application_between_environments,
             clio::list_environments,
             clio::set_default_environment,
+            catalog::prefetch_env_catalog,
             github::github_status,
             github::set_git_identity,
             github::start_github_login,

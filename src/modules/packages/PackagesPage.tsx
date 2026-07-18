@@ -3,7 +3,7 @@ import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   addPackageToWorkspace, deployPackageBetweenEnvironments, EnvSummary, listEnvironments,
-  listPackages, listWorkspaces, onJobUpdate, PackageAction, PackageInfo,
+  listPackages, listWorkspaces, onCatalogUpdated, onJobUpdate, PackageAction, PackageInfo,
   runPackageAction, WorkspaceSummary,
 } from "../../lib/ipc";
 
@@ -73,6 +73,12 @@ export default function PackagesPage({
   };
 
   useEffect(() => { refresh(false); }, [env]);
+
+  // Reload from cache when the background prefetch freshens this environment.
+  useEffect(() => {
+    const un = onCatalogUpdated((updated) => { if (updated === env) refresh(false); });
+    return () => { un.then((f) => f()); };
+  }, [env]);
 
   useEffect(() => {
     const unlisten = getCurrentWebviewWindow().onDragDropEvent((event) => {

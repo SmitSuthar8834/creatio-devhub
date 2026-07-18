@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
+import { listEnvironments, onEnvironmentChanged, prefetchEnvCatalog } from "./lib/ipc";
 import ApplicationsPage from "./modules/applications/ApplicationsPage";
 import EnvironmentsPage from "./modules/environments/EnvironmentsPage";
 import JobsPage from "./modules/jobs/JobsPage";
+import JobToaster from "./modules/jobs/JobToaster";
 import PackagesPage from "./modules/packages/PackagesPage";
 import SettingsPage from "./modules/settings/SettingsPage";
 import WorkspacesPage from "./modules/workspaces/WorkspacesPage";
@@ -29,6 +31,21 @@ const NAV: { id: Page; label: string; icon: string }[] = [
 export default function App() {
   const [page, setPage] = useState<Page>("environments");
   const [workspaceToOpen, setWorkspaceToOpen] = useState<string | null>(null);
+
+  // Auto-capture catalog state: warm the active environment's cache on launch,
+  // and again whenever the default environment changes.
+  useEffect(() => {
+    listEnvironments()
+      .then((list) => {
+        const active = list.find((e) => e.isActive) ?? list[0];
+        if (active) prefetchEnvCatalog(active.name);
+      })
+      .catch(() => {});
+    const un = onEnvironmentChanged((env) => prefetchEnvCatalog(env));
+    return () => {
+      un.then((f) => f());
+    };
+  }, []);
 
   return (
     <div className="shell">
@@ -79,6 +96,7 @@ export default function App() {
         {page === "settings" && <SettingsPage />}
         </div>
       </main>
+      <JobToaster onShowJobs={() => setPage("jobs")} />
     </div>
   );
 }

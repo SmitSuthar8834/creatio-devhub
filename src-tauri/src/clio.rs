@@ -1,5 +1,6 @@
 use serde::Serialize;
 use std::path::PathBuf;
+use tauri::{AppHandle, Emitter};
 
 /// clio's own settings file — the single source of truth for environments.
 /// We read it only to LIST environments; secrets are never exposed to the UI.
@@ -63,7 +64,7 @@ pub fn list_environments() -> Result<Vec<EnvSummary>, String> {
 }
 
 #[tauri::command]
-pub fn set_default_environment(name: String) -> Result<(), String> {
+pub fn set_default_environment(app: AppHandle, name: String) -> Result<(), String> {
     let name = name.trim();
     if name.is_empty() {
         return Err("Choose an environment.".to_string());
@@ -86,6 +87,8 @@ pub fn set_default_environment(name: String) -> Result<(), String> {
     if active.as_deref() != Some(name) {
         return Err("clio completed without updating the active environment.".to_string());
     }
+    // Let the shell warm this environment's catalog cache in the background.
+    let _ = app.emit("environment-changed", name.to_string());
     Ok(())
 }
 

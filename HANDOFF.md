@@ -2,7 +2,7 @@
 
 Last verified: **2026-07-18**
 
-Current version: **0.2.4**
+Current version: **0.2.5**
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
@@ -26,7 +26,9 @@ The main milestones are complete:
 |---|---|
 | Environment registration, default selection, ping/open, cliogate installation | Complete |
 | Workspace creation/registration, pull, diff, commit, history, Git remote push | Complete |
-| Empty-first workspace + selective add-package UI + create GitHub repo from app | Complete (working tree) |
+| Empty-first workspace + selective add-package UI + create GitHub repo from app | Complete |
+| Global job toaster (top-right running-job indicator) | Complete |
+| Auto-captured catalog cache (background prefetch on launch / env change) | Complete |
 | Push workspace to Creatio with drift guard and backup controls | Complete |
 | Package browsing, actions, archive installation, Git workspace bridge | Complete |
 | Package deployment between registered environments | Complete |
@@ -91,6 +93,31 @@ New onboarding flow so a workspace no longer has to download every package up fr
   `src/App.css`. Validated: `tsc --noEmit` clean, `cargo check`/`cargo test --lib` = 13 passed,
   full `tauri dev` build ran and launched. Shipped in v0.2.4 on `main`; push tag `v0.2.4` to
   publish the signed release.
+
+## Global job toaster + auto-captured catalog cache (v0.2.5, 2026-07-18)
+
+Two additive UX features:
+
+- **Global job toaster** (`src/modules/jobs/JobToaster.tsx`, mounted once in `App.tsx`): a
+  top-right indicator that subscribes to `job-update` and seeds from `get_jobs` on mount. Running
+  jobs stay pinned (pulsing ⏳ with label/phase/env); terminal jobs flash ✅/✗/⊘ and auto-dismiss
+  after 6s. Clicking opens the Jobs screen. Purely frontend — no backend change.
+- **Auto-captured catalog state** (`src-tauri/src/catalog.rs` → `prefetch_env_catalog`): a silent
+  background thread runs read-only `list-packages` + `list-apps` for an environment and writes both
+  into `catalog-cache.json`, then emits `catalog-updated`. Wired to fire on app launch (active env)
+  and whenever the default env changes — `clio::set_default_environment` now takes `AppHandle` and
+  emits `environment-changed`. Applications and Packages pages listen for `catalog-updated` and
+  reload from the freshened cache live.
+- Touched: `src-tauri/src/catalog.rs` (new), `src-tauri/src/lib.rs`, `src-tauri/src/clio.rs`,
+  `src/lib/ipc.ts`, `src/App.tsx`, `src/App.css`, `src/modules/jobs/JobToaster.tsx` (new),
+  `src/modules/applications/ApplicationsPage.tsx`, `src/modules/packages/PackagesPage.tsx`.
+  Validated: `tsc --noEmit` clean, `cargo check`/`cargo test --lib` = 13 passed, full `tauri dev`
+  build ran and launched, shell renders with no new runtime errors. Shipped in v0.2.5.
+
+NOTE: the "Start empty" workspace path (v0.2.4) still passes `-e <env>` to `create-workspace`,
+which makes clio connect and populate settings rather than create a truly empty workspace. The
+correct invocation is `clio createw <name> --empty --directory <parent>` (no `-e`, no credentials).
+This is a known open bug, deliberately deferred — fix in a future release.
 
 ## Architecture
 

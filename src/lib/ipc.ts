@@ -64,6 +64,16 @@ export const clearJobHistory = () => invoke<JobInfo[]>("clear_job_history");
 export const onJobUpdate = (cb: (job: JobInfo) => void): Promise<UnlistenFn> =>
   listen<JobInfo>("job-update", (e) => cb(e.payload));
 
+// Warm an environment's package + application caches in the background.
+export const prefetchEnvCatalog = (env: string) =>
+  invoke<void>("prefetch_env_catalog", { env });
+
+export const onCatalogUpdated = (cb: (env: string) => void): Promise<UnlistenFn> =>
+  listen<string>("catalog-updated", (e) => cb(e.payload));
+
+export const onEnvironmentChanged = (cb: (env: string) => void): Promise<UnlistenFn> =>
+  listen<string>("environment-changed", (e) => cb(e.payload));
+
 export const onJobLog = (cb: (line: JobLogLine) => void): Promise<UnlistenFn> =>
   listen<JobLogLine>("job-log", (e) => cb(e.payload));
 

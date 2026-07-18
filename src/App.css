@@ -858,3 +858,49 @@ input, select, .dialog input, .dialog select, .commit-bar input, .remote-bar inp
   color: var(--ink) !important; padding: 4px 0;
 }
 .choice-row .opt { color: var(--ink-soft); }
+
+/* ---- global job toaster (top-right running-job indicator) ---- */
+.job-toaster {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 320px;
+  pointer-events: none;
+}
+.job-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 10px 30px rgba(5, 24, 55, .16);
+  padding: 10px 12px;
+  cursor: pointer;
+  animation: toast-in .18s ease-out;
+}
+.job-toast.running { border-left-color: var(--accent); }
+.job-toast.succeeded { border-left-color: var(--ok); }
+.job-toast.failed { border-left-color: var(--bad); }
+.job-toast.cancelled { border-left-color: var(--warn); }
+.job-toast-icon { font-size: 15px; line-height: 1; }
+.job-toast.running .job-toast-icon { animation: toast-pulse 1.4s ease-in-out infinite; }
+.job-toast-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.job-toast-title {
+  color: var(--ink); font-weight: 600; font-size: 12.5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.job-toast-sub {
+  color: var(--ink-soft); font-size: 11px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+@keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes toast-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
