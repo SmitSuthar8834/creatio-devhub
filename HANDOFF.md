@@ -1,178 +1,253 @@
-# Creatio DevHub — Handoff
+# Creatio DevHub — Engineering Handoff
 
-_Last updated: 2026-07-18 (sessions 1–2: design → M1 → M2 → M3 → M4 complete)_
+Last verified: **2026-07-18**
 
-## What this is
+Current version: **0.2.1**
 
-A Tauri 2 desktop app ("GitHub Desktop for Creatio") that wraps the **clio CLI** into a visual
-workbench: environment management, package operations, and two-way sync of Creatio Cloud package
-source code with git. No hosting/server component — everything runs on the user's machine; the only
-future "hosting" is a GitHub Releases page for installer distribution + auto-updates.
+Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Full technical design (screens, flows, feature tiers, wireframes):
-https://claude.ai/code/artifact/ff9dfd0e-d421-47cb-b0b5-3463a11baeaa
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.2.1>
 
-## Plan — milestones and progress
+## Current state
 
-| Milestone | Scope | Status |
-|---|---|---|
-| **M1** | App skeleton, job engine (streaming, per-env locks, secret masking), Environment Hub (cards, Ping/Open/Install-gate, add-env dialog w/ password or OAuth), Jobs screen with live log | ✅ **Done & verified** |
-| **M2** | Workspaces: create wizard (pull-from-env or register existing folder, native folder picker), pull-from-cloud (clean-tree guard), Changes tab (file list + colorized diff + commit bar), History tab (log, remote URL, git push) | ✅ **Done & verified** |
-| **M3** | Push to Cloud: confirm dialog (backup toggle, uncommitted-changes warning) → streamed `clio push-workspace`; **drift guard** (package snapshot compare → Cancel / Pull first / Push anyway banner); desktop notifications on job finish when window unfocused | ✅ **Done & verified** |
-| **M4** | Package Manager: grid per env (structured `clio list-packages -j` parser + fixture tests), actions pull-pkg/push-pkg/lock/unlock/activate/deactivate/set-version/hotfix/delete (typed confirmation for destructive), drag-drop .zip/.gz install, add an existing cloud package to a registered workspace for Git | ✅ **Done & verified** |
-| **M5** | Polish & distribution: Settings screen (default environment + GitHub/Git identity done; clio path and log retention pending), remote Git conflict alerts, scheduled auto-pull + tray, clio sidecar bundling, updater via GitHub Releases | 🟨 **Started** |
-| Later (Tier 2/3 from design) | App/ALM deploy between envs, env compare (save-state/show-diff), SQL & DataService console, live log streamer (`clio listen`), schema explorer, OAuth bootstrap wizard, licensing | ⬜ |
+Creatio DevHub is a Windows-first Tauri 2 desktop application that provides a visual workbench over
+the installed clio, Git, and GitHub CLI tools. It manages Creatio environments, source-controlled
+workspaces, packages, applications, background jobs, GitHub identity, and signed application
+updates.
 
-## Things done (session log)
+The main milestones are complete:
 
-1. **Research**: full clio command surface catalogued from the official repo; verified `git-sync` is
-   just a script-runner (we orchestrate the underlying commands instead); captured real
-   `clio packages` output for the drift parser.
-2. **Design doc** published as artifact (link above) and kept updated (incl. §6.4 OAuth
-   registration flow, §6.5 git remote & team clone flow).
-3. **Toolchain bootstrapped on this machine**: VS 2022 BuildTools (VC workload), rustup + stable
-   1.97.1 (first winget install was corrupt — reinstalled clean), Node 22 already present.
-4. **Project scaffolded** (create-tauri-app, React-TS/Vite, identifier `com.qnt.creatiodevhub`).
-5. **M1 built**: `jobs.rs`, `clio.rs`, Environments + Jobs UI. Verified: unit test parses the real
-   local clio settings; app launched; UI checked in browser preview.
-6. **M2 built**: `git.rs`, `workspaces.rs` (registry + create/pull flows), workspace UI, dialog
-   plugin for folder picker. Verified: git roundtrip unit test; tsc + cargo clean.
-7. **M3 built**: `push_workspace_cloud` + drift snapshots + notification plugin. Verified: snapshot
-   parser fixture test (3/3 tests green), tsc clean.
-8. **Release 0.1.0 produced**: standalone exe (9.3 MB), NSIS setup (2 MB), MSI (3.1 MB) under
-   `src-tauri\target\release\bundle\`. A rebuild including M3 was started; if it isn't there,
-   rerun `build.cmd`.
-9. `HANDOFF.md` (this file) + persistent memory kept in sync; user rule saved: always write a
-   handoff at session end / >75% context usage.
-10. **M4 built**: Packages screen with environment selector, filterable package grid, pull,
-    archive install, lock/unlock, activate/deactivate, hotfix, version update, and typed-confirm
-    delete. Native `.zip`/`.gz` drag-drop and backup toggles are included. Version update is an
-    orchestrated pull → `set-pkg-version` → push because clio has no direct remote set-version.
-11. **M4 verified**: corrected command names against installed clio 8.1 help; live read-only
-    `Qnovate_DevEnv` package query exposed empty package versions, so the implementation uses
-    structured `list-packages -j` rather than relying on table columns. `tsc` clean, 6/6 Rust
-    tests pass, and fresh EXE/MSI/NSIS bundles were built.
-12. **M4 Git bridge added**: Package grid → Add to workspace filters to registered workspaces
-    for the same environment, requires a clean Git tree, appends the selected package through
-    `clio cfg-worspace --Packages`, runs `restore-workspace`, and opens the workspace Changes
-    tab when the job succeeds. Existing package selections are preserved; no commit is created
-    automatically. Verified against clio source behavior; 7/7 Rust tests pass. Because the
-    normal release EXE was open during the final build, the newest EXE/MSI/NSIS artifacts are
-    under `src-tauri\target-m4\release\`; close the running app before installing the new build.
-13. **M5 started — Settings**: added a real Settings page with a default-environment selector.
-    Saving calls `clio reg-web-app -a <name>`, verifies clio's active environment changed, and
-    makes that environment the initial selection throughout DevHub. TypeScript and 7/7 Rust
-    tests pass.
-14. **GitHub collaboration safety**: Settings now shows the authenticated `gh` account, starts
-    browser-based GitHub login/account switching, runs `gh auth setup-git`, and allows the global
-    Git commit name/email to be aligned with that account. Workspace History fetches origin every
-    60 seconds; if origin is ahead it warns that someone else pushed and blocks `git push` until
-    the user pulls/rebases. A two-clone fixture verifies remote-ahead detection (8/8 tests).
-15. **Environment-to-environment package deploy**: package actions now offer Deploy to
-    environment. The user selects a different registered target, keeps or skips target backup,
-    and types the target name to confirm. DevHub downloads/unzips the package from the source into
-    a temporary folder and installs it into the target with streamed logs and ordered source/target
-    environment locks.
-16. **Phase-aware job cancellation**: jobs now expose phase, cancellable, and cancel-requested
-    state; queued jobs can be cancelled before starting, and safe running phases terminate the
-    complete Windows child-process tree. The Jobs screen shows Cancel only while safe. Package
-    download, workspace restore, and GitHub browser login are cancellable; environment installs,
-    package deletion/activation/locking, Git push, credential setup, and server-side compile phases
-    are deliberately non-cancellable. Added a real process-tree termination test (9/9 tests pass).
-    The normal release EXE was open, so this latest build is under `src-tauri\target-m4\release\`.
-17. **Whole application deployment**: added an Applications screen backed by structured
-    `clio list-apps -e <source> --json`. It lists application name/code/version/description and
-    deploys a selected application with `clio deploy-application <code> -e <source> -d <target>`.
-    The target must differ from the source and its name must be typed to confirm. Source and target
-    locks prevent overlapping environment mutations; deployment is deliberately non-cancellable
-    once transfer/install starts. TypeScript is clean and 10/10 Rust tests pass.
-18. **Signed self-updates and visual refresh (v0.2.0)**: Settings can check the
-    `SmitSuthar8834/creatio-devhub` GitHub Releases feed, show release notes/download progress,
-    install a cryptographically signed update, and restart DevHub. The release workflow builds
-    Windows installers and publishes `latest.json`. The signing private key lives only at
-    `%USERPROFILE%\.tauri\creatio-devhub.key`; back it up securely and add its contents to the
-    repository secret `TAURI_SIGNING_PRIVATE_KEY` before publishing. The shell now uses an original
-    DevHub identity with a Creatio-inspired navy/blue palette, rounded white cards, a compact top
-    bar, and clearer spacing. No Creatio logo is included.
-19. **Persistent catalog cache (v0.2.1)**: application and package lists are cached per
-    environment in app-data `catalog-cache.json`. Returning to a page or restarting DevHub now
-    renders saved data without another clio/server call. Each page shows the saved timestamp;
-    Refresh bypasses the cache and replaces it. The cache contains catalog metadata only, never
-    credentials. TypeScript is clean and 11/11 Rust tests pass.
-
-## Key decisions (do not re-litigate)
-
-| Decision | Reason |
+| Area | Status |
 |---|---|
-| Tauri 2 (Rust) + React/TS/Vite | Small installer, native process control; Windows-first |
-| Shell out to `clio` CLI as child processes | Stays in sync with user's clio (8.1.0.84+); app never talks to Creatio endpoints directly |
-| App stores **zero credentials** | clio's `%LOCALAPPDATA%\creatio\clio\appsettings.json` owns environments/secrets (NB: plaintext passwords in that file — never render or log secret fields; OAuth is the recommended path; `-p/--Password/--ClientSecret` values are masked `•••` in job logs) |
-| Git via system `git` CLI, `GIT_TERMINAL_PROMPT=0` | Reuses user's credential manager/SSH; auth prompts become fast failures with guidance |
-| Workspace registry = `workspaces.json` in app-data | The file is the single source of truth; `WsState` serializes read-modify-write; "Remove" never deletes folders |
-| Every operation is a "job" | `job-log`/`job-update` Tauri events stream to UI; jobs serialized per environment via named locks |
-| clio `git-sync` command NOT used | We run `create-workspace`/`restore-workspace`/`push-workspace` + git directly for better progress reporting |
-| Drift guard = package name\|version snapshot diff | Cheap, no extra services. Limitation: cloud schema edits without a version bump are invisible — v2 should query `SysPackage.ModifiedOn` via `clio dataservice` |
+| Environment registration, default selection, ping/open, cliogate installation | Complete |
+| Workspace creation/registration, pull, diff, commit, history, Git remote push | Complete |
+| Push workspace to Creatio with drift guard and backup controls | Complete |
+| Package browsing, actions, archive installation, Git workspace bridge | Complete |
+| Package deployment between registered environments | Complete |
+| Whole-application deployment between registered environments | Complete |
+| GitHub login/account switching, Git identity, remote-ahead conflict guard | Complete |
+| Phase-aware jobs and safe cancellation | Complete |
+| Persistent package/application catalog cache | Complete |
+| Creatio-inspired original DevHub UI | Complete |
+| Signed GitHub Releases updater | Complete and published |
 
-## Build & run — MACHINE QUIRK, READ FIRST
+## Verified release state
 
-This machine's **VS Community has a partial MSVC 14.44 toolset (linker but no libs)** which rustc
-prefers over the complete BuildTools install → raw `cargo build` fails with
+Release `v0.2.1` was built and published by GitHub Actions.
+
+- Workflow: `.github/workflows/release.yml`
+- Release: `DevHub v0.2.1`
+- Update endpoint:
+  `https://github.com/SmitSuthar8834/creatio-devhub/releases/latest/download/latest.json`
+- Endpoint verification: HTTP 200
+- Published artifacts:
+  - NSIS setup executable
+  - NSIS signature
+  - MSI installer
+  - MSI signature
+  - `latest.json`
+- `latest.json` reports version `0.2.1` and includes signed NSIS/MSI Windows entries.
+
+The repository Actions secret `TAURI_SIGNING_PRIVATE_KEY` is configured. The private key is not in
+Git and must remain private. On the original development machine it is stored at:
+
+```text
+%USERPROFILE%\.tauri\creatio-devhub.key
+```
+
+Back this key up securely. Losing it prevents existing installations from accepting future
+updates. Never print it in logs, add it to the repository, or upload it as a release asset.
+
+## Architecture
+
+```text
+React + TypeScript UI
+        |
+        | typed Tauri invoke/events
+        v
+Rust command layer
+        |
+        +-- Job engine: logs, phases, cancellation, process trees, environment locks
+        +-- clio process adapter: Creatio environment/package/application operations
+        +-- Git adapter: status, diff, commit, history, remote synchronization
+        +-- GitHub adapter: gh authentication and global Git identity
+        +-- App-data state: workspace registry and catalog cache
+```
+
+There is no DevHub server component. The desktop application invokes local command-line tools and
+those tools communicate with Creatio or GitHub.
+
+## Important design decisions
+
+| Decision | Rationale |
+|---|---|
+| Tauri 2 + Rust + React/TypeScript | Small Windows installer and reliable native process control |
+| Invoke installed clio instead of calling Creatio APIs | Reuses supported clio behavior and registered environments |
+| Never store Creatio credentials in DevHub | clio remains the credential owner |
+| Use the system Git and GitHub CLI | Reuses the user's credential manager and active GitHub account |
+| Represent every long mutation as a job | Provides streamed logs, serialization, status, and safe cancellation |
+| Lock jobs per environment | Prevents concurrent mutations against the same Creatio environment |
+| Typed confirmation for destructive/deployment actions | Makes the intended target explicit |
+| Cache catalogs, not credentials | Improves navigation speed without expanding secret storage |
+| Verify updater signatures | Prevents installation of releases not signed by the project key |
+
+## Persistent state
+
+DevHub writes only operational metadata beneath the Tauri application-data directory:
+
+- `workspaces.json` — registered workspace metadata.
+- `catalog-cache.json` — package and application lists keyed by environment, with timestamps.
+
+The catalog cache is used immediately when revisiting a page or restarting DevHub. **Refresh**
+bypasses it and updates the entry from clio. Neither file contains Creatio passwords or OAuth
+client secrets.
+
+clio owns environment configuration and credentials in its own application settings. Do not expose
+raw `clio env` output because it can include plaintext passwords.
+
+## Job and cancellation rules
+
+- Jobs queued behind an environment lock can be cancelled.
+- Safe local phases may terminate the complete Windows child-process tree.
+- Package download, workspace restore, and GitHub browser login can be cancellable.
+- Installation, server compilation, package deletion/activation/locking, credential changes, and
+  Git pushes become non-cancellable once their unsafe phase begins.
+- Source and target locks are acquired in stable sorted order for cross-environment deployment.
+
+Do not make unsafe phases cancellable without proving that interruption cannot leave Creatio,
+Git, or local workspace state inconsistent.
+
+## Source map
+
+```text
+src/
+  App.tsx                         shell and navigation
+  App.css                         shared visual system
+  lib/ipc.ts                      typed frontend IPC contract
+  modules/environments/           environment hub and registration
+  modules/workspaces/             workspace list, wizard, changes, history
+  modules/packages/               package manager and package deployment
+  modules/applications/           application catalog and deployment
+  modules/jobs/                   job list, logs, cancellation
+  modules/settings/               defaults, GitHub identity, updater
+
+src-tauri/src/
+  lib.rs                          plugin/state/command registration
+  jobs.rs                         job state, locks, streaming, cancellation
+  clio.rs                         safe clio helpers and shared parsing
+  cache.rs                        persistent catalog cache
+  workspaces.rs                   workspace registry and synchronization
+  packages.rs                     package actions and deployment
+  applications.rs                 application listing and deployment
+  git.rs                          local Git and remote-ahead checks
+  github.rs                       GitHub CLI authentication and Git identity
+
+src-tauri/tauri.conf.json         app, bundling, and updater configuration
+src-tauri/capabilities/           frontend permissions
+.github/workflows/release.yml     signed Windows release automation
+dev.cmd                           development wrapper
+build.cmd                         local production build wrapper
+README.md                         user and contributor documentation
+```
+
+## Build and validation
+
+This development machine has both a partial Visual Studio Community toolset and a complete Visual
+Studio Build Tools installation. Raw Cargo commands may select the incomplete toolset and fail with
 `LNK1104: cannot open msvcrt.lib`.
 
-**Always build via the wrappers** (they call BuildTools `vcvars64.bat` and prepend `~/.cargo/bin`):
+Use the wrappers:
 
-- `dev.cmd` — run in dev mode (vite + cargo watcher, hot reload)
-- `build.cmd` — production build (exe + NSIS setup + MSI in `src-tauri\target\release\bundle\`)
-
-Version 0.2.0 and later can self-update from signed GitHub Releases once the repository and its
-release secret are configured. Local builds still use `build.cmd`. Toolchain: rustc/cargo 1.97.1
-(MSVC), Node 22, VS 2022 BuildTools VC workload.
-
-Verify after changes: `cargo test --lib` (3 tests) from a vcvars shell + `npx tsc --noEmit`.
-
-## Code map
-
-```
-src-tauri/src/
-  lib.rs         plugin + command registration, WsState setup
-  jobs.rs        JobState: create_job/log/finish (finish sends the unfocused-window
-                 notification), stream_process, per-env locks, secret masking
-  clio.rs        settings_path/list_environments (safe fields only),
-                 clio_capture, parse_packages_snapshot, packages_snapshot
-  cache.rs       persistent per-environment application/package catalog cache
-  git.rs         git()/git_ok() sync helpers, status/log/current_branch/remote_url
-  packages.rs    structured package-list parser, guarded package action jobs,
-                 version pull/edit/push orchestration
-  applications.rs structured application-list parser and source-to-target application deploy job
-  workspaces.rs  registry (WsState), create_workspace_flow, pull_workspace,
-                 push_workspace_cloud (drift guard), ws_* git commands
-src/
-  lib/ipc.ts     typed invoke wrappers + event subscriptions (the single IPC surface)
-  modules/environments|workspaces|packages|applications|jobs/ pages; App.tsx = sidebar/routing
-dev.cmd / build.cmd   build wrappers (see quirk above)
+```powershell
+.\dev.cmd
+.\build.cmd
 ```
 
-## Known issues / gotchas
+Frontend validation:
 
-- `clio env` dumps full settings **including plaintext passwords** — never surface raw output.
-- clio output is human text; every parser lives in `clio.rs` with fixture tests. `clio packages`
-  rows: `Name  Version  Maintainer`, with `[WAR]/[INF]` noise lines to skip. Note: piping clio
-  through `Select-Object -First N` breaks its exit code (pipe close → 255) — capture fully.
-- `restore-workspace`/`push-workspace` require **cliogate ≥ 2.0** on the environment ("Install
-  gate" button on the env card).
-- First `git push` may fail until the user authenticates once in a terminal; job log explains.
-- Push-to-cloud is not safely cancellable once installation starts; the Jobs screen explains the
-  unsafe phase and disables cancellation.
-- **Env registrations**: `Trail-187417` (the active default) currently returns Unauthorized (stale
-  password); `Qnovate_DevEnv` verified working (used for the packages fixture). `dev-834` is a
-  local IIS env (http://QWI008:40000). Primary test target per user: dev-834 / QntProjectHub.
-- Real end-to-end workspace create→pull→push against a live environment has NOT been exercised yet
-  — that's the first thing to do in the next session (needs cliogate on the chosen env).
-- M4 package reads were checked against `Qnovate_DevEnv`, but mutating package actions were not
-  executed against a live environment during implementation. Test them first on a disposable
-  package; lock/unlock requires cliogate >= 2.0.0.42.
-- Environment-to-environment package and whole-application deploys have not been executed against
-  a live target. First validate with a disposable package/application and a non-production target.
-  Application deployment follows clio's application descriptor and package dependencies; it is
-  separate from a Creatio ALM promotion workflow.
-- The repo is **not under git yet** (user hasn't asked; suggest `git init` + initial commit).
+```powershell
+npx tsc --noEmit
+npm run build
+```
+
+Rust validation from the Build Tools environment:
+
+```powershell
+cd src-tauri
+cargo test --lib
+```
+
+Latest verified result:
+
+- TypeScript check: passed
+- Vite production build: passed
+- Rust tests: **11 passed, 0 failed**
+- Local signed v0.2.1 MSI/NSIS artifacts: produced
+- GitHub v0.2.1 release workflow: passed
+- Public updater feed: verified
+
+## Publishing the next release
+
+1. Pull `main` and ensure the working tree is clean.
+2. Implement and validate the change.
+3. Increase the same version in:
+   - `package.json`
+   - `src-tauri/Cargo.toml`
+   - `src-tauri/tauri.conf.json`
+4. Update README and this handoff when behavior or operational requirements change.
+5. Commit and push `main`.
+6. Create and push the matching tag:
+
+```powershell
+git tag -a v0.2.2 -m "Creatio DevHub v0.2.2"
+git push origin v0.2.2
+```
+
+7. Monitor **Publish DevHub release** in GitHub Actions.
+8. Confirm the release contains both installers, both signatures, and `latest.json`.
+9. Confirm the latest endpoint reports the new version before announcing the update.
+
+Never reuse a version tag for different source. If a release fails, fix the workflow or secret and
+rerun the same failed workflow only when its source/tag is unchanged.
+
+## Known limitations and risks
+
+- Mutating package operations have not all been exercised against a disposable live environment.
+- Cross-environment package and whole-application deployments require final end-to-end validation
+  against non-production targets before production use.
+- Application deployment follows clio's descriptor and package dependency behavior; it is not a
+  full Creatio ALM approval/promotion workflow.
+- The workspace drift guard compares package names and versions. Server-side changes without a
+  version change may not be detected.
+- Workspace synchronization and some package operations require a compatible cliogate installation.
+- DevHub currently depends on separately installed clio, Git, and GitHub CLI binaries.
+- The update feed is public. Moving the source repository to private access requires a separate
+  public release feed or an authenticated update service.
+- Job history is currently in memory and is not restored after restarting DevHub.
+- Catalog cache invalidation is explicit via Refresh or selected successful mutations; it is not a
+  real-time subscription to Creatio changes.
+
+## Recommended next priorities
+
+1. Run a controlled end-to-end validation matrix using disposable packages/applications and
+   non-production environments.
+2. Add automated integration tests around cache invalidation and deployment job locking.
+3. Add configurable clio executable path and log retention settings.
+4. Persist job history and provide log cleanup/export.
+5. Decide whether to bundle clio or keep it as an external prerequisite.
+6. Add optional scheduled workspace refresh/tray behavior.
+7. Design a proper ALM promotion flow if approvals, environment policies, or release gates are
+   required.
+
+## Handoff checklist
+
+Before changing the project:
+
+- Read `README.md` and this file.
+- Confirm active GitHub account and repository access.
+- Keep the updater private key outside Git.
+- Preserve unrelated local/user changes.
+- Verify clio command names against the installed clio version.
+- Test destructive/deployment changes only against disposable non-production targets.
+- Run TypeScript, frontend build, and Rust tests before publishing.
+- Update both documentation files when the user-visible workflow changes.

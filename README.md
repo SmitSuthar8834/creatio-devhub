@@ -10,6 +10,10 @@ registration and credentials remain owned by clio.
 
 Current version: **0.2.1**
 
+Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
+
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/latest>
+
 ## Implemented features
 
 ### Environments
@@ -170,16 +174,24 @@ The update endpoint is configured as:
 https://github.com/SmitSuthar8834/creatio-devhub/releases/latest/download/latest.json
 ```
 
-Before publishing:
+Release `v0.2.1` is live and the endpoint has been verified. The repository secret
+`TAURI_SIGNING_PRIVATE_KEY` is already configured.
 
-1. Create the `SmitSuthar8834/creatio-devhub` GitHub repository and push this project.
-2. Add the private key contents as the repository secret `TAURI_SIGNING_PRIVATE_KEY`.
-3. If the key has a password, add `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
-4. Keep releases publicly downloadable, or replace the update feed with an authenticated service.
-5. Increase the version in `package.json`, `src-tauri/Cargo.toml`, and
+To publish the next version:
+
+1. Keep releases publicly downloadable, or replace the update feed with an authenticated service.
+2. Increase the version in `package.json`, `src-tauri/Cargo.toml`, and
    `src-tauri/tauri.conf.json`.
-6. Commit and push the change.
-7. Push a version tag such as `v0.2.1`, or manually run the release workflow.
+3. Commit and push the change.
+4. Push the matching annotated version tag, for example:
+
+```powershell
+git tag -a v0.2.2 -m "Creatio DevHub v0.2.2"
+git push origin v0.2.2
+```
+
+5. Wait for **Publish DevHub release** to succeed.
+6. Verify the new release contains the installers, signatures, and `latest.json`.
 
 The workflow at `.github/workflows/release.yml` builds the Windows release and publishes the
 installer, signatures, and updater metadata.
@@ -219,7 +231,7 @@ installer, signatures, and updater metadata.
   version change may not be detected.
 - GitHub Releases updates currently require publicly downloadable release assets.
 - DevHub currently relies on separately installed clio, Git, and GitHub CLI tools.
-- The updater configuration assumes the repository listed above exists.
+- Job history is held in memory and is cleared when DevHub restarts.
 
 ## Repository map
 
