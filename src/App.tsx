@@ -6,16 +6,24 @@ import JobsPage from "./modules/jobs/JobsPage";
 import PackagesPage from "./modules/packages/PackagesPage";
 import SettingsPage from "./modules/settings/SettingsPage";
 import WorkspacesPage from "./modules/workspaces/WorkspacesPage";
+import logoMark from "./assets/icons/logo-mark.png";
+import iconEnvironments from "./assets/icons/environments.png";
+import iconWorkspaces from "./assets/icons/workspaces.png";
+import iconPackages from "./assets/icons/packages.png";
+import iconApplications from "./assets/icons/applications.png";
+import iconJobs from "./assets/icons/jobs.png";
+import iconSettings from "./assets/icons/settings.png";
+import iconLocalDesktop from "./assets/icons/local-desktop.png";
 
 type Page = "environments" | "workspaces" | "packages" | "applications" | "jobs" | "settings";
 
 const NAV: { id: Page; label: string; icon: string }[] = [
-  { id: "environments", label: "Environments", icon: "◉" },
-  { id: "workspaces", label: "Workspaces", icon: "◇" },
-  { id: "packages", label: "Packages", icon: "□" },
-  { id: "applications", label: "Applications", icon: "▦" },
-  { id: "jobs", label: "Jobs", icon: "↻" },
-  { id: "settings", label: "Settings", icon: "⚙" },
+  { id: "environments", label: "Environments", icon: iconEnvironments },
+  { id: "workspaces", label: "Workspaces", icon: iconWorkspaces },
+  { id: "packages", label: "Packages", icon: iconPackages },
+  { id: "applications", label: "Applications", icon: iconApplications },
+  { id: "jobs", label: "Jobs", icon: iconJobs },
+  { id: "settings", label: "Settings", icon: iconSettings },
 ];
 
 export default function App() {
@@ -26,7 +34,7 @@ export default function App() {
     <div className="shell">
       <nav className="sidebar">
         <div className="brand">
-          <span className="brand-mark">D</span>
+          <img className="brand-mark" src={logoMark} alt="Creatio DevHub" />
           <span className="brand-copy">DevHub<small>Creatio engineering</small></span>
         </div>
         <div className="nav-label">Workspace</div>
@@ -39,10 +47,13 @@ export default function App() {
               setPage(n.id);
             }}
           >
-            <span className="nav-icon">{n.icon}</span>{n.label}
+            <img className="nav-icon" src={n.icon} alt="" />{n.label}
           </button>
         ))}
-        <div className="sidebar-footer"><span className="status-light" /> Local desktop</div>
+        <div className="sidebar-footer">
+          <img className="footer-icon" src={iconLocalDesktop} alt="" />
+          <span className="status-light" /> Local desktop
+        </div>
       </nav>
       <main className="content">
         <header className="topbar">
