@@ -15,6 +15,7 @@ export default function NewWorkspaceWizard({ onClose, onStarted }: Props) {
   const [parentDir, setParentDir] = useState("");
   const [appCode, setAppCode] = useState("");
   const [remoteUrl, setRemoteUrl] = useState("");
+  const [startEmpty, setStartEmpty] = useState(true);
   const [existingPath, setExistingPath] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -47,6 +48,7 @@ export default function NewWorkspaceWizard({ onClose, onStarted }: Props) {
           env,
           appCode: appCode.trim() || undefined,
           remoteUrl: remoteUrl.trim() || undefined,
+          skipRestore: startEmpty,
         });
       } else {
         if (!existingPath.trim() || !env) {
@@ -106,8 +108,25 @@ export default function NewWorkspaceWizard({ onClose, onStarted }: Props) {
               App code <span className="opt">(optional — limits the workspace to one app)</span>
               <input value={appCode} onChange={(e) => setAppCode(e.target.value)} placeholder="MyAppCode" />
             </label>
+
+            <fieldset className="choice-group">
+              <legend>Contents</legend>
+              <label className="choice-row">
+                <input type="radio" checked={startEmpty} onChange={() => setStartEmpty(true)} />
+                <span>
+                  <strong>Start empty</strong> — scaffold only, pick packages to add afterwards <span className="opt">(recommended)</span>
+                </span>
+              </label>
+              <label className="choice-row">
+                <input type="radio" checked={!startEmpty} onChange={() => setStartEmpty(false)} />
+                <span>
+                  <strong>Pull everything now</strong> — download all editable packages from the environment
+                </span>
+              </label>
+            </fieldset>
+
             <label>
-              Git remote URL <span className="opt">(optional — pushes the initial commit)</span>
+              Git remote URL <span className="opt">(optional — you can also create a GitHub repo later from the workspace)</span>
               <input
                 value={remoteUrl}
                 onChange={(e) => setRemoteUrl(e.target.value)}
@@ -115,8 +134,9 @@ export default function NewWorkspaceWizard({ onClose, onStarted }: Props) {
               />
             </label>
             <p className="hint">
-              Runs create-workspace + restore-workspace against the environment, then initializes git with an initial
-              commit. Watch progress on the Jobs screen.
+              {startEmpty
+                ? "Creates an empty clio workspace and an initial git commit — no packages downloaded. Add packages and create a GitHub repo from the workspace screen. Watch progress on the Jobs screen."
+                : "Runs create-workspace + restore-workspace against the environment, then initializes git with an initial commit. Watch progress on the Jobs screen."}
             </p>
           </>
         ) : (

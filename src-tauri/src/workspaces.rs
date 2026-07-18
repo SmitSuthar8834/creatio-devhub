@@ -160,6 +160,7 @@ pub fn create_workspace_flow(
     env: String,
     app_code: Option<String>,
     remote_url: Option<String>,
+    skip_restore: bool,
 ) -> Result<String, String> {
     let dir = PathBuf::from(&parent_dir).join(&name);
     if dir.exists() && std::fs::read_dir(&dir).map(|mut d| d.next().is_some()).unwrap_or(true) {
@@ -189,22 +190,31 @@ pub fn create_workspace_flow(
                 return Err("clio create-workspace failed".to_string());
             }
 
-            if st.is_cancel_requested(&job_id) {
-                return Err("Cancelled before restore.".to_string());
-            }
-            if !st.set_phase(&app, &job_id, "restoring workspace files", true) {
-                return Err("Cancelled before restore.".to_string());
-            }
-            let restore: Vec<String> = vec!["restore-workspace".into(), "-e".into(), env.clone()];
-            if st.stream_process(&app, &job_id, "clio", &restore, Some(&dir), &[])? != 0 {
-                return Err("clio restore-workspace failed".to_string());
+            if skip_restore {
+                st.log(&app, &job_id, "Empty workspace — skipping package download. Add packages later from the workspace screen.");
+            } else {
+                if st.is_cancel_requested(&job_id) {
+                    return Err("Cancelled before restore.".to_string());
+                }
+                if !st.set_phase(&app, &job_id, "restoring workspace files", true) {
+                    return Err("Cancelled before restore.".to_string());
+                }
+                let restore: Vec<String> = vec!["restore-workspace".into(), "-e".into(), env.clone()];
+                if st.stream_process(&app, &job_id, "clio", &restore, Some(&dir), &[])? != 0 {
+                    return Err("clio restore-workspace failed".to_string());
+                }
             }
 
             st.log(&app, &job_id, "Initializing git repository…");
             git::git_ok(&dir, &["init", "-b", "main"])?;
             std::fs::write(dir.join(".gitignore"), GITIGNORE).map_err(|e| e.to_string())?;
             git::git_ok(&dir, &["add", "-A"])?;
-            git::git_ok(&dir, &["commit", "-m", &format!("Initial pull from {env}")])?;
+            let commit_msg = if skip_restore {
+                "Initial empty workspace".to_string()
+            } else {
+                format!("Initial pull from {env}")
+            };
+            git::git_ok(&dir, &["commit", "-m", &commit_msg])?;
             st.log(&app, &job_id, "✓ Initial commit created on branch main");
 
             if let Some(url) = remote_url.as_ref().filter(|u| !u.trim().is_empty()) {
@@ -224,7 +234,9 @@ pub fn create_workspace_flow(
 
         match result {
             Ok(()) => {
-                let snapshot = clio::packages_snapshot(&env).ok();
+                // An empty workspace has pulled nothing, so it has no drift baseline yet;
+                // the first add-package/pull records the snapshot.
+                let snapshot = if skip_restore { None } else { clio::packages_snapshot(&env).ok() };
                 let w = Workspace {
                     id: format!("ws-{}", now_ms()),
                     name: name.clone(),
@@ -232,7 +244,7 @@ pub fn create_workspace_flow(
                     env: env.clone(),
                     app_code,
                     created_at: now_ms(),
-                    last_pull: Some(now_ms()),
+                    last_pull: if skip_restore { None } else { Some(now_ms()) },
                     last_push: None,
                     packages_snapshot: snapshot,
                 };
@@ -642,6 +654,87 @@ pub fn ws_push_remote(
                 if code != 0 {
                     st.log(&app, &jid, "Push failed. If this is an authentication error, sign in once with your git client (e.g. `git push` in a terminal) so Windows credential manager stores the token.");
                 }
+                st.finish(&app, &jid, Some(code));
+            }
+            Err(e) => {
+                st.log(&app, &jid, e);
+                st.finish(&app, &jid, Some(1));
+            }
+        }
+    });
+
+    Ok(job_id)
+}
+
+/// Create a GitHub repository straight from the workspace and wire it as `origin`.
+/// Runs `gh repo create <name> [--private|--public] --source <dir> --remote origin [--push]`,
+/// so a fresh workspace goes from "no remote" to "pushed to GitHub" in one action.
+#[tauri::command]
+pub fn create_github_repo(
+    app: AppHandle,
+    jobs: State<'_, JobState>,
+    ws: State<'_, WsState>,
+    id: String,
+    repo_name: String,
+    private: bool,
+    push: bool,
+) -> Result<String, String> {
+    let w = ws.get(&id)?;
+    let repo_name = repo_name.trim().to_string();
+    if repo_name.is_empty() || repo_name.contains(' ') {
+        return Err("Enter a repository name without spaces (owner/name is allowed).".to_string());
+    }
+    let dir = PathBuf::from(&w.path);
+    if !dir.is_dir() {
+        return Err(format!("Workspace folder is missing: {}", w.path));
+    }
+    if git::remote_url(&dir).is_some() {
+        return Err("This workspace already has a git remote — use Push to remote instead.".to_string());
+    }
+
+    let job_id = jobs.create_job(&app, "github-create-repo", None, format!("gh repo create {repo_name}"));
+    let st = jobs.inner().clone();
+    let wstate = ws.inner().clone();
+    let jid = job_id.clone();
+    let ws_id = w.id.clone();
+    let path = w.path.clone();
+
+    std::thread::spawn(move || {
+        // Creating + wiring the repo is quick; the optional push is the unsafe phase, so
+        // keep the whole job non-cancellable to avoid a half-created remote.
+        if !st.mark_running_phase(&app, &jid, "creating GitHub repository", false) {
+            return;
+        }
+        let visibility = if private { "--private" } else { "--public" };
+        let mut args: Vec<String> = vec![
+            "repo".into(),
+            "create".into(),
+            repo_name,
+            visibility.into(),
+            "--source".into(),
+            path,
+            "--remote".into(),
+            "origin".into(),
+        ];
+        if push {
+            args.push("--push".into());
+        }
+        match st.stream_process(&app, &jid, "gh", &args, Some(&dir), &[]) {
+            Ok(0) => {
+                st.log(&app, &jid, "✓ GitHub repository created and set as origin.");
+                if push {
+                    st.log(&app, &jid, "✓ Pushed the initial commit.");
+                    wstate.modify(|list| {
+                        if let Some(entry) = list.iter_mut().find(|x| x.id == ws_id) {
+                            entry.last_push = Some(now_ms());
+                        }
+                    });
+                }
+                let _ = app.emit("workspaces-changed", ());
+                st.finish(&app, &jid, Some(0));
+            }
+            Ok(code) => {
+                st.log(&app, &jid, "✗ gh repo create failed. If this is an auth error, sign in on Settings → GitHub first. If the name is taken, pick another.");
                 st.finish(&app, &jid, Some(code));
             }
             Err(e) => {

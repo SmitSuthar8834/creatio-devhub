@@ -27,9 +27,15 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
 ### Workspaces and Git
 
 - Create a workspace from a Creatio environment or register an existing folder.
-- Pull packages from Creatio into a workspace.
+- Start an **empty** workspace (scaffold + initial commit only, no packages downloaded) and add
+  packages to it later, or pull everything from the environment up front.
+- Add packages selectively from a picker, or pull all packages from Creatio into a workspace.
 - Review changed files and colorized diffs.
 - Commit changes and inspect Git history.
+- **Create a GitHub repository directly from a workspace** (via the GitHub CLI), which wires the
+  `origin` remote and pushes the initial commit in one step.
+- A guidance banner walks new workspaces through the steps: Workspace → Packages → GitHub repo →
+  Pushed.
 - Configure and push to a Git remote.
 - Use the active GitHub CLI account for HTTPS pushes.
 - Configure the global Git author name and email.

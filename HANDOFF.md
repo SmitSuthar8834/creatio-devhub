@@ -2,7 +2,7 @@
 
 Last verified: **2026-07-18**
 
-Current version: **0.2.3**
+Current version: **0.2.4**
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
@@ -26,6 +26,7 @@ The main milestones are complete:
 |---|---|
 | Environment registration, default selection, ping/open, cliogate installation | Complete |
 | Workspace creation/registration, pull, diff, commit, history, Git remote push | Complete |
+| Empty-first workspace + selective add-package UI + create GitHub repo from app | Complete (working tree) |
 | Push workspace to Creatio with drift guard and backup controls | Complete |
 | Package browsing, actions, archive installation, Git workspace bridge | Complete |
 | Package deployment between registered environments | Complete |
@@ -62,6 +63,31 @@ Git and must remain private. On the original development machine it is stored at
 
 Back this key up securely. Losing it prevents existing installations from accepting future
 updates. Never print it in logs, add it to the repository, or upload it as a release asset.
+
+## Empty-first workspaces + GitHub-from-app (v0.2.4, 2026-07-18)
+
+New onboarding flow so a workspace no longer has to download every package up front:
+
+- **Start empty**: `create_workspace_flow` takes a new `skip_restore: bool`. When set, it runs
+  `create-workspace` + git init + an "Initial empty workspace" commit and **skips
+  `restore-workspace`** (no packages pulled, no drift baseline recorded yet). The New Workspace
+  wizard defaults to "Start empty"; "Pull everything now" is the opt-in.
+- **Add packages selectively**: the pre-existing `add_package_to_workspace` command
+  (`cfg-worspace` — note that misspelling is clio's own alias, verified against installed clio,
+  aliases `cfgw` — + `restore-workspace`) is now surfaced in the UI. `WorkspaceDetail` has an
+  "➕ Add package" action + a package-picker dialog fed by `list_packages`.
+- **Create GitHub repo from the app**: new `create_github_repo` command runs
+  `gh repo create <name> [--private|--public] --source <dir> --remote origin --push`, wiring
+  `origin` and pushing the initial commit in one job. Exposed via a guidance banner and the
+  History-tab remote bar (shown only when the workspace has no remote yet). Requires `gh` signed
+  in (Settings → GitHub). Non-cancellable job (push is the unsafe phase).
+- **Guidance banner + progress strip** in `WorkspaceDetail`
+  (✅ Workspace → Packages → GitHub repo → Pushed) drives new users through the four steps.
+- Touched: `src-tauri/src/workspaces.rs`, `src-tauri/src/lib.rs`, `src/lib/ipc.ts`,
+  `src/modules/workspaces/NewWorkspaceWizard.tsx`, `src/modules/workspaces/WorkspaceDetail.tsx`,
+  `src/App.css`. Validated: `tsc --noEmit` clean, `cargo check`/`cargo test --lib` = 13 passed,
+  full `tauri dev` build ran and launched. Shipped in v0.2.4 on `main`; push tag `v0.2.4` to
+  publish the signed release.
 
 ## Architecture
 

@@ -56,6 +56,7 @@ pub fn run() {
             workspaces::ws_set_remote,
             workspaces::ws_remote_status,
             workspaces::ws_push_remote,
+            workspaces::create_github_repo,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  addPackageToWorkspace,
   Commit,
+  createGithubRepo,
   FileChange,
+  listPackages,
   onJobUpdate,
+  PackageInfo,
   pullWorkspace,
   RemoteStatus,
   pushWorkspaceCloud,
@@ -38,6 +42,13 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
   const [drift, setDrift] = useState("");
   const [remoteStatus, setRemoteStatus] = useState<RemoteStatus | null>(null);
   const [remoteError, setRemoteError] = useState("");
+  const [showAddPkg, setShowAddPkg] = useState(false);
+  const [pkgList, setPkgList] = useState<PackageInfo[]>([]);
+  const [pkgFilter, setPkgFilter] = useState("");
+  const [pkgLoading, setPkgLoading] = useState(false);
+  const [showCreateRepo, setShowCreateRepo] = useState(false);
+  const [repoName, setRepoName] = useState(w.name);
+  const [repoPrivate, setRepoPrivate] = useState(true);
 
   const refresh = useCallback(() => {
     wsStatus(w.id).then(setChanges).catch((e) => setError(String(e)));
@@ -142,6 +153,50 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
     }
   };
 
+  const openAddPkg = () => {
+    setShowAddPkg(true);
+    setPkgFilter("");
+    setPkgLoading(true);
+    listPackages(w.env)
+      .then((res) => setPkgList(res.items))
+      .catch((e) => setError(String(e)))
+      .finally(() => setPkgLoading(false));
+  };
+
+  const doAddPackage = async (name: string) => {
+    setError("");
+    setNotice("");
+    setShowAddPkg(false);
+    try {
+      await addPackageToWorkspace(w.id, name);
+      setNotice(`Adding ${name} to the workspace — follow it on the Jobs screen.`);
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
+  const doCreateRepo = async () => {
+    setError("");
+    setNotice("");
+    setShowCreateRepo(false);
+    try {
+      await createGithubRepo({ id: w.id, repoName: repoName.trim(), private: repoPrivate, push: true });
+      setNotice("Creating the GitHub repository and pushing — follow it on the Jobs screen.");
+      onChanged();
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
+  const filteredPkgs = pkgList.filter((p) =>
+    p.name.toLowerCase().includes(pkgFilter.trim().toLowerCase()),
+  );
+
+  const hasPackages = changes.length > 0 || (w.lastPull != null);
+  const hasRepo = !!w.remote;
+  const isPushed = !!remoteStatus?.hasRemote && remoteStatus.ahead === 0;
+  const showGuidance = !hasPackages || !hasRepo;
+
   const suggested = `Pull from ${w.env} — ${changes.length} file(s) changed`;
 
   return (
@@ -156,6 +211,9 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
           {w.branch && <span className="pill accent">{w.branch}</span>}
         </div>
         <div className="ws-actions">
+          <button className="ghost" onClick={openAddPkg}>
+            ➕ Add package
+          </button>
           <button className="ghost" onClick={doPull}>
             ⬇ Pull from Cloud
           </button>
@@ -170,6 +228,100 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
 
       {notice && <p className="notice">{notice}</p>}
       {error && <p className="form-error">{error}</p>}
+
+      {showGuidance && (
+        <div className="guidance-banner">
+          <div className="guidance-head">
+            <strong>{hasPackages ? "Almost there." : "Your workspace is ready — but empty."}</strong>
+            <span>
+              {hasPackages
+                ? "Publish it to GitHub so your work is versioned and shareable."
+                : "Add the Creatio packages you want to version-control — only the ones you pick get downloaded."}
+            </span>
+          </div>
+          <div className="guidance-steps">
+            <span className="gstep done">✅ Workspace</span>
+            <span className="garrow">→</span>
+            <span className={`gstep ${hasPackages ? "done" : "next"}`}>
+              {hasPackages ? "✅" : "⬜"} Packages
+            </span>
+            <span className="garrow">→</span>
+            <span className={`gstep ${hasRepo ? "done" : hasPackages ? "next" : ""}`}>
+              {hasRepo ? "✅" : "⬜"} GitHub repo
+            </span>
+            <span className="garrow">→</span>
+            <span className={`gstep ${isPushed ? "done" : ""}`}>{isPushed ? "✅" : "⬜"} Pushed</span>
+          </div>
+          <div className="dialog-actions">
+            {!hasPackages && (
+              <button className="primary" onClick={openAddPkg}>
+                ➕ Add packages
+              </button>
+            )}
+            {hasPackages && !hasRepo && (
+              <button className="primary" onClick={() => setShowCreateRepo(true)}>
+                Create GitHub repo
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showAddPkg && (
+        <div className="dialog-backdrop" onClick={() => setShowAddPkg(false)}>
+          <div className="dialog" onClick={(e) => e.stopPropagation()}>
+            <h2>Add package from {w.env}</h2>
+            <p className="hint">Pick a package to include in this workspace. It gets added to the selection and its source is pulled in as a Git change.</p>
+            <input
+              autoFocus
+              placeholder="Filter packages…"
+              value={pkgFilter}
+              onChange={(e) => setPkgFilter(e.target.value)}
+            />
+            <div className="pkg-picker">
+              {pkgLoading ? (
+                <p className="empty">Loading packages…</p>
+              ) : filteredPkgs.length === 0 ? (
+                <p className="empty">No packages match.</p>
+              ) : (
+                filteredPkgs.map((p) => (
+                  <button key={p.name} className="pkg-row" onClick={() => doAddPackage(p.name)}>
+                    <span className="pkg-name">{p.name}</span>
+                    <span className="pkg-meta">{p.maintainer} · {p.version}</span>
+                  </button>
+                ))
+              )}
+            </div>
+            <div className="dialog-actions">
+              <button className="ghost" onClick={() => setShowAddPkg(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCreateRepo && (
+        <div className="dialog-backdrop" onClick={() => setShowCreateRepo(false)}>
+          <div className="dialog" onClick={(e) => e.stopPropagation()}>
+            <h2>Create GitHub repository</h2>
+            <p className="hint">Creates the repository on your signed-in GitHub account, wires it as <code>origin</code>, and pushes the current commit. Requires the GitHub CLI signed in (Settings → GitHub).</p>
+            <label>
+              Repository name
+              <input value={repoName} onChange={(e) => setRepoName(e.target.value)} placeholder="my-workspace" autoFocus />
+            </label>
+            <label className="check-row">
+              <input type="checkbox" checked={repoPrivate} onChange={(e) => setRepoPrivate(e.target.checked)} />
+              Private repository (recommended)
+            </label>
+            <div className="dialog-actions">
+              <button className="ghost" onClick={() => setShowCreateRepo(false)}>Cancel</button>
+              <button className="primary" onClick={doCreateRepo} disabled={!repoName.trim()}>
+                Create &amp; push
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {drift && (
         <div className="drift-banner">
           <p>⚠ {drift}</p>
@@ -307,6 +459,11 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
             <button className="ghost" onClick={doPush}>
               ⬆ Push to remote
             </button>
+            {!hasRepo && (
+              <button className="ghost" onClick={() => setShowCreateRepo(true)}>
+                ✨ Create GitHub repo
+              </button>
+            )}
           </div>
           {commits.length === 0 ? (
             <p className="empty">No commits yet.</p>

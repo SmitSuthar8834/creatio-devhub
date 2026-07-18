@@ -187,6 +187,7 @@ export const createWorkspaceFlow = (opts: {
   env: string;
   appCode?: string;
   remoteUrl?: string;
+  skipRestore?: boolean;
 }) =>
   invoke<string>("create_workspace_flow", {
     name: opts.name,
@@ -194,6 +195,7 @@ export const createWorkspaceFlow = (opts: {
     env: opts.env,
     appCode: opts.appCode ?? null,
     remoteUrl: opts.remoteUrl ?? null,
+    skipRestore: opts.skipRestore ?? false,
   });
 
 export const pullWorkspace = (id: string) => invoke<string>("pull_workspace", { id });
@@ -210,6 +212,19 @@ export const wsCommit = (id: string, message: string) => invoke<string>("ws_comm
 export const wsSetRemote = (id: string, url: string) => invoke<void>("ws_set_remote", { id, url });
 export const wsRemoteStatus = (id: string) => invoke<RemoteStatus>("ws_remote_status", { id });
 export const wsPushRemote = (id: string) => invoke<string>("ws_push_remote", { id });
+
+export const createGithubRepo = (opts: {
+  id: string;
+  repoName: string;
+  private: boolean;
+  push: boolean;
+}) =>
+  invoke<string>("create_github_repo", {
+    id: opts.id,
+    repoName: opts.repoName,
+    private: opts.private,
+    push: opts.push,
+  });
 
 export const onWorkspacesChanged = (cb: () => void): Promise<UnlistenFn> =>
   listen("workspaces-changed", () => cb());
