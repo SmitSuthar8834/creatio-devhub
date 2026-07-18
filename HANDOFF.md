@@ -77,6 +77,22 @@ Rust command layer
 There is no DevHub server component. The desktop application invokes local command-line tools and
 those tools communicate with Creatio or GitHub.
 
+## Branding / icons (added 2026-07-18, later session)
+
+- Icon source sheet: `Downloads\Generated image 1.png` cropped into `src/assets/icons/`
+  (logo-mark, logo-wordmark, environments, workspaces, packages, applications, jobs, settings,
+  local-desktop, app-icon-512). White backgrounds converted to alpha (luminance ramp ≥215) so the
+  icons sit on the dark sidebar.
+- Sidebar (`App.tsx` NAV + brand) uses the PNG icons; active nav item applies
+  `filter: brightness(0) invert(1)`. Wordmark (`logo-wordmark.png`, white bg) is reserved for
+  README/light surfaces.
+- Sidebar switched from navy to a light treatment (`--side-bg #fbfcfe`, dark ink, border-right)
+  so the blue-gradient icons render in true color — matches the icon sheet's design language.
+- App icons (`src-tauri/icons/*` — .ico/.icns/pngs/Android mipmaps) regenerated from
+  `app-icon-512.png` via `npx tauri icon`. Ship in the next tagged release so installed apps get
+  the new taskbar/Start icon.
+- These changes are in the working tree — not yet committed/released at time of writing.
+
 ## Important design decisions
 
 | Decision | Rationale |
@@ -223,7 +239,10 @@ rerun the same failed workflow only when its source/tag is unchanged.
 - DevHub currently depends on separately installed clio, Git, and GitHub CLI binaries.
 - The update feed is public. Moving the source repository to private access requires a separate
   public release feed or an authenticated update service.
-- Job history is currently in memory and is not restored after restarting DevHub.
+- Job history persists under app-data `jobs/` (`history.json`, capped at 200, + per-job log
+  files written at completion). Jobs active during an app exit are shown as
+  failed/"interrupted" on next start. Logs stream to memory during a run and are only flushed
+  to disk at finish — a hard crash mid-job loses that job's log tail (record survives).
 - Catalog cache invalidation is explicit via Refresh or selected successful mutations; it is not a
   real-time subscription to Creatio changes.
 
@@ -233,7 +252,8 @@ rerun the same failed workflow only when its source/tag is unchanged.
    non-production environments.
 2. Add automated integration tests around cache invalidation and deployment job locking.
 3. Add configurable clio executable path and log retention settings.
-4. Persist job history and provide log cleanup/export.
+4. ~~Persist job history~~ (done — `JobStore` in jobs.rs, Clear-history button on Jobs page);
+   log export still open.
 5. Decide whether to bundle clio or keep it as an external prerequisite.
 6. Add optional scheduled workspace refresh/tray behavior.
 7. Design a proper ALM promotion flow if approvals, environment policies, or release gates are

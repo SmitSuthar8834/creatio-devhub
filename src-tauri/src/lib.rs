@@ -21,6 +21,9 @@ pub fn run() {
         .setup(|app| {
             app.manage(workspaces::WsState::load(app.handle()));
             app.manage(cache::CacheState::load(app.handle()));
+            if let Ok(dir) = app.path().app_data_dir() {
+                app.state::<jobs::JobState>().init_persistence(dir.join("jobs"));
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -35,6 +38,7 @@ pub fn run() {
             jobs::get_jobs,
             jobs::get_job_log,
             jobs::cancel_job,
+            jobs::clear_job_history,
             packages::list_packages,
             packages::run_package_action,
             packages::deploy_package_between_environments,

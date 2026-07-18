@@ -1,13 +1,13 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter, State};
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JobInfo {
     pub id: String,
@@ -38,6 +38,77 @@ pub struct JobState {
     /// One lock per environment so jobs against the same env run sequentially.
     pub env_locks: Arc<Mutex<HashMap<String, Arc<Mutex<()>>>>>,
     pub process_ids: Arc<Mutex<HashMap<String, u32>>>,
+    /// Set once at startup; None only in unit tests that don't touch persistence.
+    pub store: Arc<Mutex<Option<JobStore>>>,
+}
+
+/// Persistent job history under the app-data dir:
+/// `jobs/history.json` (newest first, capped) + `jobs/logs/{id}.log` per finished job.
+const MAX_HISTORY: usize = 200;
+
+#[derive(Clone)]
+pub struct JobStore {
+    dir: PathBuf,
+}
+
+impl JobStore {
+    pub fn new(dir: PathBuf) -> Self {
+        let _ = std::fs::create_dir_all(dir.join("logs"));
+        JobStore { dir }
+    }
+
+    fn history_file(&self) -> PathBuf {
+        self.dir.join("history.json")
+    }
+
+    fn log_file(&self, id: &str) -> PathBuf {
+        self.dir.join("logs").join(format!("{id}.log"))
+    }
+
+    /// Load past jobs; anything recorded as still active was orphaned by an app
+    /// exit and is surfaced as failed/interrupted rather than silently dropped.
+    pub fn load(&self) -> Vec<JobInfo> {
+        let mut list: Vec<JobInfo> = std::fs::read_to_string(self.history_file())
+            .ok()
+            .and_then(|raw| serde_json::from_str(&raw).ok())
+            .unwrap_or_default();
+        for j in &mut list {
+            if !matches!(j.status.as_str(), "succeeded" | "failed" | "cancelled") {
+                j.status = "failed".to_string();
+                j.phase = "interrupted — DevHub closed while the job was active".to_string();
+                j.cancellable = false;
+                j.cancel_requested = false;
+                if j.finished_at.is_none() {
+                    j.finished_at = Some(j.started_at);
+                }
+            }
+        }
+        list
+    }
+
+    pub fn persist(&self, jobs: &[JobInfo]) {
+        let capped: Vec<&JobInfo> = jobs.iter().take(MAX_HISTORY).collect();
+        if let Ok(json) = serde_json::to_string_pretty(&capped) {
+            let _ = std::fs::write(self.history_file(), json);
+        }
+        for pruned in jobs.iter().skip(MAX_HISTORY) {
+            let _ = std::fs::remove_file(self.log_file(&pruned.id));
+        }
+    }
+
+    pub fn write_log(&self, id: &str, lines: &[String]) {
+        let _ = std::fs::write(self.log_file(id), lines.join("\n"));
+    }
+
+    pub fn read_log(&self, id: &str) -> Option<Vec<String>> {
+        std::fs::read_to_string(self.log_file(id))
+            .ok()
+            .map(|s| s.lines().map(String::from).collect())
+    }
+
+    pub fn remove_log(&self, id: &str) {
+        let _ = std::fs::remove_file(self.log_file(id));
+    }
 }
 
 pub fn now_ms() -> u64 {
@@ -91,6 +162,26 @@ fn secret_values(args: &[String]) -> Vec<String> {
 }
 
 impl JobState {
+    /// Called once from setup: attach the store and surface past jobs.
+    pub fn init_persistence(&self, dir: PathBuf) {
+        let store = JobStore::new(dir);
+        let loaded = store.load();
+        {
+            let mut jobs = self.jobs.lock().unwrap();
+            jobs.extend(loaded);
+        }
+        store.persist(&self.jobs.lock().unwrap());
+        *self.store.lock().unwrap() = Some(store);
+    }
+
+    fn persist_snapshot(&self) {
+        let store = self.store.lock().unwrap().clone();
+        if let Some(store) = store {
+            let snapshot = self.jobs.lock().unwrap().clone();
+            store.persist(&snapshot);
+        }
+    }
+
     pub fn env_lock(&self, env: Option<&str>) -> Arc<Mutex<()>> {
         let mut locks = self.env_locks.lock().unwrap();
         locks
@@ -117,6 +208,7 @@ impl JobState {
         self.jobs.lock().unwrap().insert(0, job.clone());
         self.logs.lock().unwrap().insert(id.clone(), Vec::new());
         let _ = app.emit("job-update", job);
+        self.persist_snapshot();
         id
     }
 
@@ -204,6 +296,16 @@ impl JobState {
                     if code == Some(0) { "completed".to_string() } else { "failed".to_string() };
             }
         });
+        // Persist the terminal state and dump this job's log to its file.
+        {
+            let store = self.store.lock().unwrap().clone();
+            if let Some(store) = store {
+                if let Some(lines) = self.logs.lock().unwrap().get(id) {
+                    store.write_log(id, lines);
+                }
+            }
+        }
+        self.persist_snapshot();
         // Long jobs finish while the user is elsewhere — notify unless the window is focused.
         let focused = tauri::Manager::get_webview_window(app, "main")
             .and_then(|w| w.is_focused().ok())
@@ -353,7 +455,42 @@ pub fn get_jobs(state: State<'_, JobState>) -> Vec<JobInfo> {
 
 #[tauri::command]
 pub fn get_job_log(state: State<'_, JobState>, id: String) -> Vec<String> {
-    state.logs.lock().unwrap().get(&id).cloned().unwrap_or_default()
+    if let Some(lines) = state.logs.lock().unwrap().get(&id) {
+        if !lines.is_empty() {
+            return lines.clone();
+        }
+    }
+    // Not in memory (job from a previous run) — read its persisted log file.
+    let store = state.store.lock().unwrap().clone();
+    store.and_then(|s| s.read_log(&id)).unwrap_or_default()
+}
+
+/// Remove finished jobs (and their log files) from history; active jobs stay.
+#[tauri::command]
+pub fn clear_job_history(state: State<'_, JobState>) -> Vec<JobInfo> {
+    let removed: Vec<JobInfo>;
+    {
+        let mut jobs = state.jobs.lock().unwrap();
+        let (keep, drop): (Vec<JobInfo>, Vec<JobInfo>) = jobs
+            .drain(..)
+            .partition(|j| !matches!(j.status.as_str(), "succeeded" | "failed" | "cancelled"));
+        *jobs = keep;
+        removed = drop;
+    }
+    let store = state.store.lock().unwrap().clone();
+    if let Some(store) = store {
+        for j in &removed {
+            store.remove_log(&j.id);
+        }
+    }
+    {
+        let mut logs = state.logs.lock().unwrap();
+        for j in &removed {
+            logs.remove(&j.id);
+        }
+    }
+    state.persist_snapshot();
+    state.jobs.lock().unwrap().clone()
 }
 
 fn terminate_process_tree(pid: u32) {
@@ -415,12 +552,75 @@ pub fn cancel_job(app: AppHandle, state: State<'_, JobState>, id: String) -> Res
     if let Some(pid) = pid {
         terminate_process_tree(pid);
     }
+    state.persist_snapshot();
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn sample_job(id: &str, status: &str) -> JobInfo {
+        JobInfo {
+            id: id.to_string(),
+            kind: "test".to_string(),
+            env: Some("env1".to_string()),
+            display_command: "clio test".to_string(),
+            status: status.to_string(),
+            phase: "running clio command".to_string(),
+            cancellable: false,
+            cancel_requested: false,
+            started_at: 1,
+            finished_at: if status == "succeeded" { Some(2) } else { None },
+            exit_code: if status == "succeeded" { Some(0) } else { None },
+        }
+    }
+
+    #[test]
+    fn history_roundtrip_marks_orphaned_jobs_interrupted() {
+        let dir = std::env::temp_dir().join(format!("devhub-jobs-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let store = JobStore::new(dir.clone());
+
+        let jobs = vec![sample_job("j-running", "running"), sample_job("j-done", "succeeded")];
+        store.persist(&jobs);
+        store.write_log("j-done", &["line one".to_string(), "line two".to_string()]);
+
+        let loaded = store.load();
+        assert_eq!(loaded.len(), 2);
+        let orphan = loaded.iter().find(|j| j.id == "j-running").unwrap();
+        assert_eq!(orphan.status, "failed");
+        assert!(orphan.phase.contains("interrupted"));
+        assert!(orphan.finished_at.is_some());
+        let done = loaded.iter().find(|j| j.id == "j-done").unwrap();
+        assert_eq!(done.status, "succeeded");
+        assert_eq!(store.read_log("j-done").unwrap(), vec!["line one", "line two"]);
+
+        store.remove_log("j-done");
+        assert!(store.read_log("j-done").is_none());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn history_caps_and_prunes_logs() {
+        let dir = std::env::temp_dir().join(format!("devhub-jobs-cap-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let store = JobStore::new(dir.clone());
+
+        let jobs: Vec<JobInfo> =
+            (0..MAX_HISTORY + 5).map(|i| sample_job(&format!("j{i}"), "succeeded")).collect();
+        for j in &jobs {
+            store.write_log(&j.id, &["x".to_string()]);
+        }
+        store.persist(&jobs);
+
+        let loaded = store.load();
+        assert_eq!(loaded.len(), MAX_HISTORY);
+        // logs of pruned (beyond-cap) jobs are deleted, capped ones remain
+        assert!(store.read_log(&format!("j{}", MAX_HISTORY + 1)).is_none());
+        assert!(store.read_log("j0").is_some());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     #[test]
     #[cfg(windows)]

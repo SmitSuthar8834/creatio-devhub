@@ -59,6 +59,8 @@ export const getJobs = () => invoke<JobInfo[]>("get_jobs");
 export const getJobLog = (id: string) => invoke<string[]>("get_job_log", { id });
 export const cancelJob = (id: string) => invoke<void>("cancel_job", { id });
 
+export const clearJobHistory = () => invoke<JobInfo[]>("clear_job_history");
+
 export const onJobUpdate = (cb: (job: JobInfo) => void): Promise<UnlistenFn> =>
   listen<JobInfo>("job-update", (e) => cb(e.payload));
 

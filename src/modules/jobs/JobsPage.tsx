@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { cancelJob, getJobLog, getJobs, JobInfo, onJobLog, onJobUpdate } from "../../lib/ipc";
+import { cancelJob, clearJobHistory, getJobLog, getJobs, JobInfo, onJobLog, onJobUpdate } from "../../lib/ipc";
 
 function duration(job: JobInfo): string {
   const end = job.finishedAt ?? Date.now();
@@ -64,6 +64,23 @@ export default function JobsPage() {
     <div className="page-body jobs-layout">
       <div className="page-bar">
         <h1>Jobs</h1>
+        {jobs.some((j) => ["succeeded", "failed", "cancelled"].includes(j.status)) && (
+          <button
+            className="ghost"
+            onClick={() =>
+              clearJobHistory().then((remaining) => {
+                setJobs(remaining);
+                if (selected && !remaining.some((j) => j.id === selected)) {
+                  setSelected(null);
+                  setLog([]);
+                }
+              })
+            }
+            title="Remove finished jobs and their logs. Running jobs are kept."
+          >
+            Clear history
+          </button>
+        )}
       </div>
       {jobs.length === 0 ? (
         <p className="empty">Nothing has run yet. Actions from other screens appear here with live output.</p>
