@@ -103,6 +103,86 @@ pub fn github_status() -> GithubStatus {
     }
 }
 
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GithubRepo {
+    pub name_with_owner: String,
+    pub name: String,
+    pub url: String,
+    pub default_branch: String,
+    pub is_private: bool,
+}
+
+/// List the signed-in account's GitHub repositories (for the "Deploy from
+/// GitHub" picker). Read-only; requires `gh` to be authenticated.
+#[tauri::command]
+pub fn list_github_repos() -> Result<Vec<GithubRepo>, String> {
+    let (code, out, err) = capture(
+        "gh",
+        &[
+            "repo",
+            "list",
+            "--no-archived",
+            "--limit",
+            "200",
+            "--json",
+            "nameWithOwner,name,url,defaultBranchRef,isPrivate",
+        ],
+    )?;
+    if code != 0 {
+        return Err(if err.trim().is_empty() {
+            "Could not list GitHub repositories. Sign in on Settings → GitHub first.".to_string()
+        } else {
+            err
+        });
+    }
+    let json: serde_json::Value = serde_json::from_str(&out).map_err(|e| e.to_string())?;
+    let rows = json.as_array().ok_or("Unexpected gh output.".to_string())?;
+    let mut repos: Vec<GithubRepo> = rows
+        .iter()
+        .filter_map(|row| {
+            let name_with_owner = row.get("nameWithOwner")?.as_str()?.to_string();
+            Some(GithubRepo {
+                name_with_owner,
+                name: row.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                url: row.get("url").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                default_branch: row
+                    .get("defaultBranchRef")
+                    .and_then(|v| v.get("name"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("main")
+                    .to_string(),
+                is_private: row.get("isPrivate").and_then(|v| v.as_bool()).unwrap_or(false),
+            })
+        })
+        .collect();
+    repos.sort_by(|a, b| a.name_with_owner.to_lowercase().cmp(&b.name_with_owner.to_lowercase()));
+    Ok(repos)
+}
+
+/// List branch names of a `owner/name` repository via the GitHub API.
+#[tauri::command]
+pub fn list_repo_branches(repo: String) -> Result<Vec<String>, String> {
+    let repo = repo.trim();
+    if repo.is_empty() || !repo.contains('/') {
+        return Err("Expected a repository in owner/name form.".to_string());
+    }
+    let path = format!("repos/{repo}/branches");
+    let (code, out, err) = capture("gh", &["api", "--paginate", &path, "--jq", ".[].name"])?;
+    if code != 0 {
+        return Err(if err.trim().is_empty() {
+            "Could not list branches for this repository.".to_string()
+        } else {
+            err
+        });
+    }
+    Ok(out
+        .lines()
+        .map(|l| l.trim().to_string())
+        .filter(|l| !l.is_empty())
+        .collect())
+}
+
 #[tauri::command]
 pub fn set_git_identity(name: String, email: String) -> Result<(), String> {
     let name = name.trim();

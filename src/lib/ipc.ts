@@ -51,6 +51,28 @@ export const startGithubLogin = () => invoke<string>("start_github_login");
 export const setGitIdentity = (name: string, email: string) =>
   invoke<void>("set_git_identity", { name, email });
 
+export interface GithubRepo {
+  nameWithOwner: string;
+  name: string;
+  url: string;
+  defaultBranch: string;
+  isPrivate: boolean;
+}
+
+export const listGithubRepos = () => invoke<GithubRepo[]>("list_github_repos");
+export const listRepoBranches = (repo: string) =>
+  invoke<string[]>("list_repo_branches", { repo });
+
+export const deployFromGithub = (opts: {
+  repo: string;
+  cloneUrl: string;
+  branch: string;
+  destParent: string;
+  targetEnv: string;
+  skipBackup: boolean;
+  register: boolean;
+}) => invoke<string>("deploy_from_github", opts);
+
 export const runClioJob = (kind: string, args: string[], env?: string) =>
   invoke<string>("run_clio_job", { kind, args, env: env ?? null });
 

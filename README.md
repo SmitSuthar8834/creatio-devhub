@@ -41,6 +41,11 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
 - Configure the global Git author name and email.
 - Detect commits pushed by another user and block unsafe pushes until the workspace is updated.
 - Add another package from the same Creatio environment to an existing workspace.
+- **Deploy from GitHub** — clone a repository at a chosen branch (or hard-refresh an existing
+  clone) and install it into a target environment with `push-workspace`, for example to restore a
+  broken environment from known-good source. Pick a repo and branch from your GitHub account (with
+  a manual owner/name fallback), choose the target environment and destination, keep a backup, and
+  optionally keep the clone as a workspace to keep iterating.
 
 ### Packages
 

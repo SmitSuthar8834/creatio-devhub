@@ -36,6 +36,8 @@ pub fn run() {
             github::github_status,
             github::set_git_identity,
             github::start_github_login,
+            github::list_github_repos,
+            github::list_repo_branches,
             jobs::run_clio_job,
             jobs::get_jobs,
             jobs::get_job_log,
@@ -59,6 +61,7 @@ pub fn run() {
             workspaces::ws_remote_status,
             workspaces::ws_push_remote,
             workspaces::create_github_repo,
+            workspaces::deploy_from_github,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { listWorkspaces, onWorkspacesChanged, removeWorkspace, WorkspaceSummary } from "../../lib/ipc";
+import DeployFromGithubDialog from "./DeployFromGithubDialog";
 import NewWorkspaceWizard from "./NewWorkspaceWizard";
 import WorkspaceDetail from "./WorkspaceDetail";
 
@@ -15,6 +16,7 @@ export default function WorkspacesPage({
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialWorkspaceId ?? null);
   const [showWizard, setShowWizard] = useState(false);
+  const [showDeploy, setShowDeploy] = useState(false);
 
   const refresh = () => listWorkspaces().then(setWorkspaces).catch(console.error);
 
@@ -47,9 +49,14 @@ export default function WorkspacesPage({
     <div className="page-body">
       <div className="page-bar">
         <h1>Workspaces</h1>
-        <button className="primary" onClick={() => setShowWizard(true)}>
-          + New workspace
-        </button>
+        <div className="ws-actions">
+          <button className="ghost" onClick={() => setShowDeploy(true)}>
+            ⬇ Deploy from GitHub
+          </button>
+          <button className="primary" onClick={() => setShowWizard(true)}>
+            + New workspace
+          </button>
+        </div>
       </div>
       {workspaces.length === 0 && (
         <p className="empty">
@@ -102,6 +109,15 @@ export default function WorkspacesPage({
           onStarted={() => {
             setShowWizard(false);
             refresh();
+          }}
+        />
+      )}
+      {showDeploy && (
+        <DeployFromGithubDialog
+          onClose={() => setShowDeploy(false)}
+          onStarted={() => {
+            setShowDeploy(false);
+            onShowJobs();
           }}
         />
       )}

@@ -747,6 +747,160 @@ pub fn create_github_repo(
     Ok(job_id)
 }
 
+/// Deploy a Creatio workspace straight from a GitHub repository into an
+/// environment — e.g. to restore a broken dev environment from known-good
+/// source, or move a repo's packages onto a fresh environment. Clones (or
+/// hard-refreshes) the repo at `branch`, verifies it is a clio workspace, then
+/// runs `push-workspace` to install it. Optionally keeps the clone as a
+/// registered workspace so you can keep iterating on it.
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub fn deploy_from_github(
+    app: AppHandle,
+    jobs: State<'_, JobState>,
+    ws: State<'_, WsState>,
+    repo: String,
+    clone_url: String,
+    branch: String,
+    dest_parent: String,
+    target_env: String,
+    skip_backup: bool,
+    register: bool,
+) -> Result<String, String> {
+    let repo = repo.trim().to_string();
+    let branch = branch.trim().to_string();
+    let target_env = target_env.trim().to_string();
+    if repo.is_empty() || !repo.contains('/') {
+        return Err("Choose a GitHub repository (owner/name).".to_string());
+    }
+    if branch.is_empty() {
+        return Err("Choose a branch to deploy.".to_string());
+    }
+    if target_env.is_empty() {
+        return Err("Choose a target environment.".to_string());
+    }
+    let leaf = repo.rsplit('/').next().unwrap_or("repo").to_string();
+    let parent = PathBuf::from(dest_parent.trim());
+    if !parent.is_dir() {
+        return Err(format!("Destination folder does not exist: {}", parent.display()));
+    }
+    let dir = parent.join(&leaf);
+
+    let job_id = jobs.create_job(
+        &app,
+        "deploy-from-github",
+        Some(target_env.clone()),
+        format!("deploy {repo}@{branch} → {target_env}"),
+    );
+    let lock = jobs.env_lock(Some(&target_env));
+    let st = jobs.inner().clone();
+    let wstate = ws.inner().clone();
+    let jid = job_id.clone();
+
+    std::thread::spawn(move || {
+        let _guard = lock.lock().unwrap();
+        if !st.mark_running_phase(&app, &jid, "fetching from GitHub", true) {
+            return;
+        }
+
+        let result = (|| -> Result<i32, String> {
+            // 1. Bring the local copy to the exact branch tip.
+            if dir.join(".git").is_dir() {
+                st.log(&app, &jid, format!("Refreshing existing clone at {}…", dir.display()));
+                git::git_ok(&dir, &["fetch", "--prune", "origin"])?;
+                git::git_ok(&dir, &["checkout", &branch])?;
+                git::git_ok(&dir, &["reset", "--hard", &format!("origin/{branch}")])?;
+            } else if dir.exists()
+                && std::fs::read_dir(&dir).map(|mut d| d.next().is_some()).unwrap_or(true)
+            {
+                return Err(format!(
+                    "{} already exists and is not a git clone. Pick another destination.",
+                    dir.display()
+                ));
+            } else {
+                st.log(&app, &jid, format!("Cloning {repo} ({branch})…"));
+                // Prefer gh (uses the signed-in account for private repos); fall back to git.
+                let gh_args: Vec<String> = vec![
+                    "repo".into(),
+                    "clone".into(),
+                    repo.clone(),
+                    dir.to_string_lossy().to_string(),
+                    "--".into(),
+                    "-b".into(),
+                    branch.clone(),
+                ];
+                let code = st.stream_process(&app, &jid, "gh", &gh_args, Some(&parent), &[])?;
+                if code != 0 {
+                    st.log(&app, &jid, "gh clone failed — falling back to git clone…");
+                    git::git_ok(
+                        &parent,
+                        &["clone", "-b", &branch, clone_url.trim(), &leaf],
+                    )?;
+                }
+            }
+
+            // 2. Only clio workspaces can be installed.
+            if !dir.join(".clio").is_dir() {
+                return Err(format!(
+                    "{repo} is not a clio workspace (no .clio directory). Only DevHub/clio workspaces can be deployed."
+                ));
+            }
+
+            if st.is_cancel_requested(&jid) {
+                return Err("Cancelled before install.".to_string());
+            }
+            // 3. Install into the environment (unsafe phase — server compile).
+            if !st.set_phase(&app, &jid, "installing workspace in environment", false) {
+                return Err("Cancelled before install.".to_string());
+            }
+            st.log(&app, &jid, "Packing and installing the workspace — the server-side compile can take several minutes and cannot be safely cancelled once it starts.");
+            let mut args: Vec<String> = vec!["push-workspace".into(), "-e".into(), target_env.clone()];
+            if skip_backup {
+                args.push("--skip-backup".into());
+                args.push("true".into());
+            }
+            st.stream_process(&app, &jid, "clio", &args, Some(&dir), &[])
+        })();
+
+        match result {
+            Ok(0) => {
+                st.log(&app, &jid, format!("✓ Deployed {repo}@{branch} to {target_env}."));
+                if register {
+                    let snapshot = clio::packages_snapshot(&target_env).ok();
+                    let path = dir.to_string_lossy().to_string();
+                    wstate.modify(|list| {
+                        if !list.iter().any(|x| x.path.eq_ignore_ascii_case(&path)) {
+                            list.push(Workspace {
+                                id: format!("ws-{}", now_ms()),
+                                name: leaf.clone(),
+                                path: path.clone(),
+                                env: target_env.clone(),
+                                app_code: None,
+                                created_at: now_ms(),
+                                last_pull: Some(now_ms()),
+                                last_push: Some(now_ms()),
+                                packages_snapshot: snapshot.clone(),
+                            });
+                        }
+                    });
+                    let _ = app.emit("workspaces-changed", ());
+                }
+                st.finish(&app, &jid, Some(0));
+            }
+            Ok(code) => {
+                st.log(&app, &jid, "✗ Install failed — scroll up for the compile/installation errors. The environment keeps its backup unless you skipped it.");
+                st.finish(&app, &jid, Some(code));
+            }
+            Err(e) => {
+                st.log(&app, &jid, format!("✗ {e}"));
+                st.finish(&app, &jid, Some(1));
+            }
+        }
+    });
+
+    Ok(job_id)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

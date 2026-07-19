@@ -2,7 +2,7 @@
 
 Last verified: **2026-07-18**
 
-Current version: **0.2.5**
+Current version: **0.2.6**
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
@@ -29,6 +29,7 @@ The main milestones are complete:
 | Empty-first workspace + selective add-package UI + create GitHub repo from app | Complete |
 | Global job toaster (top-right running-job indicator) | Complete |
 | Auto-captured catalog cache (background prefetch on launch / env change) | Complete |
+| Deploy from GitHub (clone/refresh a repo and push-workspace into an env) | Complete |
 | Push workspace to Creatio with drift guard and backup controls | Complete |
 | Package browsing, actions, archive installation, Git workspace bridge | Complete |
 | Package deployment between registered environments | Complete |
@@ -118,6 +119,28 @@ NOTE: the "Start empty" workspace path (v0.2.4) still passes `-e <env>` to `crea
 which makes clio connect and populate settings rather than create a truly empty workspace. The
 correct invocation is `clio createw <name> --empty --directory <parent>` (no `-e`, no credentials).
 This is a known open bug, deliberately deferred — fix in a future release.
+
+## Deploy from GitHub (v0.2.6, 2026-07-18)
+
+GitHub → Creatio: install a workspace straight from a repository into an environment — e.g. to
+restore a broken environment from known-good source, or move a repo's packages onto a fresh env.
+
+- `github::list_github_repos` (`gh repo list --json …`) and `github::list_repo_branches`
+  (`gh api repos/{owner}/{repo}/branches`) feed the picker.
+- `workspaces::deploy_from_github` runs as one env-locked job: clone via `gh repo clone` (git
+  clone fallback) into `<destParent>/<repo-leaf>`, or **hard-refresh** an existing clone
+  (`fetch` + `checkout` + `reset --hard origin/<branch>`); verify the `.clio` folder; then
+  `push-workspace -e <targetEnv>` (unsafe/non-cancellable, `--skip-backup true` when the user
+  opts out). Optionally registers the clone as a workspace (dedup by path).
+- Frontend: `src/modules/workspaces/DeployFromGithubDialog.tsx`, opened from a "Deploy from
+  GitHub" button on the Workspaces page. Repo dropdown (from gh) with a graceful manual
+  owner/name + clone-URL fallback when gh isn't authed; branch dropdown/loader; target env;
+  destination + Browse; "backup first" and "keep as workspace" toggles; an overwrite warning.
+- Touched: `src-tauri/src/github.rs`, `src-tauri/src/workspaces.rs`, `src-tauri/src/lib.rs`,
+  `src/lib/ipc.ts`, `src/modules/workspaces/DeployFromGithubDialog.tsx` (new),
+  `src/modules/workspaces/WorkspacesPage.tsx`. Validated: `tsc` clean, `cargo check`/`cargo test
+  --lib` = 13 passed, full `tauri dev` build + launch, dialog renders with working manual
+  fallback. Shipped in v0.2.6.
 
 ## Architecture
 
