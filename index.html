@@ -197,6 +197,30 @@
 
   a:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
 
+  /* ---- live download stats ---- */
+  .stats-band { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface-2); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .stat { padding: 30px 10px 8px; text-align: center; }
+  .stat + .stat { border-left: 1px solid var(--line); }
+  .stat-num { font-size: clamp(30px, 4.4vw, 44px); font-weight: 800; letter-spacing: -.022em;
+    font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1; transition: color .3s ease; }
+  .stat-live .stat-num { color: var(--accent); }
+  .stat-cap { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 9px; }
+  .stats-note { text-align: center; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); padding: 14px 0 24px; }
+  .stats-note a { color: var(--accent); text-decoration: none; }
+  .stats-note a:hover { text-decoration: underline; }
+
+  /* ---- changelog ---- */
+  .changelog { display: flex; flex-direction: column; }
+  .rel { display: grid; grid-template-columns: 138px 1fr; gap: 24px; padding: 24px 0; border-top: 1px solid var(--line); }
+  .rel:first-child { border-top: 0; padding-top: 4px; }
+  .rel-tag { font-family: var(--font-mono); font-weight: 700; font-size: 15px; color: var(--accent); white-space: nowrap; }
+  .rel-tag .badge { display: inline-block; margin-left: 7px; font-size: 9px; letter-spacing: .07em; text-transform: uppercase;
+    background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); padding: 2px 7px; border-radius: 999px; vertical-align: 2px; }
+  .rel-date { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-faint); margin-bottom: 5px; }
+  .rel h4 { margin: 0 0 7px; font-size: 17.5px; letter-spacing: -.01em; }
+  .rel p { margin: 0; color: var(--ink-soft); font-size: 14.5px; max-width: 64ch; }
+
   @media (max-width: 860px) {
     .hero-grid { grid-template-columns: 1fr; gap: 34px; }
     .lede { max-width: none; }
@@ -204,6 +228,8 @@
     .flow { grid-template-columns: 1fr 1fr; }
     .split { grid-template-columns: 1fr; }
     .nav a:not(.btn) { display: none; }
+    .rel { grid-template-columns: 1fr; gap: 8px; }
+    .stat { padding: 22px 8px 6px; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
@@ -221,7 +247,7 @@
     </div>
     <nav class="nav">
       <a href="#features">Features</a>
-      <a href="#flow">Workflow</a>
+      <a href="#whats-new">What's new</a>
       <a href="#specs">Requirements</a>
       <a href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">GitHub</a>
       <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.2.6/creatio-devhub_0.2.6_x64-setup.exe">Download</a>
@@ -280,6 +306,26 @@
       </div>
     </div>
   </section>
+
+  <div class="stats-band">
+    <div class="wrap">
+      <div class="stats">
+        <div class="stat stat-live">
+          <div class="stat-num" id="dl-count">—</div>
+          <div class="stat-cap">installer downloads</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="dl-version">v0.2.6</div>
+          <div class="stat-cap">latest version</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="dl-releases">5</div>
+          <div class="stat-cap">releases shipped</div>
+        </div>
+      </div>
+      <div class="stats-note" id="stats-note">Counts update live from <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases" target="_blank" rel="noopener">GitHub Releases</a>.</div>
+    </div>
+  </div>
 
   <section id="features">
     <div class="wrap">
@@ -340,6 +386,58 @@
     </section>
   </div>
 
+  <section id="whats-new">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">Changelog</span>
+        <h2>What's new</h2>
+        <p>DevHub ships often, and updates install themselves after the first download.</p>
+      </div>
+      <div class="changelog">
+        <div class="rel">
+          <div class="rel-tag">v0.2.6<span class="badge">latest</span></div>
+          <div class="rel-body">
+            <div class="rel-date">July 2026</div>
+            <h4>Deploy from GitHub</h4>
+            <p>Clone a repository at a chosen branch and install it straight into an environment — restore a broken environment from known-good source, or move a package onto a fresh one. Repo &amp; branch picker, backup, and keep-as-workspace options.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.2.5</div>
+          <div class="rel-body">
+            <div class="rel-date">July 2026</div>
+            <h4>Live job indicator &amp; auto-captured catalog</h4>
+            <p>A top-right indicator shows running jobs from any screen and flashes each outcome. Package and application lists are now captured into the cache automatically on launch and when you switch environments.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.2.4</div>
+          <div class="rel-body">
+            <div class="rel-date">July 2026</div>
+            <h4>Empty-first workspaces &amp; GitHub from the app</h4>
+            <p>Start an empty workspace and add only the packages you want, then create a private GitHub repo and push — without leaving DevHub.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.2.3</div>
+          <div class="rel-body">
+            <div class="rel-date">July 2026</div>
+            <h4>New look &amp; persistent job history</h4>
+            <p>Refreshed branding and a light sidebar, plus a job history that survives restarts so you can revisit past runs and their logs.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.2.1</div>
+          <div class="rel-body">
+            <div class="rel-date">July 2026</div>
+            <h4>First public release</h4>
+            <p>Signed Windows installers (NSIS &amp; MSI) published to GitHub, with cryptographically verified auto-updates.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="specs">
     <div class="wrap split">
       <div class="spec">
@@ -388,6 +486,41 @@
     <p class="disclaimer">An independent, open-source community tool for developers working with the Creatio platform. Not affiliated with, endorsed by, or an official product of Creatio.</p>
   </div>
 </footer>
+
+<script>
+(function () {
+  var repo = 'SmitSuthar8834/creatio-devhub';
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function set(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
+  function countUp(id, target) {
+    var el = document.getElementById(id); if (!el) return;
+    if (reduce || target <= 0) { el.textContent = target.toLocaleString(); return; }
+    var start = performance.now(), dur = 900;
+    (function step(t) {
+      var p = Math.min((t - start) / dur, 1), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(target * e).toLocaleString();
+      if (p < 1) requestAnimationFrame(step);
+    })(start);
+  }
+  fetch('https://api.github.com/repos/' + repo + '/releases?per_page=100', { headers: { Accept: 'application/vnd.github+json' } })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (rel) {
+      var dl = 0;
+      rel.forEach(function (x) { (x.assets || []).forEach(function (a) { if (/\.(exe|msi)$/i.test(a.name)) dl += a.download_count; }); });
+      countUp('dl-count', dl);
+      var latest = rel.filter(function (x) { return !x.draft && !x.prerelease; })[0] || rel[0];
+      if (latest) set('dl-version', latest.tag_name);
+      set('dl-releases', String(rel.length));
+    })
+    .catch(function () {
+      // The Claude artifact preview blocks external fetch (CSP); the hosted GitHub
+      // Pages site loads the live numbers. Show a graceful fallback here.
+      set('dl-count', '5+');
+      var n = document.getElementById('stats-note');
+      if (n) n.innerHTML = 'Live counts load on the hosted site — <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases" target="_blank" rel="noopener">see release stats on GitHub</a>.';
+    });
+})();
+</script>
 
 </body>
 </html>
