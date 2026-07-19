@@ -6,6 +6,7 @@ mod git;
 mod github;
 mod jobs;
 mod packages;
+mod sql;
 mod workspaces;
 
 use tauri::Manager;
@@ -46,6 +47,8 @@ pub fn run() {
             packages::list_packages,
             packages::run_package_action,
             packages::deploy_package_between_environments,
+            sql::run_sql,
+            sql::export_sql,
             workspaces::list_workspaces,
             workspaces::register_workspace,
             workspaces::remove_workspace,

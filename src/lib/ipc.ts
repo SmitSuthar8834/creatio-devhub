@@ -170,6 +170,21 @@ export const deployPackageBetweenEnvironments = (opts: {
   skipBackup: boolean;
 }) => invoke<string>("deploy_package_between_environments", opts);
 
+// ---------- sql ----------
+
+export interface SqlResult {
+  columns: string[];
+  rows: string[][];
+  rowCount: number;
+  truncated: boolean;
+}
+
+export const runSql = (env: string, query: string) =>
+  invoke<SqlResult>("run_sql", { env, query });
+
+export const exportSql = (opts: { env: string; query: string; format: "csv" | "xlsx"; path: string }) =>
+  invoke<void>("export_sql", opts);
+
 // ---------- workspaces ----------
 
 export interface WorkspaceSummary {

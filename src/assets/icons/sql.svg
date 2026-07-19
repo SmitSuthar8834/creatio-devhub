@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="SQL">
+  <defs>
+    <linearGradient id="sql-blue" x1="8" y1="7" x2="56" y2="57" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#20a8ff"/>
+      <stop offset="1" stop-color="#0755d9"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="14" rx="22" ry="8" fill="url(#sql-blue)"/>
+  <path d="M10 14v13c0 4.5 9.8 8 22 8s22-3.5 22-8V14c0 4.5-9.8 8-22 8s-22-3.5-22-8Z" fill="#248cf1"/>
+  <path d="M10 28v13c0 4.5 9.8 8 22 8s22-3.5 22-8V28c0 4.5-9.8 8-22 8s-22-3.5-22-8Z" fill="#1269db"/>
+  <path d="M10 42v8c0 4.5 9.8 8 22 8s22-3.5 22-8v-8c-4.4 5.1-14 7.4-22 7.4S14.4 47.1 10 42Z" fill="#0755b8"/>
+  <path d="M17 27.5c3.8 2.1 9 3.3 15 3.3s11.2-1.2 15-3.3" fill="none" stroke="#8dd1ff" stroke-width="2" stroke-linecap="round" opacity=".8"/>
+  <path d="M17 41.5c3.8 2.1 9 3.3 15 3.3s11.2-1.2 15-3.3" fill="none" stroke="#75b9ff" stroke-width="2" stroke-linecap="round" opacity=".75"/>
+</svg>

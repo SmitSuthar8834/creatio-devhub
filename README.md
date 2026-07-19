@@ -8,7 +8,7 @@ workspaces.
 DevHub does not connect directly to Creatio APIs and does not store Creatio passwords. Environment
 registration and credentials remain owned by clio.
 
-Current version: **0.2.1**
+Current version: **0.2.7**
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
@@ -63,6 +63,14 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
 - Deploy a whole application from one registered environment to another using
   `clio deploy-application`.
 - Lock both environments during transfer to prevent overlapping mutations.
+
+### SQL runner
+
+- Run raw SQL against a selected Creatio environment through clio and cliogate.
+- Review result sets in a scrollable grid capped at 2,000 displayed rows.
+- Export the complete result directly to semicolon-delimited CSV or Excel.
+- Keep credentials in clio; DevHub stages only the query in a temporary local file.
+- Raw SQL can modify data, so review `UPDATE` and `DELETE` statements carefully.
 
 ### Local catalog cache
 
@@ -191,7 +199,7 @@ The update endpoint is configured as:
 https://github.com/SmitSuthar8834/creatio-devhub/releases/latest/download/latest.json
 ```
 
-Release `v0.2.1` is live and the endpoint has been verified. The repository secret
+Release `v0.2.7` is published through the same signed workflow. The repository secret
 `TAURI_SIGNING_PRIVATE_KEY` is already configured.
 
 To publish the next version:

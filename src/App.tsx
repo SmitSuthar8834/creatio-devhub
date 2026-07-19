@@ -7,6 +7,7 @@ import JobsPage from "./modules/jobs/JobsPage";
 import JobToaster from "./modules/jobs/JobToaster";
 import PackagesPage from "./modules/packages/PackagesPage";
 import SettingsPage from "./modules/settings/SettingsPage";
+import SqlPage from "./modules/sql/SqlPage";
 import WorkspacesPage from "./modules/workspaces/WorkspacesPage";
 import logoMark from "./assets/icons/logo-mark.png";
 import iconEnvironments from "./assets/icons/environments.png";
@@ -16,14 +17,16 @@ import iconApplications from "./assets/icons/applications.png";
 import iconJobs from "./assets/icons/jobs.png";
 import iconSettings from "./assets/icons/settings.png";
 import iconLocalDesktop from "./assets/icons/local-desktop.png";
+import iconSql from "./assets/icons/sql.svg";
 
-type Page = "environments" | "workspaces" | "packages" | "applications" | "jobs" | "settings";
+type Page = "environments" | "workspaces" | "packages" | "applications" | "sql" | "jobs" | "settings";
 
 const NAV: { id: Page; label: string; icon: string }[] = [
   { id: "environments", label: "Environments", icon: iconEnvironments },
   { id: "workspaces", label: "Workspaces", icon: iconWorkspaces },
   { id: "packages", label: "Packages", icon: iconPackages },
   { id: "applications", label: "Applications", icon: iconApplications },
+  { id: "sql", label: "SQL", icon: iconSql },
   { id: "jobs", label: "Jobs", icon: iconJobs },
   { id: "settings", label: "Settings", icon: iconSettings },
 ];
@@ -93,6 +96,7 @@ export default function App() {
           }}
         />}
         {page === "applications" && <ApplicationsPage onShowJobs={() => setPage("jobs")} />}
+        {page === "sql" && <SqlPage onShowJobs={() => setPage("jobs")} />}
         {page === "settings" && <SettingsPage />}
         </div>
       </main>

@@ -1,12 +1,12 @@
 # Creatio DevHub — Engineering Handoff
 
-Last verified: **2026-07-18**
+Last verified: **2026-07-19**
 
-Current version: **0.2.6**
+Current version: **0.2.7**
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.2.3>
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.2.7>
 (v0.2.3 adds branding icons + light sidebar and persistent job history. There is no v0.2.2:
 that tag's workflow failed because the version bump wrote a UTF-8 BOM into package.json /
 tauri.conf.json — Windows PowerShell `Set-Content -Encoding utf8` writes a BOM; use
@@ -30,6 +30,7 @@ The main milestones are complete:
 | Global job toaster (top-right running-job indicator) | Complete |
 | Auto-captured catalog cache (background prefetch on launch / env change) | Complete |
 | Deploy from GitHub (clone/refresh a repo and push-workspace into an env) | Complete |
+| SQL query runner with CSV/Excel export | Complete |
 | Push workspace to Creatio with drift guard and backup controls | Complete |
 | Package browsing, actions, archive installation, Git workspace bridge | Complete |
 | Package deployment between registered environments | Complete |
@@ -141,6 +142,18 @@ restore a broken environment from known-good source, or move a repo's packages o
   `src/modules/workspaces/WorkspacesPage.tsx`. Validated: `tsc` clean, `cargo check`/`cargo test
   --lib` = 13 passed, full `tauri dev` build + launch, dialog renders with working manual
   fallback. Shipped in v0.2.6.
+
+## SQL query runner + CSV/Excel export (v0.2.7, 2026-07-19)
+
+- Added a dedicated SQL workspace with environment selection, a keyboard-friendly query editor,
+  sticky result headers, row/column metadata, and a 2,000-row display cap.
+- Queries run through `clio execute-sql-script`; credentials remain owned by clio and the target
+  environment must have cliogate installed.
+- Complete results can be exported directly to semicolon-delimited CSV or Excel (`.xlsx`).
+- Added a dedicated sidebar icon, friendly clio error handling, and parser tests for quoted
+  semicolon values.
+- Validated with TypeScript, Vite production build, Rust compilation, and 15 passing Rust tests.
+  A live read-only query and both export formats succeeded against `187559-crm-bundle`.
 
 ## Architecture
 
