@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Creatio DevHub — a Windows desktop workbench over clio, Git, and GitHub. Download the signed installer.">
+<meta property="og:title" content="Creatio DevHub">
+<meta property="og:description" content="The desktop workbench for Creatio developers — clio, Git and GitHub in one window.">
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">&#128421;</text></svg>'>
+<title>Creatio DevHub — desktop workbench for clio, Git & GitHub</title>
+<style>
+  :root {
+    --bg: #eef1f6;
+    --surface: #ffffff;
+    --surface-2: #f5f7fb;
+    --ink: #0d1526;
+    --ink-soft: #55607a;
+    --ink-faint: #8a94ab;
+    --line: #dce1ec;
+    --accent: #2f6bff;
+    --accent-ink: #ffffff;
+    --ok: #17915a;
+    --shadow: 0 24px 60px -24px rgba(13, 30, 68, .28);
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", "SF Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #070b16;
+      --surface: #0f1526;
+      --surface-2: #0c1220;
+      --ink: #e9eef8;
+      --ink-soft: #9aa6be;
+      --ink-faint: #6b768f;
+      --line: #1d2740;
+      --accent: #4c86ff;
+      --ok: #34c489;
+      --shadow: 0 30px 70px -28px rgba(0, 0, 0, .7);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f6; --surface: #ffffff; --surface-2: #f5f7fb;
+    --ink: #0d1526; --ink-soft: #55607a; --ink-faint: #8a94ab; --line: #dce1ec;
+    --accent: #2f6bff; --ok: #17915a; --shadow: 0 24px 60px -24px rgba(13, 30, 68, .28);
+  }
+  :root[data-theme="dark"] {
+    --bg: #070b16; --surface: #0f1526; --surface-2: #0c1220;
+    --ink: #e9eef8; --ink-soft: #9aa6be; --ink-faint: #6b768f; --line: #1d2740;
+    --accent: #4c86ff; --ok: #34c489; --shadow: 0 30px 70px -28px rgba(0, 0, 0, .7);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    line-height: 1.55;
+  }
+  a { color: inherit; }
+  .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  .eyebrow {
+    font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--accent); font-weight: 600;
+  }
+
+  /* ---- top bar ---- */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-inner { display: flex; align-items: center; gap: 20px; height: 62px; }
+  .brand { display: flex; align-items: center; gap: 11px; font-weight: 700; letter-spacing: -.01em; }
+  .mark {
+    width: 32px; height: 32px; border-radius: 9px; flex: none;
+    display: grid; place-items: center;
+    background: linear-gradient(150deg, #3d7bff, #1e50e6 70%);
+    color: #fff; font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+    box-shadow: 0 4px 14px -4px rgba(47, 107, 255, .6);
+  }
+  .brand small { display: block; font-family: var(--font-mono); font-size: 10.5px; font-weight: 500;
+    color: var(--ink-faint); letter-spacing: .02em; margin-top: -2px; }
+  .nav { margin-left: auto; display: flex; align-items: center; gap: 26px; }
+  .nav a { text-decoration: none; color: var(--ink-soft); font-size: 14.5px; font-weight: 500; }
+  .nav a:hover { color: var(--ink); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px; cursor: pointer;
+    font-family: var(--font-sans); font-size: 14.5px; font-weight: 600;
+    padding: 10px 18px; border-radius: 10px; text-decoration: none;
+    border: 1px solid transparent; transition: transform .12s ease, box-shadow .2s ease, background .2s ease;
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 10px 24px -12px var(--accent); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 30px -12px var(--accent); }
+  .btn-ghost { border-color: var(--line); color: var(--ink); background: var(--surface); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .nav .btn { padding: 8px 15px; }
+
+  /* ---- hero ---- */
+  .hero { padding: 76px 0 40px; }
+  .hero-grid { display: grid; grid-template-columns: 1.02fr .98fr; gap: 52px; align-items: center; }
+  h1 {
+    font-size: clamp(34px, 5vw, 54px); line-height: 1.04; letter-spacing: -.028em;
+    font-weight: 800; margin: 18px 0 0; text-wrap: balance;
+  }
+  h1 .grad { background: linear-gradient(120deg, var(--accent), #7aa2ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { font-size: 18.5px; color: var(--ink-soft); margin: 20px 0 0; max-width: 34ch; }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+  .cta-row .btn { padding: 13px 22px; font-size: 15.5px; }
+  .meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px 18px; font-family: var(--font-mono);
+    font-size: 12.5px; color: var(--ink-faint); }
+  .meta b { color: var(--ink-soft); font-weight: 600; }
+  .meta .ok { color: var(--ok); }
+
+  /* ---- app window mock (fixed dark, both themes) ---- */
+  .window {
+    background: #0b1220; border: 1px solid #1c2740; border-radius: 14px;
+    box-shadow: var(--shadow); overflow: hidden; color: #cdd7ea;
+  }
+  .win-bar { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid #182238; background: #0e1728; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
+  .win-title { margin-left: 8px; font-family: var(--font-mono); font-size: 11.5px; color: #6b7793; }
+  .win-body { display: grid; grid-template-columns: 132px 1fr; min-height: 288px; }
+  .side { border-right: 1px solid #182238; padding: 10px 8px; background: #0a1120; }
+  .side-h { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: #4a5570; padding: 6px 8px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 7px; font-size: 12.5px; color: #93a1bd; }
+  .nav-item .ic { width: 15px; height: 15px; border-radius: 4px; background: linear-gradient(150deg,#3d7bff,#1e50e6); opacity: .55; flex: none; }
+  .nav-item.on { background: #14203a; color: #e7edf9; }
+  .nav-item.on .ic { opacity: 1; }
+  .panel { padding: 14px 16px; display: flex; flex-direction: column; }
+  .panel-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .panel-h strong { font-size: 13.5px; color: #e7edf9; letter-spacing: -.01em; }
+  .chip { font-family: var(--font-mono); font-size: 10.5px; padding: 3px 9px; border-radius: 999px; background: #12213c; color: #6ea0ff; }
+  .log { background: #060b16; border: 1px solid #16203a; border-radius: 9px; padding: 12px 13px; flex: 1;
+    font-family: var(--font-mono); font-size: 11.6px; line-height: 1.7; overflow: hidden; }
+  .log .t { color: #4c5772; }
+  .log .c { color: #9fb2d4; }
+  .log .a { color: #6ea0ff; }
+  .log .ok { color: #43d493; }
+  .caret { display: inline-block; width: 7px; height: 14px; background: #6ea0ff; vertical-align: -2px; margin-left: 2px; animation: blink 1.1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ---- sections ---- */
+  section { padding: 52px 0; }
+  .sec-head { max-width: 60ch; margin-bottom: 34px; }
+  .sec-head h2 { font-size: clamp(24px, 3.4vw, 34px); letter-spacing: -.02em; font-weight: 750; margin: 10px 0 0; text-wrap: balance; }
+  .sec-head p { color: var(--ink-soft); font-size: 16.5px; margin: 12px 0 0; }
+
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px 22px 24px;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+  }
+  .card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); box-shadow: var(--shadow); }
+  .card .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .card h3 { font-size: 17.5px; letter-spacing: -.01em; margin: 12px 0 8px; font-weight: 700; }
+  .card p { color: var(--ink-soft); font-size: 14.5px; margin: 0; }
+
+  /* ---- flow ---- */
+  .flow-band { background: var(--surface-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .step { position: relative; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 13px; }
+  .step .n { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 600; }
+  .step h4 { margin: 10px 0 6px; font-size: 15.5px; letter-spacing: -.01em; }
+  .step p { margin: 0; font-size: 13.5px; color: var(--ink-soft); }
+  .step .arrow { display: none; }
+
+  /* ---- specs / trust ---- */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .spec { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 26px 26px 28px; }
+  .spec h3 { margin: 0 0 16px; font-size: 15px; font-family: var(--font-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; }
+  .spec ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 13px; }
+  .spec li { display: flex; gap: 12px; font-size: 14.5px; align-items: flex-start; }
+  .spec li .tick { color: var(--accent); flex: none; font-family: var(--font-mono); }
+  .spec li b { font-weight: 600; }
+  .spec li span { color: var(--ink-soft); }
+
+  /* ---- download callout ---- */
+  .download { text-align: center; }
+  .dl-box { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 46px 30px; box-shadow: var(--shadow); }
+  .dl-box h2 { font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -.02em; margin: 0 0 8px; }
+  .dl-box p { color: var(--ink-soft); margin: 0 auto 26px; max-width: 46ch; }
+  .dl-links { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .dl-note { margin-top: 20px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint); }
+
+  /* ---- footer ---- */
+  footer { border-top: 1px solid var(--line); padding: 34px 0 46px; }
+  .foot { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; }
+  .foot a { color: var(--ink-soft); text-decoration: none; font-size: 14px; }
+  .foot a:hover { color: var(--accent); }
+  .made { flex-basis: 100%; margin-top: 4px; font-size: 14px; color: var(--ink-soft); }
+  .made b { color: var(--ink); font-weight: 700; }
+  .made a { color: var(--accent); text-decoration: none; font-family: var(--font-mono); font-size: 13px; }
+  .made a:hover { text-decoration: underline; }
+  .disclaimer { flex-basis: 100%; color: var(--ink-faint); font-size: 12.5px; margin-top: 2px; max-width: 70ch; }
+
+  a:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+
+  @media (max-width: 860px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 34px; }
+    .lede { max-width: none; }
+    .features { grid-template-columns: 1fr; }
+    .flow { grid-template-columns: 1fr 1fr; }
+    .split { grid-template-columns: 1fr; }
+    .nav a:not(.btn) { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand">
+      <span class="mark">&lt;/&gt;</span>
+      <span>DevHub<small>for Creatio</small></span>
+    </div>
+    <nav class="nav">
+      <a href="#features">Features</a>
+      <a href="#flow">Workflow</a>
+      <a href="#specs">Requirements</a>
+      <a href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.2.6/creatio-devhub_0.2.6_x64-setup.exe">Download</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">clio · git · gh — one window</span>
+        <h1>The desktop workbench for <span class="grad">Creatio developers</span>.</h1>
+        <p class="lede">Environments, source-controlled workspaces, package &amp; app deployment, and GitHub — driven from one native app instead of a dozen terminal commands.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.2.6/creatio-devhub_0.2.6_x64-setup.exe">
+            ↓ Download for Windows
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">View source</a>
+        </div>
+        <div class="meta">
+          <span><b>v0.2.6</b> · Windows 10/11 (x64)</span>
+          <span class="ok">✓ signed installer &amp; auto-updates</span>
+        </div>
+      </div>
+
+      <div class="window" role="img" aria-label="Creatio DevHub application window showing a running workspace deployment job">
+        <div class="win-bar">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="win-title">Creatio DevHub</span>
+        </div>
+        <div class="win-body">
+          <aside class="side">
+            <div class="side-h">Workspace</div>
+            <div class="nav-item"><span class="ic"></span>Environments</div>
+            <div class="nav-item on"><span class="ic"></span>Workspaces</div>
+            <div class="nav-item"><span class="ic"></span>Packages</div>
+            <div class="nav-item"><span class="ic"></span>Applications</div>
+            <div class="nav-item"><span class="ic"></span>Jobs</div>
+          </aside>
+          <div class="panel">
+            <div class="panel-h">
+              <strong>push · my-app-workspace</strong>
+              <span class="chip">running</span>
+            </div>
+            <div class="log">
+              <div><span class="t">$</span> <span class="c">clio push-workspace -e</span> <span class="a">prod-eu</span></div>
+              <div><span class="t">›</span> packing 3 packages…</div>
+              <div><span class="t">›</span> uploading UsrMyApp.gz</div>
+              <div><span class="t">›</span> server compile…</div>
+              <div><span class="ok">✓ installed · compiled in 2m 41s</span></div>
+              <div><span class="t">›</span> snapshot updated<span class="caret"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">What it does</span>
+        <h2>Everything clio can do, without living in the terminal.</h2>
+        <p>DevHub drives the tools you already have — clio, Git, and the GitHub CLI — and represents every long operation as a streamed, cancellable job.</p>
+      </div>
+      <div class="features">
+        <div class="card">
+          <div class="k">Environments</div>
+          <h3>Register &amp; manage</h3>
+          <p>Add Creatio environments, ping them, set a default, and install the cliogate helper — credentials stay in clio, never in DevHub.</p>
+        </div>
+        <div class="card">
+          <div class="k">Workspaces &amp; Git</div>
+          <h3>Source control, visual</h3>
+          <p>Create empty or full workspaces, add packages, review colorized diffs, commit, and inspect history — GitHub Desktop, for Creatio packages.</p>
+        </div>
+        <div class="card">
+          <div class="k">GitHub, both ways</div>
+          <h3>Publish &amp; restore</h3>
+          <p>Create a GitHub repo straight from a workspace and push it — or deploy a package back <em>from</em> a repo to restore a broken environment.</p>
+        </div>
+        <div class="card">
+          <div class="k">Deployment</div>
+          <h3>Env → env, safely</h3>
+          <p>Move a package or a whole application between environments, with a drift guard that blocks pushing over changes you haven't pulled.</p>
+        </div>
+        <div class="card">
+          <div class="k">Jobs</div>
+          <h3>Watch everything run</h3>
+          <p>Streamed logs, a top-right activity indicator, safe cancellation of process trees, and a persistent job history across restarts.</p>
+        </div>
+        <div class="card">
+          <div class="k">Updates</div>
+          <h3>Signed &amp; automatic</h3>
+          <p>Cryptographically verified releases from GitHub. DevHub checks, downloads, verifies, and installs — no manual reinstalls.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="flow-band">
+    <section id="flow">
+      <div class="wrap">
+        <div class="sec-head">
+          <span class="eyebrow">The loop</span>
+          <h2>Pull, edit, version, ship — a real workflow.</h2>
+        </div>
+        <div class="flow">
+          <div class="step"><div class="n">01</div><h4>Pull</h4><p>Bring editable packages from an environment into a local workspace.</p></div>
+          <div class="step"><div class="n">02</div><h4>Commit</h4><p>Diff the changes and commit them to Git — history you can trust.</p></div>
+          <div class="step"><div class="n">03</div><h4>Push to GitHub</h4><p>Create the repo from DevHub and push, private by default.</p></div>
+          <div class="step"><div class="n">04</div><h4>Deploy</h4><p>Install to the next environment — with a backup and drift check.</p></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section id="specs">
+    <div class="wrap split">
+      <div class="spec">
+        <h3>Requirements</h3>
+        <ul>
+          <li><span class="tick">▹</span><span><b>Windows 10 or 11</b> (x64). A small, signed native installer.</span></li>
+          <li><span class="tick">▹</span><span>The <b>clio</b> CLI, <b>Git</b>, and the <b>GitHub CLI (gh)</b> installed — DevHub drives them.</span></li>
+          <li><span class="tick">▹</span><span>A registered Creatio environment (cloud or on-site) to connect to.</span></li>
+        </ul>
+      </div>
+      <div class="spec">
+        <h3>Built for trust</h3>
+        <ul>
+          <li><span class="tick">▹</span><span><b>No credentials stored.</b> clio owns your environment secrets — DevHub never holds them.</span></li>
+          <li><span class="tick">▹</span><span><b>Every mutation is a job.</b> Streamed output, serialized per environment, safe to cancel.</span></li>
+          <li><span class="tick">▹</span><span><b>Signed updates.</b> Releases are verified against the project key before install.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="download">
+    <div class="wrap">
+      <div class="dl-box">
+        <h2>Get DevHub for Windows</h2>
+        <p>One installer. It reuses the clio, Git, and GitHub tools you already have.</p>
+        <div class="dl-links">
+          <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.2.6/creatio-devhub_0.2.6_x64-setup.exe">↓ Download installer (.exe)</a>
+          <a class="btn btn-ghost" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.2.6/creatio-devhub_0.2.6_x64_en-US.msi">Get the .msi</a>
+          <a class="btn btn-ghost" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest" target="_blank" rel="noopener">All releases</a>
+        </div>
+        <div class="dl-note">v0.2.6 · NSIS &amp; MSI · signed · auto-updates after install</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div class="brand"><span class="mark">&lt;/&gt;</span><span>DevHub<small>for Creatio</small></span></div>
+    <a href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest" target="_blank" rel="noopener">Releases</a>
+    <a href="https://github.com/SmitSuthar8834/creatio-devhub/blob/main/README.md" target="_blank" rel="noopener">Docs</a>
+    <a href="mailto:sutharsmit574@gmail.com">Support</a>
+    <div class="made">Developed by <b>Smit Suthar</b> &nbsp;·&nbsp; Found an issue or have feedback? Email <a href="mailto:sutharsmit574@gmail.com?subject=Creatio%20DevHub%20—%20issue%2Ffeedback">sutharsmit574@gmail.com</a></div>
+    <p class="disclaimer">An independent, open-source community tool for developers working with the Creatio platform. Not affiliated with, endorsed by, or an official product of Creatio.</p>
+  </div>
+</footer>
+
+</body>
+</html>
