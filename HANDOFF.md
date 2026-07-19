@@ -2,11 +2,11 @@
 
 Last verified: **2026-07-19**
 
-Current version: **0.2.7**
+Current version: **0.2.8**
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.2.7>
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.2.8>
 (v0.2.3 adds branding icons + light sidebar and persistent job history. There is no v0.2.2:
 that tag's workflow failed because the version bump wrote a UTF-8 BOM into package.json /
 tauri.conf.json — Windows PowerShell `Set-Content -Encoding utf8` writes a BOM; use
@@ -154,6 +154,16 @@ restore a broken environment from known-good source, or move a repo's packages o
   semicolon values.
 - Validated with TypeScript, Vite production build, Rust compilation, and 15 passing Rust tests.
   A live read-only query and both export formats succeeded against `187559-crm-bundle`.
+
+## Clear deployment failure summaries (v0.2.8, 2026-07-19)
+
+- Failed jobs now show a plain-language outcome and a separate technical-details panel above the
+  complete raw log.
+- Creatio package deployments that finish only partially are identified explicitly. For example,
+  a locally modified target schema is named, the skipped content is explained, and the original
+  Creatio message plus clio exit code remain visible.
+- Bare trailing messages such as `[ERR] - Error` no longer hide the meaningful failure that
+  appeared earlier in the installation log.
 
 ## Architecture
 

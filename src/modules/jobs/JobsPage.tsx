@@ -7,6 +7,55 @@ function duration(job: JobInfo): string {
   return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`;
 }
 
+interface FailureSummary {
+  title: string;
+  general: string;
+  technical: string[];
+}
+
+function failureSummary(job: JobInfo | undefined, lines: string[]): FailureSummary | null {
+  if (!job || job.status !== "failed") return null;
+
+  const schemaConflict = lines.find(
+    (line) =>
+      line.includes("Unable to install Schema") &&
+      line.includes("because the element has been modified locally"),
+  );
+  if (schemaConflict) {
+    const schema = schemaConflict.match(/Schema "([^"]+)"/)?.[1] ?? "a schema";
+    return {
+      title: "Deployment partially completed",
+      general:
+        `Creatio installed the package, but it did not replace ${schema}. ` +
+        "That item has local changes in the target environment. Preserve or merge those changes, mark the item unchanged, and deploy again.",
+      technical: [schemaConflict.trim(), `Process exit code: ${job.exitCode ?? "unavailable"}`],
+    };
+  }
+
+  const meaningful = lines
+    .filter((line) => {
+      const text = line.trim();
+      if (!text) return false;
+      if (/^\[ERR\]\s*-\s*Error\s*$/i.test(text)) return false;
+      return (
+        text.includes("[ERR]") ||
+        /\b(unable to|exception|failed|failure|conflict|unauthorized|forbidden|timed out)\b/i.test(text)
+      );
+    })
+    .slice(-4);
+
+  const installationFinished = lines.some((line) => line.includes("Package installation finished"));
+  return {
+    title: installationFinished ? "Deployment finished with errors" : "Job failed",
+    general: installationFinished
+      ? "Creatio reached the end of its installation pipeline, but one or more operations failed. Some package content may already be present, so verify the target before retrying."
+      : "The command did not complete successfully. Review the technical details below before retrying.",
+    technical: meaningful.length > 0
+      ? [...meaningful, `Process exit code: ${job.exitCode ?? "unavailable"}`]
+      : [`clio returned exit code ${job.exitCode ?? "unavailable"} without a detailed error message.`],
+  };
+}
+
 export default function JobsPage() {
   const [jobs, setJobs] = useState<JobInfo[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -50,6 +99,7 @@ export default function JobsPage() {
   };
 
   const selectedJob = jobs.find((job) => job.id === selected);
+  const failure = failureSummary(selectedJob, log);
 
   const cancelSelected = async () => {
     if (!selectedJob) return;
@@ -121,6 +171,29 @@ export default function JobsPage() {
                     </button>
                   )}
                 </div>
+                {failure && (
+                  <section className="job-failure-summary" aria-label="Failure summary">
+                    <div className="job-failure-heading">
+                      <span className="job-failure-icon" aria-hidden="true">!</span>
+                      <div>
+                        <strong>{failure.title}</strong>
+                        <span>Action required</span>
+                      </div>
+                    </div>
+                    <div className="job-failure-columns">
+                      <div>
+                        <h3>In general terms</h3>
+                        <p>{failure.general}</p>
+                      </div>
+                      <div>
+                        <h3>Technical details</h3>
+                        {failure.technical.map((line, index) => (
+                          <code key={`${index}-${line}`}>{line}</code>
+                        ))}
+                      </div>
+                    </div>
+                  </section>
+                )}
                 <pre className="job-log" ref={logRef}>
                   {log.length > 0 ? log.join("\n") : "— no output yet —"}
                 </pre>

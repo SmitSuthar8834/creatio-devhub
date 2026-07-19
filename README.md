@@ -8,7 +8,7 @@ workspaces.
 DevHub does not connect directly to Creatio APIs and does not store Creatio passwords. Environment
 registration and credentials remain owned by clio.
 
-Current version: **0.2.7**
+Current version: **0.2.8**
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
@@ -95,6 +95,8 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
 - A global **job indicator** in the top-right corner shows running jobs from any screen (with
   phase and environment), flashes each job's outcome when it finishes, and links to the Jobs
   screen on click.
+- Failed jobs summarize the outcome in plain language and separately show the meaningful technical
+  error, including partial package deployments caused by locally modified Creatio schemas.
 
 ### Updates
 

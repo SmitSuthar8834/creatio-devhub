@@ -593,6 +593,64 @@ button.ghost {
   overflow-x: auto;
   white-space: nowrap;
 }
+.job-failure-summary {
+  border: 1px solid #efb7bd;
+  border-left: 4px solid var(--bad);
+  border-radius: 10px;
+  background: #fffafb;
+  padding: 14px 16px;
+  box-shadow: 0 4px 14px rgba(128, 26, 40, .05);
+}
+.job-failure-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.job-failure-heading > div { display: grid; gap: 1px; }
+.job-failure-heading strong { color: #8f2030; font-size: 14px; }
+.job-failure-heading span { color: var(--ink-soft); font-size: 11px; }
+.job-failure-icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bad);
+  color: #fff !important;
+  font-size: 15px !important;
+  font-weight: 800;
+}
+.job-failure-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 18px;
+}
+.job-failure-columns > div { min-width: 0; }
+.job-failure-columns h3 {
+  margin: 0 0 5px;
+  color: var(--ink);
+  font-size: 11px;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+.job-failure-columns p {
+  margin: 0;
+  color: #4f5d73;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.job-failure-columns code {
+  display: block;
+  margin-top: 5px;
+  border-radius: 5px;
+  background: #f8e9eb;
+  color: #7e1e2c;
+  padding: 6px 8px;
+  font: 11px/1.5 "Cascadia Code", Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 .job-log {
   background: var(--code-bg);
   color: var(--code-ink);
@@ -604,6 +662,9 @@ button.ghost {
   overflow: auto;
   white-space: pre-wrap;
   word-break: break-word;
+}
+@media (max-width: 1050px) {
+  .job-failure-columns { grid-template-columns: 1fr; gap: 12px; }
 }
 
 /* Package manager */
