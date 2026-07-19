@@ -2,11 +2,11 @@
 
 Last verified: **2026-07-19**
 
-Current version: **0.2.8**
+Current version: **0.2.9**
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.2.8>
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.2.9>
 (v0.2.3 adds branding icons + light sidebar and persistent job history. There is no v0.2.2:
 that tag's workflow failed because the version bump wrote a UTF-8 BOM into package.json /
 tauri.conf.json — Windows PowerShell `Set-Content -Encoding utf8` writes a BOM; use
@@ -164,6 +164,14 @@ restore a broken environment from known-good source, or move a repo's packages o
   Creatio message plus clio exit code remain visible.
 - Bare trailing messages such as `[ERR] - Error` no longer hide the meaningful failure that
   appeared earlier in the installation log.
+
+## Saved SQL queries (v0.2.9, 2026-07-19)
+
+- SQL queries can be named and stored locally in the DevHub webview profile.
+- Saved queries retain their original environment and can be reopened, updated, copied under a
+  new name, deleted, or run again immediately.
+- A saved query is never silently redirected: rerunning is blocked when its original environment
+  is no longer registered.
 
 ## Architecture
 

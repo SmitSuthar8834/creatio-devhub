@@ -8,7 +8,7 @@ workspaces.
 DevHub does not connect directly to Creatio APIs and does not store Creatio passwords. Environment
 registration and credentials remain owned by clio.
 
-Current version: **0.2.8**
+Current version: **0.2.9**
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
@@ -69,6 +69,8 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
 - Run raw SQL against a selected Creatio environment through clio and cliogate.
 - Review result sets in a scrollable grid capped at 2,000 displayed rows.
 - Export the complete result directly to semicolon-delimited CSV or Excel.
+- Save named queries locally, reopen them for editing, or rerun them against their original
+  environment. DevHub blocks reruns if that environment is no longer registered.
 - Keep credentials in clio; DevHub stages only the query in a temporary local file.
 - Raw SQL can modify data, so review `UPDATE` and `DELETE` statements carefully.
 
