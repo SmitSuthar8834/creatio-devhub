@@ -4,7 +4,7 @@ use std::process::{Command, Stdio};
 /// Run git synchronously in `cwd`, returning (exit_code, stdout, stderr).
 /// GIT_TERMINAL_PROMPT=0 turns would-be credential prompts into fast failures.
 pub fn git(cwd: &Path, args: &[&str]) -> Result<(i32, String, String), String> {
-    let mut cmd = Command::new("git");
+    let mut cmd = Command::new(crate::tools::resolve("git"));
     cmd.args(args)
         .current_dir(cwd)
         .env("GIT_TERMINAL_PROMPT", "0")
@@ -19,7 +19,7 @@ pub fn git(cwd: &Path, args: &[&str]) -> Result<(i32, String, String), String> {
     }
     let out = cmd
         .output()
-        .map_err(|e| format!("Failed to start git: {e}. Is git installed and on PATH?"))?;
+        .map_err(|e| format!("Failed to start git: {e}. {}", crate::tools::not_found("git")))?;
     Ok((
         out.status.code().unwrap_or(-1),
         String::from_utf8_lossy(&out.stdout).to_string(),
@@ -139,7 +139,7 @@ pub fn remote_status(cwd: &Path) -> Result<RemoteStatus, String> {
     }
     if let Err(error) = git_ok(cwd, &["fetch", "--prune", "origin"]) {
         if error.contains("Repository not found") {
-            let account = Command::new("gh")
+            let account = Command::new(crate::tools::resolve("gh"))
                 .args(["api", "user", "--jq", ".login"])
                 .stdin(Stdio::null())
                 .output()

@@ -7,6 +7,7 @@ mod github;
 mod jobs;
 mod packages;
 mod sql;
+mod tools;
 mod workspaces;
 
 use tauri::Manager;
@@ -21,6 +22,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .manage(jobs::JobState::default())
         .setup(|app| {
+            tools::init(app.handle());
             app.manage(workspaces::WsState::load(app.handle()));
             app.manage(cache::CacheState::load(app.handle()));
             if let Ok(dir) = app.path().app_data_dir() {
@@ -51,6 +53,8 @@ pub fn run() {
             packages::deploy_package_between_environments,
             sql::run_sql,
             sql::export_sql,
+            tools::tool_paths,
+            tools::set_tool_path,
             workspaces::list_workspaces,
             workspaces::register_workspace,
             workspaces::remove_workspace,

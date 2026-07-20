@@ -754,6 +754,16 @@ button.danger { background: #b42332; border-color: #d13b4b; color: white; }
 }
 .settings-identity .primary { margin-bottom: 1px; white-space: nowrap; }
 
+.tool-missing { display: grid; gap: 6px; }
+.tool-missing p { margin: 0; }
+.tool-table { border-collapse: collapse; margin-top: 14px; width: 100%; }
+.tool-table td { border-top: 1px solid var(--line); padding: 8px 10px 8px 0; vertical-align: middle; }
+.tool-table tr:first-child td { border-top: none; }
+.tool-name { font-weight: 600; white-space: nowrap; width: 1%; }
+.tool-path { word-break: break-all; }
+.tool-actions { display: flex; gap: 6px; justify-content: end; white-space: nowrap; width: 1%; }
+.mono { font: 12px/1.5 Consolas, monospace; }
+
 /* ---------- DevHub visual system ---------- */
 :root {
   color-scheme: light;

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
+import { open } from "@tauri-apps/plugin-dialog";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, Update } from "@tauri-apps/plugin-updater";
 import {
-  EnvSummary, getGithubStatus, GithubStatus, listEnvironments, onJobUpdate,
-  setDefaultEnvironment, setGitIdentity, startGithubLogin,
+  EnvSummary, getGithubStatus, getToolPaths, GithubStatus, listEnvironments, onJobUpdate,
+  setDefaultEnvironment, setGitIdentity, setToolPath, startGithubLogin, ToolPath,
 } from "../../lib/ipc";
 
 export default function SettingsPage() {
@@ -19,6 +20,8 @@ export default function SettingsPage() {
   const [githubJob, setGithubJob] = useState<string | null>(null);
   const [githubNotice, setGithubNotice] = useState("");
   const [githubError, setGithubError] = useState("");
+  const [tools, setTools] = useState<ToolPath[]>([]);
+  const [toolError, setToolError] = useState("");
   const [appVersion, setAppVersion] = useState("");
   const [update, setUpdate] = useState<Update | null>(null);
   const [updateStatus, setUpdateStatus] = useState("Ready to check for updates.");
@@ -40,6 +43,7 @@ export default function SettingsPage() {
   useEffect(() => {
     load();
     refreshGithub();
+    refreshTools();
     getVersion().then(setAppVersion);
   }, []);
 
@@ -112,6 +116,38 @@ export default function SettingsPage() {
       setGitEmail(status.gitEmail ?? status.suggestedEmail ?? "");
     } catch (e) {
       setGithubError(String(e));
+    }
+  };
+
+  const refreshTools = async () => {
+    setToolError("");
+    try {
+      setTools(await getToolPaths());
+    } catch (e) {
+      setToolError(String(e));
+    }
+  };
+
+  /// Pin a CLI to an explicit executable, for installs in a location DevHub
+  /// does not know about. Cancelling the picker leaves the setting alone.
+  const pickTool = async (program: string) => {
+    const picked = await open({
+      title: `Select the ${program} executable`,
+      multiple: false,
+      directory: false,
+    });
+    if (typeof picked !== "string") return;
+    await applyToolPath(program, picked);
+  };
+
+  const applyToolPath = async (program: string, path: string) => {
+    setToolError("");
+    try {
+      await setToolPath(program, path);
+      await refreshTools();
+      await refreshGithub();
+    } catch (e) {
+      setToolError(String(e));
     }
   };
 
@@ -215,7 +251,16 @@ export default function SettingsPage() {
           control the author recorded in new commits.
         </p>
         {!github?.ghInstalled ? (
-          <p className="form-error">GitHub CLI (gh) is not installed or is not on PATH.</p>
+          <div className="tool-missing">
+            <p className="form-error">DevHub could not start the GitHub CLI (gh).</p>
+            <p className="hint">
+              If gh is installed, it was most likely added to PATH after you last signed in to
+              Windows — DevHub inherits the sign-in PATH. Use Refresh status, or point DevHub at
+              gh.exe directly under Command-line tools below. Otherwise install it from{" "}
+              <code>winget install GitHub.cli</code>.
+            </p>
+            {github?.ghError && <p className="hint mono">{github.ghError}</p>}
+          </div>
         ) : github.authenticated ? (
           <p className="notice">
             Signed in to GitHub as <strong>{github.login}</strong>
@@ -228,7 +273,7 @@ export default function SettingsPage() {
           <button className="ghost" onClick={loginGithub} disabled={!github?.ghInstalled || !!githubJob}>
             {githubJob ? "Waiting for sign-in…" : github?.authenticated ? "Switch GitHub account" : "Sign in to GitHub"}
           </button>
-          <button className="ghost" onClick={refreshGithub}>Refresh status</button>
+          <button className="ghost" onClick={() => { refreshGithub(); refreshTools(); }}>Refresh status</button>
         </div>
         <div className="settings-identity">
           <label>
@@ -243,6 +288,40 @@ export default function SettingsPage() {
         </div>
         {githubNotice && <p className="notice">{githubNotice}</p>}
         {githubError && <p className="form-error">{githubError}</p>}
+      </section>
+
+      <section className="settings-card">
+        <h2>Command-line tools</h2>
+        <p className="hint">
+          DevHub drives these CLIs directly. It searches PATH — including the current system PATH,
+          not just the one inherited at sign-in — and the usual install locations. Pin a path here
+          if a tool lives somewhere else.
+        </p>
+        <table className="tool-table">
+          <tbody>
+            {tools.map((tool) => (
+              <tr key={tool.program}>
+                <td className="tool-name">{tool.program}</td>
+                <td className="tool-path">
+                  {tool.path
+                    ? <span className="mono">{tool.path}</span>
+                    : <span className="form-error">Not found. Searched: {tool.searched.join(", ")}</span>}
+                  {tool.custom && <span className="hint"> (pinned)</span>}
+                </td>
+                <td className="tool-actions">
+                  <button className="ghost" onClick={() => pickTool(tool.program)}>Locate…</button>
+                  {tool.custom && (
+                    <button className="ghost" onClick={() => applyToolPath(tool.program, "")}>Reset</button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="settings-actions">
+          <button className="ghost" onClick={refreshTools}>Re-scan</button>
+        </div>
+        {toolError && <p className="form-error">{toolError}</p>}
       </section>
     </div>
   );

@@ -7,6 +7,12 @@ use tauri::{AppHandle, State};
 #[serde(rename_all = "camelCase")]
 pub struct GithubStatus {
     pub gh_installed: bool,
+    /// Where gh was resolved — shown in Settings so a wrong copy is obvious.
+    pub gh_path: Option<String>,
+    /// Directories checked, for the "not found" message.
+    pub gh_searched: Vec<String>,
+    /// Why starting gh failed, when it did.
+    pub gh_error: Option<String>,
     pub authenticated: bool,
     pub login: Option<String>,
     pub account_name: Option<String>,
@@ -17,7 +23,7 @@ pub struct GithubStatus {
 }
 
 fn capture(program: &str, args: &[&str]) -> Result<(i32, String, String), String> {
-    let mut command = Command::new(program);
+    let mut command = Command::new(crate::tools::resolve(program));
     command
         .args(args)
         .stdin(Stdio::null())
@@ -44,33 +50,37 @@ fn git_config(key: &str) -> Option<String> {
         .map(|(_, value, _)| value)
 }
 
+/// Status with no GitHub account details — gh is either missing (`error`) or
+/// present but not signed in.
+fn unauthenticated(error: Option<String>) -> GithubStatus {
+    GithubStatus {
+        gh_installed: error.is_none(),
+        gh_path: crate::tools::locate("gh").map(|path| path.to_string_lossy().to_string()),
+        gh_searched: crate::tools::searched_locations("gh"),
+        gh_error: error,
+        authenticated: false,
+        login: None,
+        account_name: None,
+        account_email: None,
+        suggested_email: None,
+        git_name: git_config("user.name"),
+        git_email: git_config("user.email"),
+    }
+}
+
 #[tauri::command]
 pub fn github_status() -> GithubStatus {
+    // Re-scan on every status check so a gh installed while DevHub is open is
+    // picked up by the Refresh button rather than needing a restart.
+    crate::tools::clear_cache();
     let git_name = git_config("user.name");
     let git_email = git_config("user.email");
-    let Ok((code, output, _)) = capture("gh", &["api", "user"]) else {
-        return GithubStatus {
-            gh_installed: false,
-            authenticated: false,
-            login: None,
-            account_name: None,
-            account_email: None,
-            suggested_email: None,
-            git_name,
-            git_email,
-        };
+    let (code, output, _) = match capture("gh", &["api", "user"]) {
+        Ok(result) => result,
+        Err(error) => return unauthenticated(Some(error)),
     };
     if code != 0 {
-        return GithubStatus {
-            gh_installed: true,
-            authenticated: false,
-            login: None,
-            account_name: None,
-            account_email: None,
-            suggested_email: None,
-            git_name,
-            git_email,
-        };
+        return unauthenticated(None);
     }
     let json: serde_json::Value = serde_json::from_str(&output).unwrap_or_default();
     let login = json.get("login").and_then(|value| value.as_str()).map(str::to_string);
@@ -89,6 +99,9 @@ pub fn github_status() -> GithubStatus {
     });
     GithubStatus {
         gh_installed: true,
+        gh_path: crate::tools::locate("gh").map(|path| path.to_string_lossy().to_string()),
+        gh_searched: crate::tools::searched_locations("gh"),
+        gh_error: None,
         authenticated: true,
         login,
         account_name: json
@@ -207,7 +220,7 @@ pub fn start_github_login(
     jobs: State<'_, JobState>,
 ) -> Result<String, String> {
     if capture("gh", &["--version"]).is_err() {
-        return Err("GitHub CLI (gh) is not installed or is not on PATH.".to_string());
+        return Err(crate::tools::not_found("gh"));
     }
     let id = jobs.create_job(
         &app,

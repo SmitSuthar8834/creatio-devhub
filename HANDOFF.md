@@ -338,6 +338,8 @@ src-tauri/src/
   applications.rs                 application listing and deployment
   git.rs                          local Git and remote-ahead checks
   github.rs                       GitHub CLI auth, repo/branch listing, Git identity
+  tools.rs                        locating clio/git/gh/dotnet (PATH, live registry
+                                  PATH, well-known dirs, user overrides)
 
 src-tauri/tauri.conf.json         app, bundling, and updater configuration
 src-tauri/capabilities/           frontend permissions
@@ -425,7 +427,14 @@ rerun the same failed workflow only when its source/tag is unchanged.
 - The workspace drift guard compares package names and versions. Server-side changes without a
   version change may not be detected.
 - Workspace synchronization and some package operations require a compatible cliogate installation.
-- DevHub currently depends on separately installed clio, Git, and GitHub CLI binaries.
+- DevHub currently depends on separately installed clio, Git, and GitHub CLI binaries. They are
+  located by `tools.rs` rather than by `Command::new` alone: the inherited PATH is Explorer's
+  login-time snapshot, so a tool installed after the last sign-in would otherwise read as "not
+  installed" while working in any terminal. Resolution order is user override → inherited PATH →
+  the live PATH read back from HKCU/HKLM via `reg.exe` → well-known install directories, with
+  every `PATHEXT` variant tried so `.cmd`/`.bat` shims (scoop, npm) resolve too. Results are
+  memoized until Refresh/Re-scan. Overrides are stored in app-data `tool-paths.json` and edited
+  under Settings → Command-line tools.
 - The update feed is public. Moving the source repository to private access requires a separate
   public release feed or an authenticated update service.
 - Job history persists under app-data `jobs/` (`history.json`, capped at 200, + per-job log

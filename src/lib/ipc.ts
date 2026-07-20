@@ -54,6 +54,9 @@ export const installOrUpdateClio = (mode: "install" | "update" | "repair") =>
 
 export interface GithubStatus {
   ghInstalled: boolean;
+  ghPath: string | null;
+  ghSearched: string[];
+  ghError: string | null;
   authenticated: boolean;
   login: string | null;
   accountName: string | null;
@@ -64,6 +67,18 @@ export interface GithubStatus {
 }
 
 export const getGithubStatus = () => invoke<GithubStatus>("github_status");
+
+/// Where DevHub resolved each external CLI, and any user-pinned override.
+export interface ToolPath {
+  program: string;
+  path: string | null;
+  custom: string | null;
+  searched: string[];
+}
+
+export const getToolPaths = () => invoke<ToolPath[]>("tool_paths");
+export const setToolPath = (program: string, path: string) =>
+  invoke<ToolPath>("set_tool_path", { program, path });
 export const startGithubLogin = () => invoke<string>("start_github_login");
 export const setGitIdentity = (name: string, email: string) =>
   invoke<void>("set_git_identity", { name, email });

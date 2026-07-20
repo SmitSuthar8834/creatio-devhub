@@ -161,7 +161,7 @@ fn parse_available_version(out: &str) -> Option<String> {
 
 #[tauri::command]
 pub fn clio_status() -> ClioStatus {
-    let dotnet = std::process::Command::new("dotnet")
+    let dotnet = std::process::Command::new(crate::tools::resolve("dotnet"))
         .arg("--version")
         .stdin(std::process::Stdio::null())
         .output()
@@ -286,7 +286,7 @@ pub fn clio_capture(args: &[&str]) -> Result<(i32, String), String> {
 /// Run any command synchronously, returning (exit code, stdout+stderr).
 pub fn capture_cmd(program: &str, args: &[&str]) -> Result<(i32, String), String> {
     use std::process::{Command, Stdio};
-    let mut cmd = Command::new(program);
+    let mut cmd = Command::new(crate::tools::resolve(program));
     cmd.args(args).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
     #[cfg(windows)]
     {
@@ -294,7 +294,9 @@ pub fn capture_cmd(program: &str, args: &[&str]) -> Result<(i32, String), String
         const CREATE_NO_WINDOW: u32 = 0x0800_0000;
         cmd.creation_flags(CREATE_NO_WINDOW);
     }
-    let out = cmd.output().map_err(|e| format!("Failed to start clio: {e}"))?;
+    let out = cmd
+        .output()
+        .map_err(|e| format!("Failed to start {program}: {e}. {}", crate::tools::not_found(program)))?;
     let mut text = String::from_utf8_lossy(&out.stdout).to_string();
     text.push_str(&String::from_utf8_lossy(&out.stderr));
     Ok((out.status.code().unwrap_or(-1), text))

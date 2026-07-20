@@ -354,7 +354,7 @@ impl JobState {
         secrets: &[String],
     ) -> Result<i32, String> {
         self.log(app, id, format!("$ {}", display_command(program, args)));
-        let mut cmd = Command::new(program);
+        let mut cmd = Command::new(crate::tools::resolve(program));
         cmd.args(args).stdout(Stdio::piped()).stderr(Stdio::piped()).stdin(Stdio::null());
         // Never let git block on an interactive credential prompt.
         cmd.env("GIT_TERMINAL_PROMPT", "0");
@@ -370,7 +370,7 @@ impl JobState {
 
         let mut child = cmd
             .spawn()
-            .map_err(|e| format!("Failed to start {program}: {e}. Is it installed and on PATH?"))?;
+            .map_err(|e| format!("Failed to start {program}: {e}. {}", crate::tools::not_found(program)))?;
         self.process_ids.lock().unwrap().insert(id.to_string(), child.id());
         if self.is_cancel_requested(id) {
             terminate_process_tree(child.id());

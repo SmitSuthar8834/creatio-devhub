@@ -143,9 +143,9 @@ Rust commands ── job engine ── streamed UI events
 - Node.js 22 or a compatible current LTS version.
 - Rust stable with the MSVC target.
 - Visual Studio 2022 Build Tools with the C++ desktop workload.
-- clio available on `PATH`.
-- Git available on `PATH`.
-- GitHub CLI available on `PATH` for the integrated GitHub account flow.
+- clio, Git, and (for the integrated GitHub account flow) GitHub CLI installed. DevHub finds them
+  on `PATH`, in the current system PATH, or in their usual install directories; if a tool lives
+  somewhere else, pin its path under Settings → Command-line tools.
 - cliogate installed in Creatio environments that use workspace synchronization or package
   operations requiring it.
 
@@ -273,6 +273,16 @@ installer, signatures, and updater metadata.
 - DevHub currently relies on separately installed clio, Git, and GitHub CLI tools.
 - Job history is held in memory and is cleared when DevHub restarts.
 
+## Troubleshooting
+
+**"DevHub could not start the GitHub CLI (gh)" when gh is installed.** A desktop app inherits the
+PATH captured when you signed in to Windows, so a tool installed since then is invisible to it even
+though it works in a terminal. DevHub also re-reads the current system PATH and checks the usual
+install directories, so **Refresh status** normally resolves this without signing out. If it does
+not — gh is installed somewhere unusual, or only as a `.cmd` shim — open **Settings →
+Command-line tools**, which shows exactly where each CLI resolved to, and use **Locate…** to pin
+the executable. The same section covers clio, Git, and dotnet.
+
 ## Repository map
 
 ```text
@@ -298,6 +308,7 @@ src-tauri/
     applications.rs               application listing and deployment
     git.rs                        Git operations and remote conflict detection
     github.rs                     GitHub authentication and Git identity
+    tools.rs                      locating the clio/git/gh/dotnet executables
   capabilities/default.json      frontend plugin permissions
   tauri.conf.json                 application, bundle, and updater configuration
 
