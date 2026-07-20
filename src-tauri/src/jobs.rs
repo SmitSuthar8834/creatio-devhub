@@ -26,6 +26,12 @@ pub struct JobInfo {
     /// failure. Absent on success and on failures DevHub does not recognize.
     #[serde(default)]
     pub diagnosis: Option<crate::diagnostics::Diagnosis>,
+    /// Background work the user did not personally start — health checks and
+    /// similar. It still appears in Jobs with full output, but it raises no
+    /// toast and no desktop notification, so opening the app with several
+    /// environments registered does not produce a burst of alerts.
+    #[serde(default)]
+    pub quiet: bool,
 }
 
 #[derive(Clone, Serialize)]
@@ -195,8 +201,22 @@ impl JobState {
     }
 
     pub fn create_job(&self, app: &AppHandle, kind: &str, env: Option<String>, display: String) -> String {
+        self.create_job_with(app, kind, env, display, false)
+    }
+
+    /// `quiet` marks background work that must not raise toasts or desktop
+    /// notifications. See `JobInfo::quiet`.
+    pub fn create_job_with(
+        &self,
+        app: &AppHandle,
+        kind: &str,
+        env: Option<String>,
+        display: String,
+        quiet: bool,
+    ) -> String {
         let id = format!("{}-{}", now_ms(), kind);
         let job = JobInfo {
+            quiet,
             id: id.clone(),
             kind: kind.to_string(),
             env,
@@ -318,6 +338,10 @@ impl JobState {
             }
         }
         self.persist_snapshot();
+        // Background work never notifies, however it ends.
+        if self.jobs.lock().unwrap().iter().any(|j| j.id == id && j.quiet) {
+            return;
+        }
         // Long jobs finish while the user is elsewhere — notify unless the window is focused.
         let focused = tauri::Manager::get_webview_window(app, "main")
             .and_then(|w| w.is_focused().ok())
@@ -432,9 +456,16 @@ pub fn run_clio_job(
     args: Vec<String>,
     env: Option<String>,
     cwd: Option<String>,
+    quiet: Option<bool>,
 ) -> Result<String, String> {
     let secrets = secret_values(&args);
-    let id = state.create_job(&app, &kind, env.clone(), display_command("clio", &args));
+    let id = state.create_job_with(
+        &app,
+        &kind,
+        env.clone(),
+        display_command("clio", &args),
+        quiet.unwrap_or(false),
+    );
     let lock = state.env_lock(env.as_deref());
     let st = state.inner().clone();
     let job_id = id.clone();
@@ -586,7 +617,24 @@ mod tests {
             finished_at: if status == "succeeded" { Some(2) } else { None },
             exit_code: if status == "succeeded" { Some(0) } else { None },
             diagnosis: None,
+            quiet: false,
         }
+    }
+
+    #[test]
+    fn job_history_written_before_quiet_existed_still_loads() {
+        // history.json files from earlier versions have neither field; both must
+        // default rather than failing the whole history load.
+        let old = r#"{
+            "id": "1-test", "kind": "deploy", "env": "dev-834",
+            "displayCommand": "clio push-pkg X", "status": "succeeded",
+            "phase": "completed", "cancellable": false, "cancelRequested": false,
+            "startedAt": 1, "finishedAt": 2, "exitCode": 0
+        }"#;
+        let job: JobInfo = serde_json::from_str(old).expect("legacy record should load");
+        assert!(!job.quiet);
+        assert!(job.diagnosis.is_none());
+        assert_eq!(job.status, "succeeded");
     }
 
     #[test]

@@ -1,0 +1,206 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+/* Dark mode is class-based: theme.ts toggles .dark on <html>. */
+@custom-variant dark (&:is(.dark *));
+
+/* ---------- Bundled fonts (desktop app — no network at runtime) ---------- */
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./assets/fonts/inter-latin-var.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("./assets/fonts/jetbrains-mono-latin-var.woff2") format("woff2");
+}
+
+/* ---------- Design tokens (single source of truth for both themes) ---------- */
+:root {
+  --card: #F5F5F7;
+  --ring: #4F46E5;
+  --input: #E5E5E7;
+  --muted: #F0F0F3;
+  --accent: #6366F1;
+  --border: #E5E5E7;
+  --radius: 0.75rem;
+  --chart-1: #4F46E5;
+  --chart-2: #818CF8;
+  --chart-3: #C7D2FE;
+  --chart-4: #312E81;
+  --chart-5: #A5B4FC;
+  --popover: #FFFFFF;
+  --primary: #4F46E5;
+  --sidebar: #F8F8FB;
+  --spacing: 0.25rem;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', sans-serif;
+  --secondary: #E0E0FF;
+  --background: #FFFFFF;
+  --font-serif: 'Lora', serif;
+  --foreground: #0A0A0B;
+  --destructive: #EF4444;
+  --shadow-blur: 15px;
+  --shadow-color: #000000;
+  --sidebar-ring: #4F46E5;
+  --shadow-spread: 0px;
+  --letter-spacing: 0.01em;
+  --shadow-opacity: 0.08;
+  --sidebar-accent: #E0E0FF;
+  --sidebar-border: #E5E5E7;
+  --card-foreground: #0A0A0B;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 4px;
+  --sidebar-primary: #4F46E5;
+  --muted-foreground: #636366;
+  --accent-foreground: #FFFFFF;
+  --popover-foreground: #0A0A0B;
+  --primary-foreground: #FFFFFF;
+  --sidebar-foreground: #1E1B4B;
+  --secondary-foreground: #1E1B4B;
+  --destructive-foreground: #FFFFFF;
+  --sidebar-accent-foreground: #4F46E5;
+  --sidebar-primary-foreground: #FFFFFF;
+
+  /* Status colours beyond the base set — the app reports environment health
+     and job outcomes, which need a success and warning voice. Chosen to sit
+     with the indigo primary. */
+  --success: #16A34A;
+  --success-foreground: #FFFFFF;
+  --warning: #D97706;
+  --warning-foreground: #FFFFFF;
+}
+
+.dark {
+  --card: #0A0A0C;
+  --ring: #5D5FEF;
+  --input: #1C1C21;
+  --muted: #0F0F1A;
+  --accent: #2D2D6A;
+  --border: #1C1C21;
+  --radius: 0.75rem;
+  --chart-1: #5D5FEF;
+  --chart-2: #1E1B4B;
+  --chart-3: #A5B4FC;
+  --chart-4: #7C3AED;
+  --chart-5: #312E81;
+  --popover: #000000;
+  --primary: #5D5FEF;
+  --sidebar: #030303;
+  --spacing: 0.25rem;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', sans-serif;
+  --secondary: #1E1E3F;
+  --background: #000000;
+  --font-serif: 'Lora', serif;
+  --foreground: #FFFFFF;
+  --destructive: #FF453A;
+  --shadow-blur: 30px;
+  --shadow-color: #5D5FEF;
+  --sidebar-ring: #5D5FEF;
+  --shadow-spread: -10px;
+  --letter-spacing: 0.02em;
+  --shadow-opacity: 0.2;
+  --sidebar-accent: #1E1E3F;
+  --sidebar-border: #1C1C21;
+  --card-foreground: #F2F2F7;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 0px;
+  --sidebar-primary: #5D5FEF;
+  --muted-foreground: #9898A0;
+  --accent-foreground: #A5B4FC;
+  --popover-foreground: #F2F2F7;
+  --primary-foreground: #FFFFFF;
+  --sidebar-foreground: #F2F2F7;
+  --secondary-foreground: #E0E0FF;
+  --destructive-foreground: #FFFFFF;
+  --sidebar-accent-foreground: #A5B4FC;
+  --sidebar-primary-foreground: #FFFFFF;
+
+  --success: #4ADE80;
+  --success-foreground: #052E16;
+  --warning: #FBBF24;
+  --warning-foreground: #451A03;
+}
+
+@theme inline {
+  --color-card: var(--card);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-border: var(--border);
+  --color-radius: var(--radius);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-popover: var(--popover);
+  --color-primary: var(--primary);
+  --color-sidebar: var(--sidebar);
+  --color-spacing: var(--spacing);
+  --color-font-mono: var(--font-mono);
+  --color-font-sans: var(--font-sans);
+  --color-secondary: var(--secondary);
+  --color-background: var(--background);
+  --color-font-serif: var(--font-serif);
+  --color-foreground: var(--foreground);
+  --color-destructive: var(--destructive);
+  --color-shadow-blur: var(--shadow-blur);
+  --color-shadow-color: var(--shadow-color);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-shadow-spread: var(--shadow-spread);
+  --color-letter-spacing: var(--letter-spacing);
+  --color-shadow-opacity: var(--shadow-opacity);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-card-foreground: var(--card-foreground);
+  --color-shadow-offset-x: var(--shadow-offset-x);
+  --color-shadow-offset-y: var(--shadow-offset-y);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
+  /* Tailwind utility hookups the color map above doesn't cover. */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    letter-spacing: var(--letter-spacing);
+    font-size: 14px;
+  }
+}

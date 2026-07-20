@@ -5,6 +5,20 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Creatio DevHub</title>
+    <script>
+      // Apply the saved theme before first paint so there is no flash.
+      // Tailwind's dark: variant keys off a .dark class on <html>; "system"
+      // (or no saved value) resolves against the OS preference.
+      try {
+        var mode = localStorage.getItem("devhub.theme");
+        var dark =
+          mode === "dark" ||
+          (mode !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+      } catch (e) {
+        /* storage disabled — OS preference wins via the same media query later */
+      }
+    </script>
   </head>
 
   <body>

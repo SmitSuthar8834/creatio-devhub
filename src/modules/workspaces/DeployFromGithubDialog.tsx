@@ -1,6 +1,25 @@
-import ErrorNote from "../../lib/ErrorNote";
 import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import ErrorNote from "../../lib/ErrorNote";
 import {
   deployFromGithub,
   EnvSummary,
@@ -115,128 +134,150 @@ export default function DeployFromGithubDialog({ onClose, onStarted }: Props) {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <div className="dialog" onClick={(e) => e.stopPropagation()}>
-        <h2>Deploy from GitHub</h2>
-        <p className="hint">
-          Clone a repository at a chosen branch and install it into an environment — for example to
-          restore a broken environment from known-good source. Only clio/DevHub workspaces (with a
-          <code> .clio</code> folder) can be deployed.
-        </p>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Deploy from GitHub</DialogTitle>
+          <DialogDescription>
+            Clone a repository at a chosen branch and install it into an environment — for example
+            to restore a broken environment from known-good source. Only clio/DevHub workspaces
+            (with a <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">.clio</code>{" "}
+            folder) can be deployed.
+          </DialogDescription>
+        </DialogHeader>
 
-        {repoLoadError && (
-          <p className="form-error">
-            Couldn't list your GitHub repos ({repoLoadError}). Sign in on Settings → GitHub, or enter the
-            repository manually below.
-          </p>
-        )}
-
-        {!manual ? (
-          <label>
-            Repository
-            <select value={repo} onChange={(e) => chooseRepo(e.target.value)} autoFocus>
-              <option value="">Select a repository…</option>
-              {repos.map((r) => (
-                <option key={r.nameWithOwner} value={r.nameWithOwner}>
-                  {r.nameWithOwner} {r.isPrivate ? "(private)" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : (
-          <>
-            <label>
-              Repository (owner/name)
-              <input
-                value={repo}
-                onChange={(e) => setRepo(e.target.value)}
-                placeholder="my-org/my-repo"
-                autoFocus
-              />
-            </label>
-            <label>
-              Clone URL <span className="opt">(optional — used if the account can't clone by name)</span>
-              <input
-                value={cloneUrl}
-                onChange={(e) => setCloneUrl(e.target.value)}
-                placeholder="https://github.com/my-org/my-repo.git"
-              />
-            </label>
-          </>
-        )}
-
-        <label>
-          Branch
-          {!manual && branches.length > 0 ? (
-            <select value={branch} onChange={(e) => setBranch(e.target.value)}>
-              {branches.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input
-              value={branch}
-              onChange={(e) => setBranch(e.target.value)}
-              placeholder={loadingBranches ? "loading branches…" : "main"}
-            />
+        <div className="grid gap-4">
+          {repoLoadError && (
+            <p className="text-sm text-destructive">
+              Couldn't list your GitHub repos ({repoLoadError}). Sign in on Settings → GitHub, or
+              enter the repository manually below.
+            </p>
           )}
-        </label>
 
-        <label>
-          Target environment
-          <select value={targetEnv} onChange={(e) => setTargetEnv(e.target.value)}>
-            {envs.map((e) => (
-              <option key={e.name} value={e.name}>
-                {e.name} {e.isActive ? "(default)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
+          {!manual ? (
+            <div className="grid gap-2">
+              <Label htmlFor="gh-repo">Repository</Label>
+              <Select value={repo} onValueChange={chooseRepo}>
+                <SelectTrigger id="gh-repo" className="w-full">
+                  <SelectValue placeholder="Select a repository…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {repos.map((r) => (
+                    <SelectItem key={r.nameWithOwner} value={r.nameWithOwner}>
+                      {r.nameWithOwner} {r.isPrivate ? "(private)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="gh-repo-manual">Repository (owner/name)</Label>
+                <Input
+                  id="gh-repo-manual"
+                  value={repo}
+                  onChange={(e) => setRepo(e.target.value)}
+                  placeholder="my-org/my-repo"
+                  autoFocus
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="gh-clone-url">
+                  Clone URL{" "}
+                  <span className="text-muted-foreground">
+                    (optional — used if the account can't clone by name)
+                  </span>
+                </Label>
+                <Input
+                  id="gh-clone-url"
+                  value={cloneUrl}
+                  onChange={(e) => setCloneUrl(e.target.value)}
+                  placeholder="https://github.com/my-org/my-repo.git"
+                />
+              </div>
+            </>
+          )}
 
-        <label>
-          Clone into folder
-          <div className="path-row">
-            <input
-              value={destParent}
-              onChange={(e) => setDestParent(e.target.value)}
-              placeholder="A:\CreatioWorkspaces"
-            />
-            <button className="ghost" onClick={pickFolder}>
-              Browse…
-            </button>
+          <div className="grid gap-2">
+            <Label htmlFor="gh-branch">Branch</Label>
+            {!manual && branches.length > 0 ? (
+              <Select value={branch} onValueChange={setBranch}>
+                <SelectTrigger id="gh-branch" className="w-full">
+                  <SelectValue placeholder="Select a branch" />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map((b) => (
+                    <SelectItem key={b} value={b}>{b}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                id="gh-branch"
+                value={branch}
+                onChange={(e) => setBranch(e.target.value)}
+                placeholder={loadingBranches ? "loading branches…" : "main"}
+              />
+            )}
           </div>
-        </label>
 
-        <label className="check-row">
-          <input type="checkbox" checked={backup} onChange={(e) => setBackup(e.target.checked)} />
-          Create a backup on {targetEnv || "the target"} first (recommended)
-        </label>
-        <label className="check-row">
-          <input
-            type="checkbox"
-            checked={keepWorkspace}
-            onChange={(e) => setKeepWorkspace(e.target.checked)}
-          />
-          Keep the clone as a workspace after deploying
-        </label>
+          <div className="grid gap-2">
+            <Label htmlFor="gh-target">Target environment</Label>
+            <Select value={targetEnv} onValueChange={setTargetEnv}>
+              <SelectTrigger id="gh-target" className="w-full">
+                <SelectValue placeholder="Select an environment" />
+              </SelectTrigger>
+              <SelectContent>
+                {envs.map((e) => (
+                  <SelectItem key={e.name} value={e.name}>
+                    {e.name} {e.isActive ? "(default)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <p className="form-error">
-          This overwrites {targetEnv || "the target environment"}'s packages with the repository's
-          version and starts a server-side compile that can take several minutes.
-        </p>
+          <div className="grid gap-2">
+            <Label htmlFor="gh-dest">Clone into folder</Label>
+            <div className="flex gap-2">
+              <Input
+                id="gh-dest"
+                value={destParent}
+                onChange={(e) => setDestParent(e.target.value)}
+                placeholder="A:\CreatioWorkspaces"
+              />
+              <Button variant="outline" onClick={pickFolder}>Browse…</Button>
+            </div>
+          </div>
 
-        {error && <ErrorNote error={error} />}
-        <div className="dialog-actions">
-          <button className="ghost" onClick={onClose}>
-            Cancel
-          </button>
-          <button className="primary" onClick={submit} disabled={busy}>
-            Deploy to {targetEnv || "environment"}
-          </button>
+          <Label className="flex items-center gap-2 font-normal">
+            <Checkbox checked={backup} onCheckedChange={(c) => setBackup(c === true)} />
+            Create a backup on {targetEnv || "the target"} first (recommended)
+          </Label>
+          <Label className="flex items-center gap-2 font-normal">
+            <Checkbox
+              checked={keepWorkspace}
+              onCheckedChange={(c) => setKeepWorkspace(c === true)}
+            />
+            Keep the clone as a workspace after deploying
+          </Label>
+
+          <p className="text-sm text-destructive">
+            This overwrites {targetEnv || "the target environment"}'s packages with the repository's
+            version and starts a server-side compile that can take several minutes.
+          </p>
+
+          {error && <ErrorNote error={error} />}
         </div>
-      </div>
-    </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={submit} disabled={busy}>
+            Deploy to {targetEnv || "environment"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

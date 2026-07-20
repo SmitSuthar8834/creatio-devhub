@@ -1,4 +1,27 @@
 import { useCallback, useEffect, useState } from "react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  Plus,
+  Sparkles,
+  TriangleAlert,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import ErrorNote from "../../lib/ErrorNote";
 import {
   addPackageToWorkspace,
@@ -200,213 +223,247 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
 
   const suggested = `Pull from ${w.env} — ${changes.length} file(s) changed`;
 
+  const step = (done: boolean, next: boolean, label: string) => (
+    <span
+      className={cn(
+        "rounded-md px-2 py-1 text-xs font-medium",
+        done && "bg-success/15 text-success",
+        !done && next && "bg-accent/15 text-accent-foreground",
+        !done && !next && "text-muted-foreground",
+      )}
+    >
+      {done ? "✅" : "⬜"} {label}
+    </span>
+  );
+
   return (
-    <div className="page-body">
-      <div className="page-bar">
-        <div className="ws-title">
-          <button className="ghost back" onClick={onBack}>
-            ←
-          </button>
-          <h1>{w.name}</h1>
-          <span className="pill dim">{w.env}</span>
-          {w.branch && <span className="pill accent">{w.branch}</span>}
+    <div className="mx-auto grid max-w-6xl gap-4 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={onBack} aria-label="Back">
+            <ArrowLeft aria-hidden="true" />
+          </Button>
+          <h1 className="text-xl font-semibold tracking-tight">{w.name}</h1>
+          <Badge variant="secondary">{w.env}</Badge>
+          {w.branch && (
+            <Badge className="border-transparent bg-accent/15 text-accent-foreground">
+              {w.branch}
+            </Badge>
+          )}
         </div>
-        <div className="ws-actions">
-          <button className="ghost" onClick={openAddPkg}>
-            ➕ Add package
-          </button>
-          <button className="ghost" onClick={doPull}>
-            ⬇ Pull from Cloud
-          </button>
-          <button className="primary" onClick={() => setShowPush(true)}>
-            ⬆ Push to Cloud
-          </button>
-          <button className="ghost" onClick={onShowJobs}>
-            Jobs
-          </button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={openAddPkg}>
+            <Plus aria-hidden="true" />
+            Add package
+          </Button>
+          <Button variant="outline" onClick={doPull}>
+            <ArrowDown aria-hidden="true" />
+            Pull from Cloud
+          </Button>
+          <Button onClick={() => setShowPush(true)}>
+            <ArrowUp aria-hidden="true" />
+            Push to Cloud
+          </Button>
+          <Button variant="ghost" onClick={onShowJobs}>Jobs</Button>
         </div>
       </div>
 
-      {notice && <p className="notice">{notice}</p>}
+      {notice && <p className="text-sm text-muted-foreground">{notice}</p>}
       {error && <ErrorNote error={error} />}
 
       {showGuidance && (
-        <div className="guidance-banner">
-          <div className="guidance-head">
-            <strong>{hasPackages ? "Almost there." : "Your workspace is ready — but empty."}</strong>
-            <span>
+        <div className="grid gap-3 rounded-lg border bg-card p-4">
+          <div className="grid gap-0.5">
+            <strong className="text-sm">
+              {hasPackages ? "Almost there." : "Your workspace is ready — but empty."}
+            </strong>
+            <span className="text-sm text-muted-foreground">
               {hasPackages
                 ? "Publish it to GitHub so your work is versioned and shareable."
                 : "Add the Creatio packages you want to version-control — only the ones you pick get downloaded."}
             </span>
           </div>
-          <div className="guidance-steps">
-            <span className="gstep done">✅ Workspace</span>
-            <span className="garrow">→</span>
-            <span className={`gstep ${hasPackages ? "done" : "next"}`}>
-              {hasPackages ? "✅" : "⬜"} Packages
-            </span>
-            <span className="garrow">→</span>
-            <span className={`gstep ${hasRepo ? "done" : hasPackages ? "next" : ""}`}>
-              {hasRepo ? "✅" : "⬜"} GitHub repo
-            </span>
-            <span className="garrow">→</span>
-            <span className={`gstep ${isPushed ? "done" : ""}`}>{isPushed ? "✅" : "⬜"} Pushed</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {step(true, false, "Workspace")}
+            <span className="text-muted-foreground">→</span>
+            {step(hasPackages, !hasPackages, "Packages")}
+            <span className="text-muted-foreground">→</span>
+            {step(hasRepo, hasPackages && !hasRepo, "GitHub repo")}
+            <span className="text-muted-foreground">→</span>
+            {step(isPushed, false, "Pushed")}
           </div>
-          <div className="dialog-actions">
+          <div className="flex gap-2">
             {!hasPackages && (
-              <button className="primary" onClick={openAddPkg}>
-                ➕ Add packages
-              </button>
+              <Button size="sm" onClick={openAddPkg}>
+                <Plus aria-hidden="true" />
+                Add packages
+              </Button>
             )}
             {hasPackages && !hasRepo && (
-              <button className="primary" onClick={() => setShowCreateRepo(true)}>
-                Create GitHub repo
-              </button>
+              <Button size="sm" onClick={() => setShowCreateRepo(true)}>Create GitHub repo</Button>
             )}
           </div>
         </div>
       )}
 
-      {showAddPkg && (
-        <div className="dialog-backdrop" onClick={() => setShowAddPkg(false)}>
-          <div className="dialog" onClick={(e) => e.stopPropagation()}>
-            <h2>Add package from {w.env}</h2>
-            <p className="hint">Pick a package to include in this workspace. It gets added to the selection and its source is pulled in as a Git change.</p>
-            <input
-              autoFocus
-              placeholder="Filter packages…"
-              value={pkgFilter}
-              onChange={(e) => setPkgFilter(e.target.value)}
-            />
-            <div className="pkg-picker">
-              {pkgLoading ? (
-                <p className="empty">Loading packages…</p>
-              ) : filteredPkgs.length === 0 ? (
-                <p className="empty">No packages match.</p>
-              ) : (
-                filteredPkgs.map((p) => (
-                  <button key={p.name} className="pkg-row" onClick={() => doAddPackage(p.name)}>
-                    <span className="pkg-name">{p.name}</span>
-                    <span className="pkg-meta">{p.maintainer} · {p.version}</span>
-                  </button>
-                ))
-              )}
-            </div>
-            <div className="dialog-actions">
-              <button className="ghost" onClick={() => setShowAddPkg(false)}>Close</button>
-            </div>
+      <Dialog open={showAddPkg} onOpenChange={setShowAddPkg}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add package from {w.env}</DialogTitle>
+            <DialogDescription>
+              Pick a package to include in this workspace. It gets added to the selection and its
+              source is pulled in as a Git change.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            autoFocus
+            placeholder="Filter packages…"
+            value={pkgFilter}
+            onChange={(e) => setPkgFilter(e.target.value)}
+          />
+          <div className="max-h-72 overflow-y-auto rounded-lg border">
+            {pkgLoading ? (
+              <p className="p-4 text-sm text-muted-foreground">Loading packages…</p>
+            ) : filteredPkgs.length === 0 ? (
+              <p className="p-4 text-sm text-muted-foreground">No packages match.</p>
+            ) : (
+              filteredPkgs.map((p) => (
+                <button
+                  key={p.name}
+                  className="flex w-full items-center justify-between gap-3 border-b px-3 py-2 text-left text-sm last:border-b-0 hover:bg-accent/10"
+                  onClick={() => doAddPackage(p.name)}
+                >
+                  <span className="font-medium">{p.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {p.maintainer} · {p.version}
+                  </span>
+                </button>
+              ))
+            )}
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddPkg(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {showCreateRepo && (
-        <div className="dialog-backdrop" onClick={() => setShowCreateRepo(false)}>
-          <div className="dialog" onClick={(e) => e.stopPropagation()}>
-            <h2>Create GitHub repository</h2>
-            <p className="hint">Creates the repository on your signed-in GitHub account, wires it as <code>origin</code>, and pushes the current commit. Requires the GitHub CLI signed in (Settings → GitHub).</p>
-            <label>
-              Repository name
-              <input value={repoName} onChange={(e) => setRepoName(e.target.value)} placeholder="my-workspace" autoFocus />
-            </label>
-            <label className="check-row">
-              <input type="checkbox" checked={repoPrivate} onChange={(e) => setRepoPrivate(e.target.checked)} />
-              Private repository (recommended)
-            </label>
-            <div className="dialog-actions">
-              <button className="ghost" onClick={() => setShowCreateRepo(false)}>Cancel</button>
-              <button className="primary" onClick={doCreateRepo} disabled={!repoName.trim()}>
-                Create &amp; push
-              </button>
-            </div>
+      <Dialog open={showCreateRepo} onOpenChange={setShowCreateRepo}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create GitHub repository</DialogTitle>
+            <DialogDescription>
+              Creates the repository on your signed-in GitHub account, wires it as{" "}
+              <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">origin</code>, and
+              pushes the current commit. Requires the GitHub CLI signed in (Settings → GitHub).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            <Label htmlFor="repo-name">Repository name</Label>
+            <Input
+              id="repo-name"
+              value={repoName}
+              onChange={(e) => setRepoName(e.target.value)}
+              placeholder="my-workspace"
+              autoFocus
+            />
           </div>
-        </div>
-      )}
+          <Label className="flex items-center gap-2 font-normal">
+            <Checkbox checked={repoPrivate} onCheckedChange={(c) => setRepoPrivate(c === true)} />
+            Private repository (recommended)
+          </Label>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateRepo(false)}>Cancel</Button>
+            <Button onClick={doCreateRepo} disabled={!repoName.trim()}>Create &amp; push</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {drift && (
-        <div className="drift-banner">
-          <p>⚠ {drift}</p>
-          <div className="dialog-actions">
-            <button className="ghost" onClick={() => setDrift("")}>
-              Cancel
-            </button>
-            <button
-              className="ghost"
-              onClick={() => {
-                setDrift("");
-                doPull();
-              }}
-            >
+        <div className="grid gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
+          <p className="flex items-center gap-2 text-sm">
+            <TriangleAlert className="size-4 text-warning" aria-hidden="true" />
+            {drift}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setDrift("")}>Cancel</Button>
+            <Button variant="outline" size="sm" onClick={() => { setDrift(""); doPull(); }}>
               Pull first
-            </button>
-            <button className="primary" onClick={() => doPushCloud(true)}>
-              Push anyway
-            </button>
-          </div>
-        </div>
-      )}
-      {showPush && (
-        <div className="dialog-backdrop" onClick={() => setShowPush(false)}>
-          <div className="dialog" onClick={(e) => e.stopPropagation()}>
-            <h2>Push to {w.env}?</h2>
-            <p className="hint">
-              Packs this workspace and installs it into the environment. The server compiles the configuration — expect
-              several minutes. The job can't be safely cancelled once installation starts.
-            </p>
-            <label className="check-row">
-              <input type="checkbox" checked={!skipBackup} onChange={(e) => setSkipBackup(!e.target.checked)} />
-              Create a backup on the environment first (recommended)
-            </label>
-            {changes.length > 0 && (
-              <p className="form-error">Note: {changes.length} uncommitted change(s) will be pushed as-is. Consider committing first.</p>
-            )}
-            <div className="dialog-actions">
-              <button className="ghost" onClick={() => setShowPush(false)}>
-                Cancel
-              </button>
-              <button className="primary" onClick={() => doPushCloud(false)}>
-                Push to Cloud
-              </button>
-            </div>
+            </Button>
+            <Button size="sm" onClick={() => doPushCloud(true)}>Push anyway</Button>
           </div>
         </div>
       )}
 
-      <div className="w-tabs">
-        <button className={tab === "changes" ? "on" : ""} onClick={() => setTab("changes")}>
-          Changes ({changes.length})
-        </button>
-        <button className={tab === "history" ? "on" : ""} onClick={() => setTab("history")}>
-          History
-        </button>
-      </div>
+      <Dialog open={showPush} onOpenChange={setShowPush}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Push to {w.env}?</DialogTitle>
+            <DialogDescription>
+              Packs this workspace and installs it into the environment. The server compiles the
+              configuration — expect several minutes. The job can't be safely cancelled once
+              installation starts.
+            </DialogDescription>
+          </DialogHeader>
+          <Label className="flex items-center gap-2 font-normal">
+            <Checkbox checked={!skipBackup} onCheckedChange={(c) => setSkipBackup(!c)} />
+            Create a backup on the environment first (recommended)
+          </Label>
+          {changes.length > 0 && (
+            <p className="text-sm text-destructive">
+              Note: {changes.length} uncommitted change(s) will be pushed as-is. Consider committing
+              first.
+            </p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPush(false)}>Cancel</Button>
+            <Button onClick={() => doPushCloud(false)}>Push to Cloud</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Tabs value={tab} onValueChange={(v) => setTab(v as "changes" | "history")}>
+        <TabsList>
+          <TabsTrigger value="changes">Changes ({changes.length})</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {tab === "changes" && (
         <>
           {changes.length === 0 ? (
-            <p className="empty">Working tree is clean. Pull from Cloud to fetch the latest package changes.</p>
+            <p className="text-muted-foreground">
+              Working tree is clean. Pull from Cloud to fetch the latest package changes.
+            </p>
           ) : (
-            <div className="changes-split">
-              <div className="filelist">
+            <div className="grid gap-3 md:grid-cols-[minmax(0,20rem)_1fr]">
+              <div className="grid content-start gap-1 rounded-lg border p-1">
                 {changes.map((c) => (
                   <button
                     key={c.path}
-                    className={`file-row ${selectedFile === c.path ? "sel" : ""}`}
+                    className={cn(
+                      "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent/10",
+                      selectedFile === c.path && "bg-accent/15",
+                    )}
                     onClick={() => showDiff(c.path)}
                   >
-                    <span className={`fstatus s-${c.status}`}>{c.status}</span>
-                    <span className="fpath" title={c.path}>
-                      {c.path}
+                    <span className="font-mono text-xs font-semibold text-muted-foreground uppercase">
+                      {c.status}
                     </span>
+                    <span className="truncate" title={c.path}>{c.path}</span>
                   </button>
                 ))}
               </div>
-              <pre className="diffview">
+              <pre className="max-h-[60vh] overflow-auto rounded-lg border bg-card p-3 font-mono text-xs">
                 {selectedFile
                   ? diff.split("\n").map((l, i) => (
                       <span
                         key={i}
-                        className={l.startsWith("+") ? "add" : l.startsWith("-") ? "del" : l.startsWith("@@") ? "hunk" : ""}
+                        className={cn(
+                          "block",
+                          l.startsWith("+") && "text-success",
+                          l.startsWith("-") && "text-destructive",
+                          l.startsWith("@@") && "text-accent-foreground",
+                        )}
                       >
                         {l + "\n"}
                       </span>
@@ -416,16 +473,14 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
             </div>
           )}
           {changes.length > 0 && (
-            <div className="commit-bar">
-              <input
+            <div className="flex gap-2">
+              <Input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder={suggested}
                 onFocus={() => !message && setMessage(suggested)}
               />
-              <button className="primary" onClick={doCommit}>
-                Commit
-              </button>
+              <Button onClick={doCommit}>Commit</Button>
             </div>
           )}
         </>
@@ -434,49 +489,59 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
       {tab === "history" && (
         <>
           {remoteStatus && remoteStatus.behind > 0 && (
-            <div className="drift-banner">
-              <p>
-                ⚠ Another contributor pushed {remoteStatus.behind} commit(s) to origin/{remoteStatus.branch}.
-                Your push is blocked until you pull or rebase those changes, which may conflict with local work.
+            <div className="grid gap-2 rounded-lg border border-warning/40 bg-warning/10 p-4">
+              <p className="flex items-start gap-2 text-sm">
+                <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
+                Another contributor pushed {remoteStatus.behind} commit(s) to origin/
+                {remoteStatus.branch}. Your push is blocked until you pull or rebase those changes,
+                which may conflict with local work.
               </p>
-              <button className="ghost" onClick={checkRemote}>Check again</button>
+              <div>
+                <Button variant="outline" size="sm" onClick={checkRemote}>Check again</Button>
+              </div>
             </div>
           )}
           {remoteStatus && remoteStatus.behind === 0 && remoteStatus.hasRemote && (
-            <p className="notice">
-              Remote is current{remoteStatus.ahead > 0 ? ` · ${remoteStatus.ahead} local commit(s) ready to push` : ""}.
+            <p className="text-sm text-muted-foreground">
+              Remote is current
+              {remoteStatus.ahead > 0 ? ` · ${remoteStatus.ahead} local commit(s) ready to push` : ""}.
             </p>
           )}
-          {remoteError && <div className="drift-banner">
-            <p>Remote check failed: {remoteError}</p>
-            <button className="ghost" onClick={checkRemote}>Check again</button>
-          </div>}
-          <div className="remote-bar">
-            <input
+          {remoteError && (
+            <div className="grid gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-4">
+              <p className="text-sm">Remote check failed: {remoteError}</p>
+              <div>
+                <Button variant="outline" size="sm" onClick={checkRemote}>Check again</Button>
+              </div>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Input
+              className="min-w-64 flex-1"
               value={remoteInput}
               onChange={(e) => setRemoteInput(e.target.value)}
               placeholder="git remote URL (https://github.com/you/repo.git)"
             />
-            <button className="ghost" onClick={doPush}>
-              ⬆ Push to remote
-            </button>
+            <Button variant="outline" onClick={doPush}>
+              <ArrowUp aria-hidden="true" />
+              Push to remote
+            </Button>
             {!hasRepo && (
-              <button className="ghost" onClick={() => setShowCreateRepo(true)}>
-                ✨ Create GitHub repo
-              </button>
+              <Button variant="outline" onClick={() => setShowCreateRepo(true)}>
+                <Sparkles aria-hidden="true" />
+                Create GitHub repo
+              </Button>
             )}
           </div>
           {commits.length === 0 ? (
-            <p className="empty">No commits yet.</p>
+            <p className="text-muted-foreground">No commits yet.</p>
           ) : (
-            <div className="commits">
+            <div className="grid gap-2 rounded-lg border p-2">
               {commits.map((c) => (
-                <div className="commit-row" key={c.hash}>
-                  <code>{c.hash}</code>
-                  <span className="cmsg">{c.message}</span>
-                  <span className="cmeta">
-                    {c.author} · {c.date}
-                  </span>
+                <div className="flex flex-wrap items-baseline gap-2 text-sm" key={c.hash}>
+                  <code className="font-mono text-xs text-muted-foreground">{c.hash}</code>
+                  <span className="flex-1">{c.message}</span>
+                  <span className="text-xs text-muted-foreground">{c.author} · {c.date}</span>
                 </div>
               ))}
             </div>

@@ -1,6 +1,25 @@
-import ErrorNote from "../../lib/ErrorNote";
 import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ErrorNote from "../../lib/ErrorNote";
 import { createWorkspaceFlow, EnvSummary, listEnvironments, registerWorkspace } from "../../lib/ipc";
 
 interface Props {
@@ -67,104 +86,156 @@ export default function NewWorkspaceWizard({ onClose, onStarted }: Props) {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <div className="dialog" onClick={(e) => e.stopPropagation()}>
-        <h2>New workspace</h2>
-        <div className="auth-toggle">
-          <button className={mode === "create" ? "on" : ""} onClick={() => setMode("create")}>
-            Pull from environment
-          </button>
-          <button className={mode === "existing" ? "on" : ""} onClick={() => setMode("existing")}>
-            Open existing folder
-          </button>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>New workspace</DialogTitle>
+        </DialogHeader>
+
+        <Tabs value={mode} onValueChange={(v) => setMode(v as "create" | "existing")}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="create">Pull from environment</TabsTrigger>
+            <TabsTrigger value="existing">Open existing folder</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="ws-env">Environment</Label>
+            <Select value={env} onValueChange={setEnv}>
+              <SelectTrigger id="ws-env" className="w-full">
+                <SelectValue placeholder="Select an environment" />
+              </SelectTrigger>
+              <SelectContent>
+                {envs.map((e) => (
+                  <SelectItem key={e.name} value={e.name}>
+                    {e.name} {e.isActive ? "(default)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {mode === "create" ? (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="ws-name">Workspace name</Label>
+                <Input
+                  id="ws-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="my-app-workspace"
+                  autoFocus
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="ws-parent">Create inside folder</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="ws-parent"
+                    value={parentDir}
+                    onChange={(e) => setParentDir(e.target.value)}
+                    placeholder="A:\CreatioWorkspaces"
+                  />
+                  <Button variant="outline" onClick={() => pickFolder(setParentDir)}>Browse…</Button>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="ws-appcode">
+                  App code{" "}
+                  <span className="text-muted-foreground">
+                    (optional — limits the workspace to one app)
+                  </span>
+                </Label>
+                <Input
+                  id="ws-appcode"
+                  value={appCode}
+                  onChange={(e) => setAppCode(e.target.value)}
+                  placeholder="MyAppCode"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Contents</Label>
+                <RadioGroup
+                  value={startEmpty ? "empty" : "all"}
+                  onValueChange={(v) => setStartEmpty(v === "empty")}
+                  className="grid gap-2"
+                >
+                  <Label
+                    htmlFor="ws-empty"
+                    className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 font-normal has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent/10"
+                  >
+                    <RadioGroupItem value="empty" id="ws-empty" className="mt-0.5" />
+                    <span className="text-sm">
+                      <strong>Start empty</strong> — scaffold only, pick packages to add afterwards{" "}
+                      <span className="text-muted-foreground">(recommended)</span>
+                    </span>
+                  </Label>
+                  <Label
+                    htmlFor="ws-all"
+                    className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 font-normal has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent/10"
+                  >
+                    <RadioGroupItem value="all" id="ws-all" className="mt-0.5" />
+                    <span className="text-sm">
+                      <strong>Pull everything now</strong> — download all editable packages from the
+                      environment
+                    </span>
+                  </Label>
+                </RadioGroup>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="ws-remote">
+                  Git remote URL{" "}
+                  <span className="text-muted-foreground">
+                    (optional — you can also create a GitHub repo later from the workspace)
+                  </span>
+                </Label>
+                <Input
+                  id="ws-remote"
+                  value={remoteUrl}
+                  onChange={(e) => setRemoteUrl(e.target.value)}
+                  placeholder="https://github.com/you/repo.git"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {startEmpty
+                  ? "Creates an empty clio workspace and an initial git commit — no packages downloaded. Add packages and create a GitHub repo from the workspace screen. Watch progress on the Jobs screen."
+                  : "Runs create-workspace + restore-workspace against the environment, then initializes git with an initial commit. Watch progress on the Jobs screen."}
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="ws-existing">Workspace folder</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="ws-existing"
+                    value={existingPath}
+                    onChange={(e) => setExistingPath(e.target.value)}
+                    placeholder="C:\path\to\cloned-workspace"
+                  />
+                  <Button variant="outline" onClick={() => pickFolder(setExistingPath)}>Browse…</Button>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                For a cloned repo or a workspace created outside DevHub. The folder must contain
+                .clio.
+              </p>
+            </>
+          )}
+
+          {error && <ErrorNote error={error} />}
         </div>
 
-        <label>
-          Environment
-          <select value={env} onChange={(e) => setEnv(e.target.value)}>
-            {envs.map((e) => (
-              <option key={e.name} value={e.name}>
-                {e.name} {e.isActive ? "(default)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {mode === "create" ? (
-          <>
-            <label>
-              Workspace name
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="my-app-workspace" autoFocus />
-            </label>
-            <label>
-              Create inside folder
-              <div className="path-row">
-                <input value={parentDir} onChange={(e) => setParentDir(e.target.value)} placeholder="A:\CreatioWorkspaces" />
-                <button className="ghost" onClick={() => pickFolder(setParentDir)}>
-                  Browse…
-                </button>
-              </div>
-            </label>
-            <label>
-              App code <span className="opt">(optional — limits the workspace to one app)</span>
-              <input value={appCode} onChange={(e) => setAppCode(e.target.value)} placeholder="MyAppCode" />
-            </label>
-
-            <fieldset className="choice-group">
-              <legend>Contents</legend>
-              <label className="choice-row">
-                <input type="radio" checked={startEmpty} onChange={() => setStartEmpty(true)} />
-                <span>
-                  <strong>Start empty</strong> — scaffold only, pick packages to add afterwards <span className="opt">(recommended)</span>
-                </span>
-              </label>
-              <label className="choice-row">
-                <input type="radio" checked={!startEmpty} onChange={() => setStartEmpty(false)} />
-                <span>
-                  <strong>Pull everything now</strong> — download all editable packages from the environment
-                </span>
-              </label>
-            </fieldset>
-
-            <label>
-              Git remote URL <span className="opt">(optional — you can also create a GitHub repo later from the workspace)</span>
-              <input
-                value={remoteUrl}
-                onChange={(e) => setRemoteUrl(e.target.value)}
-                placeholder="https://github.com/you/repo.git"
-              />
-            </label>
-            <p className="hint">
-              {startEmpty
-                ? "Creates an empty clio workspace and an initial git commit — no packages downloaded. Add packages and create a GitHub repo from the workspace screen. Watch progress on the Jobs screen."
-                : "Runs create-workspace + restore-workspace against the environment, then initializes git with an initial commit. Watch progress on the Jobs screen."}
-            </p>
-          </>
-        ) : (
-          <>
-            <label>
-              Workspace folder
-              <div className="path-row">
-                <input value={existingPath} onChange={(e) => setExistingPath(e.target.value)} placeholder="C:\path\to\cloned-workspace" />
-                <button className="ghost" onClick={() => pickFolder(setExistingPath)}>
-                  Browse…
-                </button>
-              </div>
-            </label>
-            <p className="hint">For a cloned repo or a workspace created outside DevHub. The folder must contain .clio.</p>
-          </>
-        )}
-
-        {error && <ErrorNote error={error} />}
-        <div className="dialog-actions">
-          <button className="ghost" onClick={onClose}>
-            Cancel
-          </button>
-          <button className="primary" onClick={submit} disabled={busy}>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={submit} disabled={busy}>
             {mode === "create" ? "Create workspace" : "Add workspace"}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

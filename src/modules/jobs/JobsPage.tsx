@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { CircleAlert } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { cancelJob, clearJobHistory, getJobLog, getJobs, JobInfo, onJobLog, onJobUpdate } from "../../lib/ipc";
 
 function duration(job: JobInfo): string {
@@ -56,6 +60,15 @@ function failureSummary(job: JobInfo | undefined, lines: string[]): FailureSumma
   };
 }
 
+const DOT: Record<string, string> = {
+  queued: "bg-muted-foreground/50",
+  running: "bg-primary animate-pulse",
+  cancelling: "bg-warning animate-pulse",
+  cancelled: "bg-muted-foreground/50",
+  succeeded: "bg-success",
+  failed: "bg-destructive",
+};
+
 export default function JobsPage() {
   const [jobs, setJobs] = useState<JobInfo[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -111,12 +124,13 @@ export default function JobsPage() {
   };
 
   return (
-    <div className="page-body jobs-layout">
-      <div className="page-bar">
-        <h1>Jobs</h1>
+    <div className="flex h-full flex-col p-6">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold tracking-tight">Jobs</h1>
         {jobs.some((j) => ["succeeded", "failed", "cancelled"].includes(j.status)) && (
-          <button
-            className="ghost"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() =>
               clearJobHistory().then((remaining) => {
                 setJobs(remaining);
@@ -129,38 +143,48 @@ export default function JobsPage() {
             title="Remove finished jobs and their logs. Running jobs are kept."
           >
             Clear history
-          </button>
+          </Button>
         )}
       </div>
+
       {jobs.length === 0 ? (
-        <p className="empty">Nothing has run yet. Actions from other screens appear here with live output.</p>
+        <p className="text-muted-foreground">
+          Nothing has run yet. Actions from other screens appear here with live output.
+        </p>
       ) : (
-        <div className="jobs-split">
-          <div className="jobs-list">
+        <div className="grid min-h-0 flex-1 grid-cols-[280px_1fr] gap-4">
+          <div className="flex min-h-0 flex-col gap-1.5 overflow-y-auto pr-1">
             {jobs.map((j) => (
               <button
                 key={j.id}
-                className={`job-row ${selected === j.id ? "sel" : ""}`}
                 onClick={() => selectJob(j.id)}
+                className={cn(
+                  "grid grid-cols-[8px_1fr_auto] items-center gap-2 rounded-lg border bg-card px-3 py-2 text-left text-sm transition-colors hover:bg-accent/10",
+                  selected === j.id && "border-primary ring-1 ring-primary",
+                )}
               >
-                <span className={`dot ${j.status}`} />
-                <span className="job-kind">{j.kind}</span>
-                <span className="job-env">{j.env ?? ""}</span>
-                <span className="job-time">{duration(j)}</span>
+                <span className={cn("size-2 rounded-full", DOT[j.status] ?? "bg-muted-foreground/50")} />
+                <span className="min-w-0">
+                  <span className="block truncate font-medium">{j.kind}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{j.env ?? ""}</span>
+                </span>
+                <span className="font-mono text-xs tabular-nums text-muted-foreground">{duration(j)}</span>
               </button>
             ))}
           </div>
-          <div className="job-detail">
+
+          <div className="flex min-h-0 flex-col gap-3">
             {selected && (
               <>
-                <div className="job-detail-bar">
-                  <div>
-                    <code className="job-cmd">{selectedJob?.displayCommand}</code>
-                    <span className="job-phase">Phase: {selectedJob?.phase}</span>
+                <div className="flex items-start justify-between gap-3 rounded-lg border bg-card px-4 py-3">
+                  <div className="min-w-0">
+                    <code className="block truncate font-mono text-xs">{selectedJob?.displayCommand}</code>
+                    <span className="text-xs text-muted-foreground">Phase: {selectedJob?.phase}</span>
                   </div>
                   {selectedJob && ["queued", "running", "cancelling"].includes(selectedJob.status) && (
-                    <button
-                      className="danger"
+                    <Button
+                      variant="destructive"
+                      size="sm"
                       disabled={!selectedJob.cancellable || selectedJob.status === "cancelling"}
                       onClick={cancelSelected}
                       title={selectedJob.cancellable
@@ -168,42 +192,61 @@ export default function JobsPage() {
                         : `Cannot stop safely during ${selectedJob.phase}`}
                     >
                       {selectedJob.status === "cancelling" ? "Stopping…" : "Cancel job"}
-                    </button>
+                    </Button>
                   )}
                 </div>
+
                 {failure && (
-                  <section className="job-failure-summary" aria-label="Failure summary">
-                    <div className="job-failure-heading">
-                      <span className="job-failure-icon" aria-hidden="true">!</span>
-                      <div>
-                        <strong>{failure.title}</strong>
-                        <span>Action required</span>
+                  <section
+                    className="rounded-lg border border-destructive/40 bg-destructive/5 p-4"
+                    aria-label="Failure summary"
+                  >
+                    <div className="mb-3 flex items-center gap-2">
+                      <CircleAlert className="size-4 text-destructive" aria-hidden="true" />
+                      <div className="flex items-baseline gap-2">
+                        <strong className="text-sm">{selectedJob?.diagnosis?.summary ?? failure.title}</strong>
+                        <Badge variant="destructive" className="text-[10px]">Action required</Badge>
                       </div>
                     </div>
-                    <div className="job-failure-columns">
-                      <div>
-                        <h3>In general terms</h3>
-                        <p>{selectedJob?.diagnosis?.summary ?? failure.general}</p>
-                        {selectedJob?.diagnosis && <p>{selectedJob.diagnosis.cause}</p>}
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      <div className="text-sm">
+                        <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          In general terms
+                        </h3>
+                        <p>{selectedJob?.diagnosis?.cause ?? failure.general}</p>
                       </div>
-                      <div>
-                        <h3>Technical details</h3>
+                      <div className="min-w-0 text-sm">
+                        <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Technical details
+                        </h3>
                         {failure.technical.map((line, index) => (
-                          <code key={`${index}-${line}`}>{line}</code>
+                          <code
+                            key={`${index}-${line}`}
+                            className="mb-1 block truncate rounded bg-muted px-2 py-1 font-mono text-xs"
+                            title={line}
+                          >
+                            {line}
+                          </code>
                         ))}
                       </div>
                     </div>
                     {selectedJob?.diagnosis && (
-                      <div className="job-failure-steps">
-                        <h3>How to fix it</h3>
-                        <ol>
+                      <div className="mt-3 text-sm">
+                        <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          How to fix it
+                        </h3>
+                        <ol className="list-decimal space-y-1 pl-5">
                           {selectedJob.diagnosis.steps.map((step) => <li key={step}>{step}</li>)}
                         </ol>
                       </div>
                     )}
                   </section>
                 )}
-                <pre className="job-log" ref={logRef}>
+
+                <pre
+                  ref={logRef}
+                  className="min-h-0 flex-1 overflow-auto rounded-lg bg-[#0F0F1A] p-4 font-mono text-xs leading-relaxed text-[#E5E5EA] dark:bg-muted"
+                >
                   {log.length > 0 ? log.join("\n") : "— no output yet —"}
                 </pre>
               </>

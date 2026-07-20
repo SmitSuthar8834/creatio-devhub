@@ -24,6 +24,8 @@ export interface JobInfo {
   finishedAt: number | null;
   exitCode: number | null;
   diagnosis: Diagnosis | null;
+  /// Background work: shown in Jobs, but never toasted or notified.
+  quiet: boolean;
 }
 
 /// A recognized failure: what happened, why, and what to do about it.
@@ -116,8 +118,10 @@ export const deployFromGithub = (opts: {
   register: boolean;
 }) => invoke<string>("deploy_from_github", opts);
 
-export const runClioJob = (kind: string, args: string[], env?: string) =>
-  invoke<string>("run_clio_job", { kind, args, env: env ?? null });
+/// `quiet` marks background work the user did not start by hand. It still runs
+/// and still appears in Jobs, but raises no toast and no desktop notification.
+export const runClioJob = (kind: string, args: string[], env?: string, quiet = false) =>
+  invoke<string>("run_clio_job", { kind, args, env: env ?? null, quiet });
 
 export const getJobs = () => invoke<JobInfo[]>("get_jobs");
 

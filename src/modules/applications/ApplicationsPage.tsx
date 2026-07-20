@@ -1,5 +1,32 @@
-import ErrorNote from "../../lib/ErrorNote";
 import { useEffect, useMemo, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import ErrorNote from "../../lib/ErrorNote";
 import {
   ApplicationInfo, deployApplicationBetweenEnvironments, EnvSummary,
   listApplications, listEnvironments, onCatalogUpdated,
@@ -96,96 +123,150 @@ export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => voi
   };
 
   return (
-    <div className="page-body">
-      <div className="page-bar">
-        <h1>Applications</h1>
-        <div className="package-page-actions">
-          <button className="ghost" onClick={onShowJobs}>Jobs</button>
-          <button className="primary" onClick={() => refresh(true)} disabled={!sourceEnv || loading}>
+    <div className="mx-auto grid max-w-6xl gap-4 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold tracking-tight">Applications</h1>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" onClick={onShowJobs}>Jobs</Button>
+          <Button onClick={() => refresh(true)} disabled={!sourceEnv || loading}>
             {loading ? "Loading…" : "Refresh"}
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="package-toolbar">
-        <label>Source environment
-          <select value={sourceEnv} onChange={(event) => setSourceEnv(event.target.value)}>
-            {environments.map((environment) => <option key={environment.name} value={environment.name}>
-              {environment.name} {environment.isActive ? "(default)" : ""}
-            </option>)}
-          </select>
-        </label>
-        <label className="package-search">Filter
-          <input value={filter} onChange={(event) => setFilter(event.target.value)}
-            placeholder="Application name, code, or version" />
-        </label>
-        <span className="package-count">{visible.length} of {applications.length}</span>
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="grid min-w-56 gap-2">
+          <Label htmlFor="app-env">Source environment</Label>
+          <Select value={sourceEnv} onValueChange={setSourceEnv}>
+            <SelectTrigger id="app-env" className="w-full">
+              <SelectValue placeholder="Select an environment" />
+            </SelectTrigger>
+            <SelectContent>
+              {environments.map((environment) => (
+                <SelectItem key={environment.name} value={environment.name}>
+                  {environment.name} {environment.isActive ? "(default)" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid min-w-64 flex-1 gap-2">
+          <Label htmlFor="app-filter">Filter</Label>
+          <Input
+            id="app-filter"
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            placeholder="Application name, code, or version"
+          />
+        </div>
+        <span className="pb-2.5 text-sm text-muted-foreground">
+          {visible.length} of {applications.length}
+        </span>
       </div>
 
-      <p className="hint">
-        Application deployment transfers the complete Creatio application represented by its application descriptor,
-        including its application packages. It is different from deploying one package from the Packages screen.
+      <p className="text-sm text-muted-foreground">
+        Application deployment transfers the complete Creatio application represented by its
+        application descriptor, including its application packages. It is different from deploying
+        one package from the Packages screen.
       </p>
-      {cachedAt && <p className="cache-status">
-        {fromCache ? "Showing saved data" : "Updated"} from {new Date(cachedAt).toLocaleString()}.
-        {fromCache && " Use Refresh to check the environment for changes."}
-      </p>}
-      {notice && <p className="notice">{notice}</p>}
+      {cachedAt && (
+        <p className="text-xs text-muted-foreground">
+          {fromCache ? "Showing saved data" : "Updated"} from {new Date(cachedAt).toLocaleString()}.
+          {fromCache && " Use Refresh to check the environment for changes."}
+        </p>
+      )}
+      {notice && <p className="text-sm text-muted-foreground">{notice}</p>}
       {error && <ErrorNote error={error} />}
 
-      {!loading && applications.length === 0 && !error ? <p className="empty">
-        No installed applications were returned for this environment.
-      </p> : <div className="application-grid">
-        {visible.map((application) => <article className="application-card" key={application.id || application.code}>
-          <div className="application-card-head">
-            <div>
-              <h3>{application.name || application.code}</h3>
-              <code>{application.code}</code>
-            </div>
-            <span className="pill accent">{application.version || "no version"}</span>
-          </div>
-          <p>{application.description || "No application description."}</p>
-          <div className="application-card-actions">
-            <button className="primary" onClick={() => chooseTarget(application)}>
-              Deploy to environment…
-            </button>
-          </div>
-        </article>)}
-      </div>}
-
-      {selectedApp && <div className="dialog-backdrop" onClick={closeDialog}>
-        <div className="dialog" onClick={(event) => event.stopPropagation()}>
-          <h2>Deploy {selectedApp.name || selectedApp.code}</h2>
-          <p className="hint">
-            Application <strong>{selectedApp.code}</strong> version <strong>{selectedApp.version || "unspecified"}</strong>
-            {" "}will be transferred from <strong>{sourceEnv}</strong> and installed into the target.
-          </p>
-          <p className="form-error">
-            This can update multiple packages and start target-side installation or compilation.
-            It cannot be safely cancelled after deployment begins.
-          </p>
-          <label>Target environment
-            <select value={targetEnv} onChange={(event) => {
-              setTargetEnv(event.target.value);
-              setConfirmation("");
-            }}>
-              {environments.filter((environment) => environment.name !== sourceEnv).map((environment) =>
-                <option key={environment.name} value={environment.name}>
-                  {environment.name} — {environment.uri}
-                </option>)}
-            </select>
-          </label>
-          <label>Type <strong>{targetEnv || "the target environment"}</strong> to confirm
-            <input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoFocus />
-          </label>
-          <div className="dialog-actions">
-            <button className="ghost" onClick={closeDialog}>Cancel</button>
-            <button className="danger" disabled={!targetEnv || confirmation !== targetEnv} onClick={deploy}>
-              Deploy application
-            </button>
-          </div>
+      {!loading && applications.length === 0 && !error ? (
+        <p className="text-muted-foreground">
+          No installed applications were returned for this environment.
+        </p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {visible.map((application) => (
+            <Card key={application.id || application.code}>
+              <CardHeader>
+                <CardTitle className="text-base">{application.name || application.code}</CardTitle>
+                <code className="font-mono text-xs text-muted-foreground">{application.code}</code>
+                <CardAction>
+                  <Badge className="border-transparent bg-accent/15 text-accent-foreground">
+                    {application.version || "no version"}
+                  </Badge>
+                </CardAction>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                {application.description || "No application description."}
+              </CardContent>
+              <CardFooter>
+                <Button size="sm" onClick={() => chooseTarget(application)}>
+                  Deploy to environment…
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
         </div>
-      </div>}
+      )}
+
+      <Dialog open={selectedApp !== null} onOpenChange={(o) => !o && closeDialog()}>
+        <DialogContent>
+          {selectedApp && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Deploy {selectedApp.name || selectedApp.code}</DialogTitle>
+                <DialogDescription>
+                  Application <strong>{selectedApp.code}</strong> version{" "}
+                  <strong>{selectedApp.version || "unspecified"}</strong> will be transferred from{" "}
+                  <strong>{sourceEnv}</strong> and installed into the target.
+                </DialogDescription>
+              </DialogHeader>
+              <p className="text-sm text-destructive">
+                This can update multiple packages and start target-side installation or compilation.
+                It cannot be safely cancelled after deployment begins.
+              </p>
+              <div className="grid gap-2">
+                <Label htmlFor="app-target">Target environment</Label>
+                <Select
+                  value={targetEnv}
+                  onValueChange={(value) => { setTargetEnv(value); setConfirmation(""); }}
+                >
+                  <SelectTrigger id="app-target" className="w-full">
+                    <SelectValue placeholder="Select a target" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {environments.filter((environment) => environment.name !== sourceEnv).map((environment) => (
+                      <SelectItem key={environment.name} value={environment.name}>
+                        {environment.name} — {environment.uri}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="app-confirm">
+                  Type <strong>{targetEnv || "the target environment"}</strong> to confirm
+                </Label>
+                <Input
+                  id="app-confirm"
+                  value={confirmation}
+                  onChange={(event) => setConfirmation(event.target.value)}
+                  autoFocus
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={closeDialog}>Cancel</Button>
+                <Button
+                  variant="destructive"
+                  disabled={!targetEnv || confirmation !== targetEnv}
+                  onClick={deploy}
+                >
+                  Deploy application
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

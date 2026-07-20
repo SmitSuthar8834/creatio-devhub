@@ -1,13 +1,44 @@
 import { useEffect, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-dialog";
-import ErrorNote from "../../lib/ErrorNote";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, Update } from "@tauri-apps/plugin-updater";
+import { ArrowUpFromLine, Monitor, Moon, RefreshCw, Sun } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import ErrorNote from "../../lib/ErrorNote";
+import { setThemeMode, ThemeMode, useTheme } from "../../lib/theme";
 import {
   EnvSummary, getGithubStatus, getToolPaths, GithubStatus, listEnvironments, onJobUpdate,
   setDefaultEnvironment, setGitIdentity, setToolPath, startGithubLogin, ToolPath,
 } from "../../lib/ipc";
+
+const THEMES: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
+  { value: "system", label: "System", icon: Monitor },
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+];
 
 export default function SettingsPage() {
   const [environments, setEnvironments] = useState<EnvSummary[]>([]);
@@ -28,6 +59,7 @@ export default function SettingsPage() {
   const [updateStatus, setUpdateStatus] = useState("Ready to check for updates.");
   const [updateBusy, setUpdateBusy] = useState(false);
   const [updateProgress, setUpdateProgress] = useState<number | null>(null);
+  const { mode } = useTheme();
 
   const load = async () => {
     try {
@@ -189,141 +221,250 @@ export default function SettingsPage() {
     }
   };
 
+  const updateFailed = updateStatus.startsWith("Update check failed")
+    || updateStatus.startsWith("Update installation failed");
+
   return (
-    <div className="page-body">
-      <div className="page-bar">
-        <div><h1>Settings</h1><p>Manage your environments, identity, and DevHub installation.</p></div>
+    <div className="mx-auto grid max-w-5xl gap-4 p-6">
+      <div className="mb-1">
+        <h1 className="text-xl font-semibold tracking-tight">Settings</h1>
+        <p className="text-muted-foreground">
+          Manage your environments, identity, and DevHub installation.
+        </p>
       </div>
 
-      <section className="settings-card update-card">
-        <div className="settings-card-heading">
-          <div className="settings-symbol">↥</div>
-          <div><h2>DevHub updates</h2><p className="hint">Securely download signed releases published from GitHub.</p></div>
-          <span className="version-badge">v{appVersion || "…"}</span>
-        </div>
-        <p className={updateStatus.startsWith("Update check failed") || updateStatus.startsWith("Update installation failed") ? "form-error" : "update-status"}>
-          {updateStatus}
-        </p>
-        {updateProgress !== null && <div className="update-progress"><span style={{ width: `${updateProgress}%` }} /></div>}
-        {update?.body && <p className="update-notes">{update.body}</p>}
-        <div className="settings-actions">
-          <button className="ghost" onClick={checkForUpdate} disabled={updateBusy}>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ArrowUpFromLine className="size-4 text-primary" aria-hidden="true" />
+            DevHub updates
+          </CardTitle>
+          <CardDescription>
+            Securely download signed releases published from GitHub.
+          </CardDescription>
+          <CardAction>
+            <Badge variant="secondary" className="font-mono">v{appVersion || "…"}</Badge>
+          </CardAction>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          {updateFailed
+            ? <ErrorNote error={updateStatus} />
+            : <p className="text-sm text-muted-foreground">{updateStatus}</p>}
+          {updateProgress !== null && <Progress value={updateProgress} />}
+          {update?.body && (
+            <p className="rounded-md bg-muted p-3 text-sm whitespace-pre-wrap">{update.body}</p>
+          )}
+        </CardContent>
+        <CardFooter className="gap-2">
+          <Button variant="outline" onClick={checkForUpdate} disabled={updateBusy}>
             {updateBusy && !update ? "Checking…" : "Check for updates"}
-          </button>
-          {update && <button className="primary" onClick={installUpdate} disabled={updateBusy}>
-            {updateBusy ? "Installing…" : `Install v${update.version} and restart`}
-          </button>}
-        </div>
-      </section>
+          </Button>
+          {update && (
+            <Button onClick={installUpdate} disabled={updateBusy}>
+              {updateBusy ? "Installing…" : `Install v${update.version} and restart`}
+            </Button>
+          )}
+        </CardFooter>
+      </Card>
 
-      <section className="settings-card">
-        <h2>Default environment</h2>
-        <p className="hint">
-          This changes clio&apos;s active environment. DevHub uses it as the initial selection
-          when creating workspaces, browsing packages, and starting environment operations.
-        </p>
-        {environments.length === 0 ? (
-          <p className="empty">Register an environment before choosing a default.</p>
-        ) : (
-          <div className="settings-row">
-            <label>
-              Environment
-              <select value={selected} onChange={(event) => setSelected(event.target.value)}>
-                {environments.map((environment) => (
-                  <option key={environment.name} value={environment.name}>
-                    {environment.name} — {environment.uri}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button className="primary" disabled={busy || !selected || selected === saved} onClick={save}>
-              {busy ? "Saving…" : "Save default"}
-            </button>
-          </div>
-        )}
-        {saved && <p className="notice">Current default: <strong>{saved}</strong></p>}
-        {error && <p className="form-error">{error}</p>}
-      </section>
-
-      <section className="settings-card">
-        <h2>GitHub and Git identity</h2>
-        <p className="hint">
-          GitHub authentication controls which account pushes over HTTPS. Git name and email
-          control the author recorded in new commits.
-        </p>
-        {!github?.ghInstalled ? (
-          <div className="tool-missing">
-            <p className="form-error">DevHub could not start the GitHub CLI (gh).</p>
-            <p className="hint">
-              If gh is installed, it was most likely added to PATH after you last signed in to
-              Windows — DevHub inherits the sign-in PATH. Use Refresh status, or point DevHub at
-              gh.exe directly under Command-line tools below. Otherwise install it from{" "}
-              <code>winget install GitHub.cli</code>.
-            </p>
-            {github?.ghError && <p className="hint mono">{github.ghError}</p>}
-          </div>
-        ) : github.authenticated ? (
-          <p className="notice">
-            Signed in to GitHub as <strong>{github.login}</strong>
-            {github.accountName ? ` (${github.accountName})` : ""}.
-          </p>
-        ) : (
-          <p className="form-error">GitHub is not signed in.</p>
-        )}
-        <div className="settings-actions">
-          <button className="ghost" onClick={loginGithub} disabled={!github?.ghInstalled || !!githubJob}>
-            {githubJob ? "Waiting for sign-in…" : github?.authenticated ? "Switch GitHub account" : "Sign in to GitHub"}
-          </button>
-          <button className="ghost" onClick={() => { refreshGithub(); refreshTools(); }}>Refresh status</button>
-        </div>
-        <div className="settings-identity">
-          <label>
-            Git author name
-            <input value={gitName} onChange={(event) => setGitName(event.target.value)} />
-          </label>
-          <label>
-            Git author email
-            <input value={gitEmail} onChange={(event) => setGitEmail(event.target.value)} />
-          </label>
-          <button className="primary" onClick={saveIdentity}>Save Git identity</button>
-        </div>
-        {githubNotice && <p className="notice">{githubNotice}</p>}
-        {githubError && <ErrorNote error={githubError} />}
-      </section>
-
-      <section className="settings-card">
-        <h2>Command-line tools</h2>
-        <p className="hint">
-          DevHub drives these CLIs directly. It searches PATH — including the current system PATH,
-          not just the one inherited at sign-in — and the usual install locations. Pin a path here
-          if a tool lives somewhere else.
-        </p>
-        <table className="tool-table">
-          <tbody>
-            {tools.map((tool) => (
-              <tr key={tool.program}>
-                <td className="tool-name">{tool.program}</td>
-                <td className="tool-path">
-                  {tool.path
-                    ? <span className="mono">{tool.path}</span>
-                    : <span className="form-error">Not found. Searched: {tool.searched.join(", ")}</span>}
-                  {tool.custom && <span className="hint"> (pinned)</span>}
-                </td>
-                <td className="tool-actions">
-                  <button className="ghost" onClick={() => pickTool(tool.program)}>Locate…</button>
-                  {tool.custom && (
-                    <button className="ghost" onClick={() => applyToolPath(tool.program, "")}>Reset</button>
-                  )}
-                </td>
-              </tr>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Appearance</CardTitle>
+          <CardDescription>
+            Choose a theme. System follows your Windows light/dark setting.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RadioGroup
+            value={mode}
+            onValueChange={(value) => setThemeMode(value as ThemeMode)}
+            className="grid gap-3 sm:grid-cols-3"
+          >
+            {THEMES.map((theme) => (
+              <Label
+                key={theme.value}
+                htmlFor={`theme-${theme.value}`}
+                className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 font-normal has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent/10"
+              >
+                <RadioGroupItem value={theme.value} id={`theme-${theme.value}`} />
+                <theme.icon className="size-4 text-muted-foreground" aria-hidden="true" />
+                {theme.label}
+              </Label>
             ))}
-          </tbody>
-        </table>
-        <div className="settings-actions">
-          <button className="ghost" onClick={refreshTools}>Re-scan</button>
-        </div>
-        {toolError && <p className="form-error">{toolError}</p>}
-      </section>
+          </RadioGroup>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Default environment</CardTitle>
+          <CardDescription>
+            This changes clio&apos;s active environment. DevHub uses it as the initial selection
+            when creating workspaces, browsing packages, and starting environment operations.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          {environments.length === 0 ? (
+            <p className="text-muted-foreground">Register an environment before choosing a default.</p>
+          ) : (
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="grid min-w-64 flex-1 gap-2">
+                <Label htmlFor="default-env">Environment</Label>
+                <Select value={selected} onValueChange={setSelected}>
+                  <SelectTrigger id="default-env" className="w-full">
+                    <SelectValue placeholder="Select an environment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {environments.map((environment) => (
+                      <SelectItem key={environment.name} value={environment.name}>
+                        {environment.name} — {environment.uri}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button disabled={busy || !selected || selected === saved} onClick={save}>
+                {busy ? "Saving…" : "Save default"}
+              </Button>
+            </div>
+          )}
+          {saved && (
+            <p className="text-sm text-muted-foreground">
+              Current default: <strong className="text-foreground">{saved}</strong>
+            </p>
+          )}
+          {error && <ErrorNote error={error} />}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">GitHub and Git identity</CardTitle>
+          <CardDescription>
+            GitHub authentication controls which account pushes over HTTPS. Git name and email
+            control the author recorded in new commits.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          {!github?.ghInstalled ? (
+            <div className="grid gap-2">
+              <ErrorNote error="DevHub could not start the GitHub CLI (gh)." />
+              <p className="text-sm text-muted-foreground">
+                If gh is installed, it was most likely added to PATH after you last signed in to
+                Windows — DevHub inherits the sign-in PATH. Use Refresh status, or point DevHub at
+                gh.exe directly under Command-line tools below. Otherwise install it from{" "}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+                  winget install GitHub.cli
+                </code>.
+              </p>
+              {github?.ghError && (
+                <p className="font-mono text-xs text-muted-foreground">{github.ghError}</p>
+              )}
+            </div>
+          ) : github.authenticated ? (
+            <p className="text-sm text-muted-foreground">
+              Signed in to GitHub as <strong className="text-foreground">{github.login}</strong>
+              {github.accountName ? ` (${github.accountName})` : ""}.
+            </p>
+          ) : (
+            <p className="text-sm text-destructive">GitHub is not signed in.</p>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={loginGithub}
+              disabled={!github?.ghInstalled || !!githubJob}
+            >
+              {githubJob
+                ? "Waiting for sign-in…"
+                : github?.authenticated ? "Switch GitHub account" : "Sign in to GitHub"}
+            </Button>
+            <Button variant="outline" onClick={() => { refreshGithub(); refreshTools(); }}>
+              <RefreshCw aria-hidden="true" />
+              Refresh status
+            </Button>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="git-name">Git author name</Label>
+              <Input
+                id="git-name"
+                value={gitName}
+                onChange={(event) => setGitName(event.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="git-email">Git author email</Label>
+              <Input
+                id="git-email"
+                value={gitEmail}
+                onChange={(event) => setGitEmail(event.target.value)}
+              />
+            </div>
+          </div>
+
+          {githubNotice && <p className="text-sm text-muted-foreground">{githubNotice}</p>}
+          {githubError && <ErrorNote error={githubError} />}
+        </CardContent>
+        <CardFooter>
+          <Button onClick={saveIdentity}>Save Git identity</Button>
+        </CardFooter>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Command-line tools</CardTitle>
+          <CardDescription>
+            DevHub drives these CLIs directly. It searches PATH — including the current system PATH,
+            not just the one inherited at sign-in — and the usual install locations. Pin a path here
+            if a tool lives somewhere else.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <Table>
+            <TableBody>
+              {tools.map((tool) => (
+                <TableRow key={tool.program}>
+                  <TableCell className="font-medium">{tool.program}</TableCell>
+                  <TableCell className="w-full">
+                    {tool.path
+                      ? <span className="font-mono text-xs break-all">{tool.path}</span>
+                      : (
+                        <span className="text-sm text-destructive">
+                          Not found. Searched: {tool.searched.join(", ")}
+                        </span>
+                      )}
+                    {tool.custom && <span className="text-xs text-muted-foreground"> (pinned)</span>}
+                  </TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    <Button variant="ghost" size="sm" onClick={() => pickTool(tool.program)}>
+                      Locate…
+                    </Button>
+                    {tool.custom && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => applyToolPath(tool.program, "")}
+                      >
+                        Reset
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {toolError && <ErrorNote error={toolError} />}
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline" onClick={refreshTools}>
+            <RefreshCw aria-hidden="true" />
+            Re-scan
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

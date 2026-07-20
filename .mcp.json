@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "shoogle": {
+      "type": "http",
+      "url": "https://mcp.shoogle.dev/mcp"
+    }
+  }
+}

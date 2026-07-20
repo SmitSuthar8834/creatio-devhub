@@ -2,11 +2,13 @@
 
 Last verified: **2026-07-20**
 
-Current version: **0.3.0**
+Current version: **0.4.0** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
+table below was last written; see per-release commit messages for their scope. v0.4.0 is the
+shadcn/ui design-system release described below.)
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.3.0>
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.4.0>
 
 Website: <https://smitsuthar8834.github.io/creatio-devhub/> (branch `gh-pages`)
 
@@ -14,6 +16,41 @@ Website: <https://smitsuthar8834.github.io/creatio-devhub/> (branch `gh-pages`)
 > into `package.json` / `tauri.conf.json` — Windows PowerShell `Set-Content -Encoding utf8` writes
 > a BOM. Use `[System.IO.File]::WriteAllText` with `UTF8Encoding($false)` (or an editor that
 > preserves encoding) for JSON the toolchain parses. The broken tag was deleted, never reused.
+
+## Design system: shadcn/ui migration (v0.4.0, 2026-07-20)
+
+The UI was migrated from the hand-rolled `App.css` visual system to **shadcn/ui** (new-york
+style, Radix + Tailwind v4, lucide icons). Shipped in v0.4.0.
+
+- **Config**: `components.json` (style `new-york`, `cssVariables: true`, aliases `@/components`,
+  `@/lib`, `@/hooks`), `.mcp.json` (shoogle registry MCP at `https://mcp.shoogle.dev/mcp`),
+  `skills-lock.json` (skills `shadcn`, `search-registry-items`, `migrate-radix-to-base`).
+- **Primitives** live in `src/components/ui/*` (button, card, badge, dialog, alert-dialog, input,
+  label, select, tabs, table, progress, alert, checkbox, textarea, collapsible, separator,
+  tooltip, scroll-area, dropdown-menu, sheet, sidebar, skeleton, radio-group, switch, sonner).
+  Add more with `npx shadcn@latest add <name>` — it respects `components.json` and does **not**
+  touch `src/index.css` theme tokens (verified).
+- **Theme**: `src/index.css` is the single source of truth — `:root` (light) + `.dark` token sets
+  supplied by the user, plus `@theme inline` mappings. Two token pairs were added beyond the
+  supplied set: `--success`/`--warning` (+ `-foreground`), because env health and job outcomes
+  need those voices. **No glassmorphism** (no `backdrop-blur`/`backdrop-filter` anywhere — only
+  flat opacity tints). Fonts Inter + JetBrains Mono are bundled under `src/assets/fonts/`
+  (no runtime network). Dark/light is class-based via `src/lib/theme.ts` (`system`/`light`/`dark`,
+  follows OS, persisted to `localStorage`); the Settings → Appearance radio group drives it.
+- **Toasts**: `sonner` via `src/components/ui/sonner.tsx`; `<Toaster>` is mounted in `App.tsx`, and
+  `JobToaster.tsx` is a headless driver issuing one keyed toast per job.
+- **Migrated screens**: every module now renders shadcn components — App shell/sidebar,
+  Environments (+ Add/Edit dialogs), Jobs, Clio banner, ErrorNote, Settings, SQL, Packages,
+  Applications, Workspaces, WorkspaceDetail, NewWorkspaceWizard, DeployFromGithubDialog.
+- **`src/App.css` was deleted** — it was already orphaned (imported nowhere; `main.tsx` imports
+  only `index.css`).
+- **Validated**: `npx tsc --noEmit` clean; `npm run build` (tsc + vite) succeeds; `tauri dev`
+  compiled and launched the desktop app cleanly. The frontend migration is the bulk of the change;
+  the release also carries a `jobs.rs` "quiet job" flag (background health checks no longer raise
+  toasts/desktop notifications) with a back-compat test for older `history.json` files.
+- **Note for this dev box**: the shoogle MCP is project-scoped in `.mcp.json`; a Claude session
+  must be started from `A:\PersonalComponents\creatio-devhub` for it to load. This migration used
+  the official `npx shadcn@latest` CLI instead.
 
 ## Current state
 

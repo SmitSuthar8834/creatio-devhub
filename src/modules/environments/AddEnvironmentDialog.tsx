@@ -1,4 +1,16 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ErrorNote from "../../lib/ErrorNote";
 import { runClioJob } from "../../lib/ipc";
 
@@ -42,67 +54,94 @@ export default function AddEnvironmentDialog({ onClose, onSubmitted }: Props) {
   };
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
-      <div className="dialog" onClick={(e) => e.stopPropagation()}>
-        <h2>Add environment</h2>
-        <label>
-          Name
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="dev-834" autoFocus />
-        </label>
-        <label>
-          URL
-          <input value={uri} onChange={(e) => setUri(e.target.value)} placeholder="https://mysite.creatio.com" />
-        </label>
-        <div className="auth-toggle">
-          <button className={authMode === "password" ? "on" : ""} onClick={() => setAuthMode("password")}>
-            Login / password
-          </button>
-          <button className={authMode === "oauth" ? "on" : ""} onClick={() => setAuthMode("oauth")}>
-            OAuth
-          </button>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add environment</DialogTitle>
+          <DialogDescription>
+            Credentials are stored by clio in its own settings file — this app keeps nothing.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="env-name">Name</Label>
+            <Input
+              id="env-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="dev-834"
+              autoFocus
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="env-uri">URL</Label>
+            <Input
+              id="env-uri"
+              value={uri}
+              onChange={(e) => setUri(e.target.value)}
+              placeholder="https://mysite.creatio.com"
+            />
+          </div>
+          <Tabs value={authMode} onValueChange={(v) => setAuthMode(v as "password" | "oauth")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="password">Login / password</TabsTrigger>
+              <TabsTrigger value="oauth">OAuth</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {authMode === "password" ? (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="env-login">Login</Label>
+                <Input
+                  id="env-login"
+                  value={login}
+                  onChange={(e) => setLogin(e.target.value)}
+                  placeholder="Supervisor"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="env-password">Password</Label>
+                <Input
+                  id="env-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="env-client-id">Client ID</Label>
+                <Input id="env-client-id" value={clientId} onChange={(e) => setClientId(e.target.value)} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="env-client-secret">Client secret</Label>
+                <Input
+                  id="env-client-secret"
+                  type="password"
+                  value={clientSecret}
+                  onChange={(e) => setClientSecret(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="env-auth-uri">Auth app URL</Label>
+                <Input
+                  id="env-auth-uri"
+                  value={authAppUri}
+                  onChange={(e) => setAuthAppUri(e.target.value)}
+                  placeholder="https://mysite-is.creatio.com/connect/token"
+                />
+              </div>
+            </>
+          )}
+          {error && <ErrorNote error={error} />}
         </div>
-        {authMode === "password" ? (
-          <>
-            <label>
-              Login
-              <input value={login} onChange={(e) => setLogin(e.target.value)} placeholder="Supervisor" />
-            </label>
-            <label>
-              Password
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </label>
-          </>
-        ) : (
-          <>
-            <label>
-              Client ID
-              <input value={clientId} onChange={(e) => setClientId(e.target.value)} />
-            </label>
-            <label>
-              Client secret
-              <input type="password" value={clientSecret} onChange={(e) => setClientSecret(e.target.value)} />
-            </label>
-            <label>
-              Auth app URL
-              <input
-                value={authAppUri}
-                onChange={(e) => setAuthAppUri(e.target.value)}
-                placeholder="https://mysite-is.creatio.com/connect/token"
-              />
-            </label>
-          </>
-        )}
-        {error && <ErrorNote error={error} />}
-        <p className="hint">Credentials are stored by clio in its own settings file — this app keeps nothing.</p>
-        <div className="dialog-actions">
-          <button className="ghost" onClick={onClose}>
-            Cancel
-          </button>
-          <button className="primary" onClick={submit}>
-            Register
-          </button>
-        </div>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={submit}>Register</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

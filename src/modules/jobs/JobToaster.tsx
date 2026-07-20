@@ -1,101 +1,50 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 import { getJobs, JobInfo, onJobUpdate } from "../../lib/ipc";
-
-interface Toast {
-  id: string;
-  label: string;
-  env: string | null;
-  phase: string;
-  state: "running" | "succeeded" | "failed" | "cancelled";
-}
 
 const ACTIVE = new Set(["queued", "running", "cancelling"]);
 const DISMISS_MS = 6000;
 
 /**
- * Global, always-mounted job indicator in the top-right corner. Subscribes once
- * to job-update events (and seeds from getJobs on mount so already-running jobs
- * show immediately). Running jobs stay pinned; finished jobs flash their outcome
- * and auto-dismiss. Clicking any toast opens the Jobs screen.
+ * Headless driver for job notifications, rendered through the shared sonner
+ * <Toaster>. One toast per job, keyed by job id: it shows as a loading toast
+ * while the job runs (phase as the description), then flips to the outcome and
+ * auto-dismisses. Quiet jobs (background health checks and similar) are skipped
+ * entirely — their feedback lives in the UI that started them.
  */
 export default function JobToaster({ onShowJobs }: { onShowJobs: () => void }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
-
   useEffect(() => {
-    const timers = new Map<string, number>();
-
     const apply = (job: JobInfo) => {
-      const running = ACTIVE.has(job.status);
-      const toast: Toast = {
-        id: job.id,
-        label: job.displayCommand || job.kind,
-        env: job.env,
-        phase: job.phase,
-        state: running ? "running" : (job.status as Toast["state"]),
-      };
-      setToasts((prev) => {
-        const next = prev.filter((t) => t.id !== job.id);
-        // Only surface running jobs and terminal outcomes; ignore queued noise.
-        if (running || job.status === "succeeded" || job.status === "failed" || job.status === "cancelled") {
-          next.push(toast);
-        }
-        return next;
-      });
-      const existing = timers.get(job.id);
-      if (existing) {
-        window.clearTimeout(existing);
-        timers.delete(job.id);
-      }
-      if (!running) {
-        const handle = window.setTimeout(() => {
-          setToasts((prev) => prev.filter((t) => t.id !== job.id));
-          timers.delete(job.id);
-        }, DISMISS_MS);
-        timers.set(job.id, handle);
+      if (job.quiet) return;
+      const label = job.displayCommand || job.kind;
+      const env = job.env ? ` · ${job.env}` : "";
+      const action = { label: "Open Jobs", onClick: onShowJobs };
+
+      if (ACTIVE.has(job.status)) {
+        toast.loading(label, { id: job.id, description: (job.phase || "working…") + env, action });
+      } else if (job.status === "succeeded") {
+        toast.success(label, { id: job.id, description: `done${env}`, action, duration: DISMISS_MS });
+      } else if (job.status === "cancelled") {
+        toast.info(label, { id: job.id, description: `cancelled${env}`, action, duration: DISMISS_MS });
+      } else if (job.status === "failed") {
+        toast.error(label, {
+          id: job.id,
+          description: (job.diagnosis?.summary ?? "failed") + env,
+          action,
+          duration: DISMISS_MS,
+        });
       }
     };
 
+    // Seed with jobs already running so a mid-job app reload still shows them.
     getJobs()
-      .then((jobs) => jobs.filter((j) => ACTIVE.has(j.status)).forEach(apply))
+      .then((jobs) => jobs.filter((j) => !j.quiet && ACTIVE.has(j.status)).forEach(apply))
       .catch(() => {});
     const un = onJobUpdate(apply);
-
     return () => {
       un.then((f) => f());
-      timers.forEach((h) => window.clearTimeout(h));
     };
-  }, []);
+  }, [onShowJobs]);
 
-  if (toasts.length === 0) return null;
-
-  const icon = (s: Toast["state"]) =>
-    s === "running" ? "⏳" : s === "succeeded" ? "✅" : s === "cancelled" ? "⊘" : "✗";
-
-  return (
-    <div className="job-toaster">
-      {toasts.map((t) => (
-        <button
-          key={t.id}
-          className={`job-toast ${t.state}`}
-          onClick={onShowJobs}
-          title="Open Jobs"
-        >
-          <span className="job-toast-icon">{icon(t.state)}</span>
-          <span className="job-toast-body">
-            <span className="job-toast-title">{t.label}</span>
-            <span className="job-toast-sub">
-              {t.state === "running"
-                ? t.phase || "working…"
-                : t.state === "succeeded"
-                  ? "done"
-                  : t.state === "cancelled"
-                    ? "cancelled"
-                    : "failed"}
-              {t.env ? ` · ${t.env}` : ""}
-            </span>
-          </span>
-        </button>
-      ))}
-    </div>
-  );
+  return null;
 }

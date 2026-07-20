@@ -13,6 +13,10 @@ dist-ssr
 src-tauri/target-m4/
 *.local
 
+# Installed agent skill packages (bulky local tooling; the lockfile is tracked)
+.claude/
+.agents/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

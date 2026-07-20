@@ -1,6 +1,28 @@
-import ErrorNote from "../../lib/ErrorNote";
 import { useEffect, useState } from "react";
 import { save } from "@tauri-apps/plugin-dialog";
+import { Download, Play } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import ErrorNote from "../../lib/ErrorNote";
 import { EnvSummary, exportSql, listEnvironments, runSql, SqlResult } from "../../lib/ipc";
 
 const SAMPLE = 'SELECT "Id", "Name", "CreatedOn"\nFROM "Contact"\nORDER BY "CreatedOn" DESC\nLIMIT 50';
@@ -176,41 +198,58 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
   };
 
   return (
-    <div className="page-body">
-      <div className="page-bar">
-        <h1>SQL</h1>
-        <div className="ws-actions">
-          <button className="ghost" onClick={onShowJobs}>Jobs</button>
-          <button className="ghost" onClick={() => doExport("csv")} disabled={!result || exporting !== null}>
-            {exporting === "csv" ? "Exporting…" : "⭳ CSV"}
-          </button>
-          <button className="ghost" onClick={() => doExport("xlsx")} disabled={!result || exporting !== null}>
-            {exporting === "xlsx" ? "Exporting…" : "⭳ Excel"}
-          </button>
-          <button className="primary" onClick={() => doRun()} disabled={!env || loading}>
-            {loading ? "Running…" : "▶ Run"}
-          </button>
+    <div className="mx-auto grid max-w-6xl gap-4 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold tracking-tight">SQL</h1>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" onClick={onShowJobs}>Jobs</Button>
+          <Button
+            variant="outline"
+            onClick={() => doExport("csv")}
+            disabled={!result || exporting !== null}
+          >
+            <Download aria-hidden="true" />
+            {exporting === "csv" ? "Exporting…" : "CSV"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => doExport("xlsx")}
+            disabled={!result || exporting !== null}
+          >
+            <Download aria-hidden="true" />
+            {exporting === "xlsx" ? "Exporting…" : "Excel"}
+          </Button>
+          <Button onClick={() => doRun()} disabled={!env || loading}>
+            <Play aria-hidden="true" />
+            {loading ? "Running…" : "Run"}
+          </Button>
         </div>
       </div>
 
-      <div className="package-toolbar">
-        <label>
-          Environment
-          <select value={env} onChange={(e) => setEnv(e.target.value)}>
-            {envs.map((e) => (
-              <option key={e.name} value={e.name}>
-                {e.name} {e.isActive ? "(default)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-        <span className="package-count">Ctrl/⌘ + Enter to run</span>
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="grid min-w-56 gap-2">
+          <Label htmlFor="sql-env">Environment</Label>
+          <Select value={env} onValueChange={setEnv}>
+            <SelectTrigger id="sql-env" className="w-full">
+              <SelectValue placeholder="Select an environment" />
+            </SelectTrigger>
+            <SelectContent>
+              {envs.map((e) => (
+                <SelectItem key={e.name} value={e.name}>
+                  {e.name} {e.isActive ? "(default)" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <span className="pb-2.5 text-sm text-muted-foreground">Ctrl/⌘ + Enter to run</span>
       </div>
 
-      <div className="sql-savebar">
-        <label>
-          Query name
-          <input
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="grid min-w-64 flex-1 gap-2">
+          <Label htmlFor="sql-name">Query name</Label>
+          <Input
+            id="sql-name"
             value={savedName}
             onChange={(e) => setSavedName(e.target.value)}
             onKeyDown={(e) => {
@@ -221,15 +260,15 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
             }}
             placeholder="e.g. Recently created contacts"
           />
-        </label>
-        <button className="ghost" onClick={saveCurrentQuery}>
+        </div>
+        <Button variant="outline" onClick={saveCurrentQuery}>
           {activeSavedId ? "Update saved query" : "Save query"}
-        </button>
-        {activeSavedId && <button className="ghost" onClick={saveAsNew}>Save as new</button>}
+        </Button>
+        {activeSavedId && <Button variant="ghost" onClick={saveAsNew}>Save as new</Button>}
       </div>
 
-      <textarea
-        className="sql-editor"
+      <Textarea
+        className="min-h-40 font-mono text-sm"
         value={query}
         spellCheck={false}
         onChange={(e) => setQuery(e.target.value)}
@@ -237,38 +276,66 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
         placeholder='SELECT "Id", "Name" FROM "Contact" LIMIT 100'
       />
 
-      <p className="hint">
-        Runs raw SQL through clio (the environment needs the <code>cliogate</code> helper). Be careful with
-        <code> UPDATE</code>/<code>DELETE</code> — it runs directly against the Creatio database. Export always
-        writes the full result; the grid below shows up to 5,000 rows.
+      <p className="text-sm text-muted-foreground">
+        Runs raw SQL through clio (the environment needs the{" "}
+        <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">cliogate</code> helper).
+        Be careful with{" "}
+        <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">UPDATE</code>/
+        <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">DELETE</code> — it runs
+        directly against the Creatio database. Export always writes the full result; the grid below
+        shows up to 5,000 rows.
       </p>
 
-      {notice && <p className="notice">{notice}</p>}
+      {notice && <p className="text-sm text-muted-foreground">{notice}</p>}
       {error && <ErrorNote error={error} />}
 
       {savedQueries.length > 0 && (
-        <section className="sql-saved">
-          <div className="sql-saved-heading">
+        <section className="grid gap-3">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <h2>Saved queries</h2>
-              <p>Stored on this device. Open one to edit it or run it again immediately.</p>
+              <h2 className="text-base font-semibold">Saved queries</h2>
+              <p className="text-sm text-muted-foreground">
+                Stored on this device. Open one to edit it or run it again immediately.
+              </p>
             </div>
-            <span className="pill dim">{savedQueries.length}</span>
+            <Badge variant="secondary">{savedQueries.length}</Badge>
           </div>
-          <div className="sql-saved-list">
+          <div className="grid gap-2">
             {savedQueries.map((saved) => (
-              <article className={`sql-saved-row ${activeSavedId === saved.id ? "active" : ""}`} key={saved.id}>
-                <button className="sql-saved-main" onClick={() => openSavedQuery(saved)}>
-                  <strong>{saved.name}</strong>
-                  <span>{saved.env} · updated {new Date(saved.updatedAt).toLocaleString()}</span>
-                  <code>{saved.query.replace(/\s+/g, " ").slice(0, 140)}</code>
+              <article
+                key={saved.id}
+                className={cn(
+                  "flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3",
+                  activeSavedId === saved.id && "border-primary bg-accent/10",
+                )}
+              >
+                <button
+                  className="grid min-w-0 flex-1 gap-0.5 text-left"
+                  onClick={() => openSavedQuery(saved)}
+                >
+                  <strong className="text-sm">{saved.name}</strong>
+                  <span className="text-xs text-muted-foreground">
+                    {saved.env} · updated {new Date(saved.updatedAt).toLocaleString()}
+                  </span>
+                  <code className="truncate font-mono text-xs text-muted-foreground">
+                    {saved.query.replace(/\s+/g, " ").slice(0, 140)}
+                  </code>
                 </button>
-                <div className="sql-saved-actions">
-                  <button className="primary" onClick={() => rerunSavedQuery(saved)} disabled={loading}>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => rerunSavedQuery(saved)} disabled={loading}>
                     Run again
-                  </button>
-                  <button className="ghost" onClick={() => openSavedQuery(saved)}>Open</button>
-                  <button className="ghost danger-text" onClick={() => deleteSavedQuery(saved)}>Delete</button>
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => openSavedQuery(saved)}>
+                    Open
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => deleteSavedQuery(saved)}
+                  >
+                    Delete
+                  </Button>
                 </div>
               </article>
             ))}
@@ -277,39 +344,51 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
       )}
 
       {result && (
-        <>
-          <div className="sql-meta">
-            <span className="pill accent">{result.rowCount.toLocaleString()} row{result.rowCount === 1 ? "" : "s"}</span>
-            <span className="pill dim">{result.columns.length} column{result.columns.length === 1 ? "" : "s"}</span>
-            {result.truncated && <span className="pill warn">grid shows first {result.rows.length.toLocaleString()}</span>}
+        <div className="grid gap-3">
+          <div className="flex flex-wrap gap-2">
+            <Badge className="border-transparent bg-accent/15 text-accent-foreground">
+              {result.rowCount.toLocaleString()} row{result.rowCount === 1 ? "" : "s"}
+            </Badge>
+            <Badge variant="secondary">
+              {result.columns.length} column{result.columns.length === 1 ? "" : "s"}
+            </Badge>
+            {result.truncated && (
+              <Badge className="border-transparent bg-warning/15 text-warning">
+                grid shows first {result.rows.length.toLocaleString()}
+              </Badge>
+            )}
           </div>
           {result.columns.length === 0 ? (
-            <p className="empty">This statement returned no result set.</p>
+            <p className="text-muted-foreground">This statement returned no result set.</p>
           ) : (
-            <div className="sql-grid">
-              <table>
-                <thead>
-                  <tr>
-                    <th className="rownum">#</th>
+            <div className="max-h-[60vh] overflow-auto rounded-lg border">
+              <Table>
+                <TableHeader className="sticky top-0 z-10 bg-card">
+                  <TableRow>
+                    <TableHead className="w-12 text-right text-muted-foreground">#</TableHead>
                     {result.columns.map((c, i) => (
-                      <th key={i}>{c}</th>
+                      <TableHead key={i} className="whitespace-nowrap">{c}</TableHead>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {result.rows.map((row, r) => (
-                    <tr key={r}>
-                      <td className="rownum">{r + 1}</td>
+                    <TableRow key={r}>
+                      <TableCell className="text-right font-mono text-xs text-muted-foreground">
+                        {r + 1}
+                      </TableCell>
                       {result.columns.map((_, c) => (
-                        <td key={c} title={row[c] ?? ""}>{row[c] ?? ""}</td>
+                        <TableCell key={c} className="max-w-80 truncate" title={row[c] ?? ""}>
+                          {row[c] ?? ""}
+                        </TableCell>
                       ))}
-                    </tr>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
