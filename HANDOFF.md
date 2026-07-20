@@ -1,17 +1,19 @@
 # Creatio DevHub — Engineering Handoff
 
-Last verified: **2026-07-19**
+Last verified: **2026-07-20**
 
 Current version: **0.3.0**
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
 Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.3.0>
-(v0.2.3 adds branding icons + light sidebar and persistent job history. There is no v0.2.2:
-that tag's workflow failed because the version bump wrote a UTF-8 BOM into package.json /
-tauri.conf.json — Windows PowerShell `Set-Content -Encoding utf8` writes a BOM; use
-`[System.IO.File]::WriteAllText` with `UTF8Encoding($false)` for JSON the toolchain parses.
-The broken tag was deleted, never reused.)
+
+Website: <https://smitsuthar8834.github.io/creatio-devhub/> (branch `gh-pages`)
+
+> **There is no v0.2.2.** That tag's workflow failed because the version bump wrote a UTF-8 BOM
+> into `package.json` / `tauri.conf.json` — Windows PowerShell `Set-Content -Encoding utf8` writes
+> a BOM. Use `[System.IO.File]::WriteAllText` with `UTF8Encoding($false)` (or an editor that
+> preserves encoding) for JSON the toolchain parses. The broken tag was deleted, never reused.
 
 ## Current state
 
@@ -44,23 +46,23 @@ The main milestones are complete:
 
 ## Verified release state
 
-Release `v0.2.4` was built and published by GitHub Actions (2026-07-18).
+Release `v0.3.0` was built and published by GitHub Actions (2026-07-20).
 
-- Workflow: `.github/workflows/release.yml` (run 29652069821, conclusion: success)
-- Release: `DevHub v0.2.4`
+- Workflow: `.github/workflows/release.yml` (run 29722892404, conclusion: success)
+- Release: `DevHub v0.3.0`
 - Update endpoint:
   `https://github.com/SmitSuthar8834/creatio-devhub/releases/latest/download/latest.json`
 - Published artifacts:
-  - `creatio-devhub_0.2.4_x64-setup.exe` (NSIS setup executable)
-  - `creatio-devhub_0.2.4_x64-setup.exe.sig` (NSIS signature)
-  - `creatio-devhub_0.2.4_x64_en-US.msi` (MSI installer)
-  - `creatio-devhub_0.2.4_x64_en-US.msi.sig` (MSI signature)
+  - `creatio-devhub_0.3.0_x64-setup.exe` (NSIS setup executable)
+  - `creatio-devhub_0.3.0_x64-setup.exe.sig` (NSIS signature)
+  - `creatio-devhub_0.3.0_x64_en-US.msi` (MSI installer)
+  - `creatio-devhub_0.3.0_x64_en-US.msi.sig` (MSI signature)
   - `latest.json`
-- `latest.json` reports version `0.2.4` with signed `windows-x86_64`, `windows-x86_64-nsis`,
+- `latest.json` reports version `0.3.0` with signed `windows-x86_64`, `windows-x86_64-nsis`,
   and `windows-x86_64-msi` entries.
 
-(The first published/verified release was `v0.2.1`; the signed updater flow has been stable
-across v0.2.1 → v0.2.4.)
+Released so far: v0.2.1, v0.2.3 → v0.2.9, v0.3.0. The first published/verified release was
+`v0.2.1`; the signed updater flow has been stable across every release since.
 
 The repository Actions secret `TAURI_SIGNING_PRIVATE_KEY` is configured. The private key is not in
 Git and must remain private. On the original development machine it is stored at:
@@ -94,8 +96,7 @@ New onboarding flow so a workspace no longer has to download every package up fr
 - Touched: `src-tauri/src/workspaces.rs`, `src-tauri/src/lib.rs`, `src/lib/ipc.ts`,
   `src/modules/workspaces/NewWorkspaceWizard.tsx`, `src/modules/workspaces/WorkspaceDetail.tsx`,
   `src/App.css`. Validated: `tsc --noEmit` clean, `cargo check`/`cargo test --lib` = 13 passed,
-  full `tauri dev` build ran and launched. Shipped in v0.2.4 on `main`; push tag `v0.2.4` to
-  publish the signed release.
+  full `tauri dev` build ran and launched. Shipped in v0.2.4.
 
 ## Global job toaster + auto-captured catalog cache (v0.2.5, 2026-07-18)
 
@@ -116,11 +117,6 @@ Two additive UX features:
   `src/modules/applications/ApplicationsPage.tsx`, `src/modules/packages/PackagesPage.tsx`.
   Validated: `tsc --noEmit` clean, `cargo check`/`cargo test --lib` = 13 passed, full `tauri dev`
   build ran and launched, shell renders with no new runtime errors. Shipped in v0.2.5.
-
-NOTE: the "Start empty" workspace path (v0.2.4) still passes `-e <env>` to `create-workspace`,
-which makes clio connect and populate settings rather than create a truly empty workspace. The
-correct invocation is `clio createw <name> --empty --directory <parent>` (no `-e`, no credentials).
-This is a known open bug, deliberately deferred — fix in a future release.
 
 ## Deploy from GitHub (v0.2.6, 2026-07-18)
 
@@ -209,12 +205,34 @@ and `parses_clio_version_and_update_notice`. Suite: **17 passing**.
   `clio lock-package`, push conflict pre-check). **Parked deliberately**: true per-schema "only I
   can edit" enforcement is only available through Creatio's **SVN** native lock, which is not
   achievable via Git/GitHub (Creatio's native VC tooling is SVN-only; Git has no lock primitive).
-- The marketing/download site lives on branch **`gh-pages`**
-  (<https://smitsuthar8834.github.io/creatio-devhub/>), deployed via a `git worktree` so `main`
-  stays clean. Its download buttons re-target the newest release from the GitHub API at runtime.
 - Test env `187559-crm-bundle` still holds leftover experiment objects
   (`UsrDevHubCollabPackage`, an empty `UsrDevHubCollab`, and unused `UsrDevHubLockItem` /
   `UsrDevHubActivityItem` in `Custom`). Harmless; cliogate is installed there and should stay.
+
+## Website (branch `gh-pages`)
+
+Live at <https://smitsuthar8834.github.io/creatio-devhub/> — a landing/download page.
+
+- **Deployment**: the page source is a single standalone `index.html` on the orphan-style
+  `gh-pages` branch. It is deployed with a `git worktree` checkout of `gh-pages` so `main` is
+  never touched:
+
+  ```bash
+  git worktree add /path/tmp gh-pages
+  cp index.html /path/tmp/ && cd /path/tmp && git add -A && git commit && git push origin gh-pages
+  git worktree remove /path/tmp --force
+  ```
+
+- **Design**: dark-only ("OLED") theme, slate ground with a `#22C55E` accent, Inter +
+  JetBrains Mono, inline SVG icons (no emoji), a stylized DevHub window in the hero, feature grid,
+  workflow strip, changelog, requirements, and a download CTA.
+- **Live data**: on load it queries the GitHub Releases API to show real installer download
+  counts, latest version and release count, and to **re-target every download link at the newest
+  release's assets** — so the buttons don't go stale between releases. There is a static fallback
+  if the fetch fails.
+- **Footer**: credit "Developed by Smit Suthar", support email `sutharsmit574@gmail.com`, and an
+  explicit "independent tool, not affiliated with Creatio" disclaimer.
+- GitHub Pages is configured to serve the `gh-pages` branch root.
 
 ## Architecture
 
@@ -247,9 +265,8 @@ those tools communicate with Creatio or GitHub.
 - Sidebar switched from navy to a light treatment (`--side-bg #fbfcfe`, dark ink, border-right)
   so the blue-gradient icons render in true color — matches the icon sheet's design language.
 - App icons (`src-tauri/icons/*` — .ico/.icns/pngs/Android mipmaps) regenerated from
-  `app-icon-512.png` via `npx tauri icon`. Ship in the next tagged release so installed apps get
-  the new taskbar/Start icon.
-- These changes are in the working tree — not yet committed/released at time of writing.
+  `app-icon-512.png` via `npx tauri icon`.
+- Shipped in v0.2.3. A dedicated SQL (database) sidebar icon was added in v0.2.7.
 
 ## Important design decisions
 
@@ -299,22 +316,28 @@ src/
   App.css                         shared visual system
   lib/ipc.ts                      typed frontend IPC contract
   modules/environments/           environment hub and registration
-  modules/workspaces/             workspace list, wizard, changes, history
+  modules/workspaces/             workspace list, wizard, changes, history,
+                                  DeployFromGithubDialog
   modules/packages/               package manager and package deployment
   modules/applications/           application catalog and deployment
-  modules/jobs/                   job list, logs, cancellation
+  modules/sql/SqlPage.tsx         SQL editor, results grid, saved queries, CSV/XLSX export
+  modules/clio/ClioBanner.tsx     clio install / update / repair header banner
+  modules/jobs/                   job list, logs, cancellation, JobToaster
   modules/settings/               defaults, GitHub identity, updater
 
 src-tauri/src/
   lib.rs                          plugin/state/command registration
   jobs.rs                         job state, locks, streaming, cancellation
-  clio.rs                         safe clio helpers and shared parsing
+  clio.rs                         clio helpers, parsing, clio_status /
+                                  install_or_update_clio / diagnose
   cache.rs                        persistent catalog cache
+  catalog.rs                      background catalog prefetch (packages + apps)
+  sql.rs                          SQL execution and CSV/XLSX export via clio
   workspaces.rs                   workspace registry and synchronization
   packages.rs                     package actions and deployment
   applications.rs                 application listing and deployment
   git.rs                          local Git and remote-ahead checks
-  github.rs                       GitHub CLI authentication and Git identity
+  github.rs                       GitHub CLI auth, repo/branch listing, Git identity
 
 src-tauri/tauri.conf.json         app, bundling, and updater configuration
 src-tauri/capabilities/           frontend permissions
@@ -351,35 +374,43 @@ cd src-tauri
 cargo test --lib
 ```
 
-Latest verified result:
+Latest verified result (2026-07-20, v0.3.0):
 
 - TypeScript check: passed
 - Vite production build: passed
-- Rust tests: **11 passed, 0 failed**
-- Local signed v0.2.1 MSI/NSIS artifacts: produced
-- GitHub v0.2.1 release workflow: passed
-- Public updater feed: verified
+- Rust tests: **17 passed, 0 failed**
+- GitHub v0.3.0 release workflow: passed (run 29722892404)
+- Published artifacts: signed NSIS + MSI, both signatures, `latest.json`
+- Public updater feed: verified reporting `0.3.0`
 
 ## Publishing the next release
 
 1. Pull `main` and ensure the working tree is clean.
 2. Implement and validate the change.
-3. Increase the same version in:
+3. Increase the same version in **all four** files (a mismatch is easy to miss):
    - `package.json`
    - `src-tauri/Cargo.toml`
    - `src-tauri/tauri.conf.json`
+   - `src-tauri/Cargo.lock` (the `creatio-devhub` package entry; `cargo` also rewrites it on the
+     next build)
+
+   Edit these with a tool that preserves encoding — a UTF-8 BOM in the JSON breaks the workflow
+   (see the v0.2.2 note at the top). Verify with a BOM check before committing.
 4. Update README and this handoff when behavior or operational requirements change.
 5. Commit and push `main`.
-6. Create and push the matching tag:
+6. Create and push the matching tag (example for the next patch after v0.3.0):
 
 ```powershell
-git tag -a v0.2.2 -m "Creatio DevHub v0.2.2"
-git push origin v0.2.2
+git tag -a v0.3.1 -m "Creatio DevHub v0.3.1"
+git push origin v0.3.1
 ```
 
 7. Monitor **Publish DevHub release** in GitHub Actions.
 8. Confirm the release contains both installers, both signatures, and `latest.json`.
 9. Confirm the latest endpoint reports the new version before announcing the update.
+10. Update the website (`gh-pages`) so the changelog and static fallbacks mention the new version.
+    The download buttons re-target the newest release from the GitHub API at runtime, so they do
+    not strictly need editing — but the changelog and fallback labels do.
 
 Never reuse a version tag for different source. If a release fails, fix the workflow or secret and
 rerun the same failed workflow only when its source/tag is unchanged.
@@ -403,19 +434,78 @@ rerun the same failed workflow only when its source/tag is unchanged.
   to disk at finish — a hard crash mid-job loses that job's log tail (record survives).
 - Catalog cache invalidation is explicit via Refresh or selected successful mutations; it is not a
   real-time subscription to Creatio changes.
+- **Windows only.** No macOS/Linux build exists — the release workflow produces NSIS + MSI on a
+  Windows runner. Tauri and the clio/Git/gh dependencies are all cross-platform, so a macOS build
+  is feasible, but it needs a `macos` runner job, a replacement for the Windows-specific
+  process-tree cancellation, and Apple signing/notarization to avoid Gatekeeper warnings.
+- **Open bug — "Start empty" workspace is not actually empty.** `create_workspace_flow` still
+  passes `-e <env>` to `clio create-workspace`, so clio connects and populates the package
+  selection instead of scaffolding an empty workspace (and it fails outright if the environment is
+  unreachable or its credentials are stale). The correct invocation is
+  `clio createw <name> --empty --directory <parent>` — no `-e`, no credentials. Deliberately
+  deferred; note that `--empty` creates the subfolder itself, so the path handling needs adjusting
+  with it.
+- SQL execution runs **raw SQL** against the Creatio database through cliogate. `UPDATE`/`DELETE`
+  are not sandboxed; the UI only warns. The grid is capped at 5,000 rows (exports are uncapped).
+- clio itself is now installable/updatable/repairable from the app, but the **.NET SDK is still an
+  external prerequisite** — without `dotnet` on PATH DevHub can only report the problem.
 
 ## Recommended next priorities
 
-1. Run a controlled end-to-end validation matrix using disposable packages/applications and
+1. **Fix the "Start empty" workspace bug** (see Known limitations) — switch that path to
+   `clio createw <name> --empty --directory <parent>` and adjust the destination handling.
+2. Run a controlled end-to-end validation matrix using disposable packages/applications and
    non-production environments.
-2. Add automated integration tests around cache invalidation and deployment job locking.
-3. Add configurable clio executable path and log retention settings.
-4. ~~Persist job history~~ (done — `JobStore` in jobs.rs, Clear-history button on Jobs page);
-   log export still open.
-5. Decide whether to bundle clio or keep it as an external prerequisite.
-6. Add optional scheduled workspace refresh/tray behavior.
-7. Design a proper ALM promotion flow if approvals, environment policies, or release gates are
+3. Add automated integration tests around cache invalidation and deployment job locking.
+4. Add a **macOS build** if there is demand: macOS runner job, non-Windows job cancellation, and
+   Apple signing/notarization (needs a paid Apple Developer account).
+5. Add configurable clio executable path and log retention/export settings.
+6. Add optional scheduled workspace refresh / tray behavior.
+7. Clean up the leftover experiment objects on `187559-crm-bundle` when that env is no longer
+   needed for testing.
+8. Design a proper ALM promotion flow if approvals, environment policies, or release gates are
    required.
+
+Done previously and no longer open: persist job history (`JobStore` in `jobs.rs` + Clear-history
+button), and "decide whether to bundle clio" — clio stays an external tool, but DevHub now
+installs/updates/repairs it from the header banner (v0.3.0).
+
+## clio behaviours worth knowing (verified live, clio 8.1.x)
+
+These cost real trial-and-error; the built-in `--help` is wrong in places.
+
+**Output parsing**
+- clio prepends `[INF]` / `[WAR]` log lines to almost every command, including JSON responses.
+  A `[WAR] - clio X is available…` line starts with `[`, which breaks a JSON stream parser —
+  find the first `{` before parsing (see `locks.rs`/`sql.rs` handling).
+- An unreachable or restarting environment answers with an **HTML error page** (e.g. 401), not
+  JSON. Detect `<!doctype` / `<html` and report it as transient rather than dumping the page.
+
+**Commands that require cliogate** (`clio install-gate -e <env>`)
+- `execute-sql-script`, `lock-package` / `unlock-package`, `install-sql-schema`.
+
+**`execute-sql-script`** (backs the SQL screen)
+- `--View csv|xlsx` **requires** `--DestinationPath`; only the default `table` view prints to
+  stdout. CSV output is **semicolon-delimited** with CRLF line endings.
+
+**`create-entity-schema`** (only used by the parked locks work)
+- Columns go after **one** `--column` as space-separated specs; repeating the flag is rejected.
+- `--title` is required, and **`--parent BaseEntity`** is required — without a parent clio creates
+  a stray `UsrId` primary key and DataService inserts then fail on a not-null violation.
+- A newly created schema is SELECT-able immediately but **INSERT fails until `restart-web-app`**.
+- `delete-schema` does **not** drop the physical table, so a name can't cleanly be reused — pick a
+  fresh schema name instead.
+
+**DataService via `clio dataservice`**
+- SELECT columns use `expressionType 0` (SchemaColumn); INSERT/DELETE **values** use
+  `expressionType 2` (Parameter) — using 0 there fails with `NotSupportedException: SchemaColumn`.
+- Writing a DateTime is locale-fragile; store timestamps as Text (e.g. epoch seconds).
+
+**Tool maintenance**
+- `dotnet tool update clio -g` fails with `Access to the path … is denied` when any clio process
+  is running — including ones DevHub itself spawned. Finish jobs first, or use Repair.
+- A damaged install reports `Could not load file or assembly …`; only uninstall + reinstall
+  (Repair) fixes it.
 
 ## Handoff checklist
 
