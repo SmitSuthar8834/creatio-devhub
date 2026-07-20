@@ -183,7 +183,8 @@ export default function JobsPage() {
                     <div className="job-failure-columns">
                       <div>
                         <h3>In general terms</h3>
-                        <p>{failure.general}</p>
+                        <p>{selectedJob?.diagnosis?.summary ?? failure.general}</p>
+                        {selectedJob?.diagnosis && <p>{selectedJob.diagnosis.cause}</p>}
                       </div>
                       <div>
                         <h3>Technical details</h3>
@@ -192,6 +193,14 @@ export default function JobsPage() {
                         ))}
                       </div>
                     </div>
+                    {selectedJob?.diagnosis && (
+                      <div className="job-failure-steps">
+                        <h3>How to fix it</h3>
+                        <ol>
+                          {selectedJob.diagnosis.steps.map((step) => <li key={step}>{step}</li>)}
+                        </ol>
+                      </div>
+                    )}
                   </section>
                 )}
                 <pre className="job-log" ref={logRef}>

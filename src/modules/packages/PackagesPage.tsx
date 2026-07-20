@@ -1,3 +1,4 @@
+import ErrorNote from "../../lib/ErrorNote";
 import { useEffect, useMemo, useState } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -275,7 +276,7 @@ export default function PackagesPage({
         {fromCache && " Use Refresh to check the environment for changes."}
       </p>}
       {notice && <p className="notice">{notice}</p>}
-      {error && <p className="form-error">{error}</p>}
+      {error && <ErrorNote error={error} />}
 
       <div className={`package-drop ${dragging ? "dragging" : ""}`} onClick={chooseInstall}>
         Drop a .zip or .gz package here to install it, or click to browse.

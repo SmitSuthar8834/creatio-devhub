@@ -1,3 +1,4 @@
+import ErrorNote from "../../lib/ErrorNote";
 import { useEffect, useMemo, useState } from "react";
 import {
   ApplicationInfo, deployApplicationBetweenEnvironments, EnvSummary,
@@ -130,7 +131,7 @@ export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => voi
         {fromCache && " Use Refresh to check the environment for changes."}
       </p>}
       {notice && <p className="notice">{notice}</p>}
-      {error && <p className="form-error">{error}</p>}
+      {error && <ErrorNote error={error} />}
 
       {!loading && applications.length === 0 && !error ? <p className="empty">
         No installed applications were returned for this environment.

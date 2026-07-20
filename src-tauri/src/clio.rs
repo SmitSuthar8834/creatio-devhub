@@ -109,35 +109,20 @@ pub struct ClioStatus {
     pub broken: bool,
 }
 
-/// Turn well-known clio / dotnet-tool failures into guidance the user can act on.
+/// Turn well-known clio / dotnet-tool failures into a single line of guidance.
 /// Returns None when we don't recognize the failure (caller shows the raw output).
+/// The rules live in `diagnostics` so the job log and this banner agree.
 pub fn diagnose(output: &str) -> Option<String> {
-    let lower = output.to_lowercase();
-    if lower.contains("could not load file or assembly") {
-        return Some(
-            "clio's installation is incomplete — a required assembly is missing. Use \"Repair clio\" in the header banner, or run: dotnet tool uninstall clio -g && dotnet tool install clio -g"
-                .to_string(),
-        );
-    }
-    if lower.contains("access to the path")
-        || lower.contains("failed to uninstall tool package")
-        || lower.contains("being used by another process")
-    {
-        return Some(
-            "clio's files are locked — this usually means a clio command is still running. Wait for running jobs to finish, close any terminal using clio, then retry. If it keeps failing, run DevHub as administrator."
-                .to_string(),
-        );
-    }
-    if lower.contains("cliogate") && lower.contains("install") {
-        return Some(
-            "This environment needs the cliogate helper. Install it from the Environments screen, then retry."
-                .to_string(),
-        );
-    }
-    if lower.contains("is not recognized") || lower.contains("no such file or directory") {
-        return Some("The .NET SDK (dotnet) was not found on PATH. Install it, then retry.".to_string());
-    }
-    None
+    crate::diagnostics::diagnose(output).map(|found| {
+        let steps = found
+            .steps
+            .iter()
+            .enumerate()
+            .map(|(index, step)| format!("{}. {step}", index + 1))
+            .collect::<Vec<_>>()
+            .join(" ");
+        format!("{} {} {steps}", found.summary, found.cause)
+    })
 }
 
 /// Value after `key:` on the first line containing it, when it looks like a version.

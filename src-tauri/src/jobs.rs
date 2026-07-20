@@ -22,6 +22,10 @@ pub struct JobInfo {
     pub started_at: u64,
     pub finished_at: Option<u64>,
     pub exit_code: Option<i32>,
+    /// Cause and resolution for a failed job, when the log matches a known
+    /// failure. Absent on success and on failures DevHub does not recognize.
+    #[serde(default)]
+    pub diagnosis: Option<crate::diagnostics::Diagnosis>,
 }
 
 #[derive(Clone, Serialize)]
@@ -204,6 +208,7 @@ impl JobState {
             started_at: now_ms(),
             finished_at: None,
             exit_code: None,
+            diagnosis: None,
         };
         self.jobs.lock().unwrap().insert(0, job.clone());
         self.logs.lock().unwrap().insert(id.clone(), Vec::new());
@@ -282,7 +287,14 @@ impl JobState {
     }
 
     pub fn finish(&self, app: &AppHandle, id: &str, code: Option<i32>) {
+        // Explain the failure while the log is still in memory.
+        let diagnosis = if code == Some(0) {
+            None
+        } else {
+            self.logs.lock().unwrap().get(id).and_then(|lines| crate::diagnostics::diagnose_log(lines))
+        };
         self.update(app, id, |j| {
+            j.diagnosis = diagnosis.clone();
             j.exit_code = code;
             j.finished_at = Some(now_ms());
             j.cancellable = false;
@@ -573,6 +585,7 @@ mod tests {
             started_at: 1,
             finished_at: if status == "succeeded" { Some(2) } else { None },
             exit_code: if status == "succeeded" { Some(0) } else { None },
+            diagnosis: None,
         }
     }
 

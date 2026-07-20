@@ -23,7 +23,18 @@ export interface JobInfo {
   startedAt: number;
   finishedAt: number | null;
   exitCode: number | null;
+  diagnosis: Diagnosis | null;
 }
+
+/// A recognized failure: what happened, why, and what to do about it.
+export interface Diagnosis {
+  code: string;
+  summary: string;
+  cause: string;
+  steps: string[];
+}
+
+export const diagnoseError = (text: string) => invoke<Diagnosis | null>("diagnose_error", { text });
 
 export interface JobLogLine {
   id: string;

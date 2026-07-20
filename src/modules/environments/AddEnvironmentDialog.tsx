@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ErrorNote from "../../lib/ErrorNote";
 import { runClioJob } from "../../lib/ipc";
 
 interface Props {
@@ -91,7 +92,7 @@ export default function AddEnvironmentDialog({ onClose, onSubmitted }: Props) {
             </label>
           </>
         )}
-        {error && <p className="form-error">{error}</p>}
+        {error && <ErrorNote error={error} />}
         <p className="hint">Credentials are stored by clio in its own settings file — this app keeps nothing.</p>
         <div className="dialog-actions">
           <button className="ghost" onClick={onClose}>

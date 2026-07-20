@@ -1,3 +1,4 @@
+import ErrorNote from "../../lib/ErrorNote";
 import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
@@ -226,7 +227,7 @@ export default function DeployFromGithubDialog({ onClose, onStarted }: Props) {
           version and starts a server-side compile that can take several minutes.
         </p>
 
-        {error && <p className="form-error">{error}</p>}
+        {error && <ErrorNote error={error} />}
         <div className="dialog-actions">
           <button className="ghost" onClick={onClose}>
             Cancel

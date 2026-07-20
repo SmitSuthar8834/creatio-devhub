@@ -340,6 +340,8 @@ src-tauri/src/
   github.rs                       GitHub CLI auth, repo/branch listing, Git identity
   tools.rs                        locating clio/git/gh/dotnet (PATH, live registry
                                   PATH, well-known dirs, user overrides)
+  diagnostics.rs                  failure-signature catalog: raw CLI output ->
+                                  summary, cause, and resolution steps
 
 src-tauri/tauri.conf.json         app, bundling, and updater configuration
 src-tauri/capabilities/           frontend permissions

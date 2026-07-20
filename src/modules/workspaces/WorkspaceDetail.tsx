@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import ErrorNote from "../../lib/ErrorNote";
 import {
   addPackageToWorkspace,
   Commit,
@@ -227,7 +228,7 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
       </div>
 
       {notice && <p className="notice">{notice}</p>}
-      {error && <p className="form-error">{error}</p>}
+      {error && <ErrorNote error={error} />}
 
       {showGuidance && (
         <div className="guidance-banner">

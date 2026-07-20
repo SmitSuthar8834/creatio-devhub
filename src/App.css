@@ -754,6 +754,34 @@ button.danger { background: #b42332; border-color: #d13b4b; color: white; }
 }
 .settings-identity .primary { margin-bottom: 1px; white-space: nowrap; }
 
+.error-note {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid #c73545;
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 12px 14px;
+}
+.error-note p { margin: 0; }
+.error-note h4 { font-size: 13px; margin: 4px 0 0; }
+.error-note ol { margin: 0; padding-left: 18px; }
+.error-note li { margin: 2px 0; }
+.error-note details { margin-top: 2px; }
+.error-note summary { cursor: pointer; font-size: 12px; }
+.error-note pre {
+  font: 12px/1.5 Consolas, monospace;
+  margin: 6px 0 0;
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.job-failure-steps { margin-top: 12px; }
+.job-failure-steps h3 { margin: 0 0 4px; }
+.job-failure-steps ol { margin: 0; padding-left: 18px; }
+
 .tool-missing { display: grid; gap: 6px; }
 .tool-missing p { margin: 0; }
 .tool-table { border-collapse: collapse; margin-top: 14px; width: 100%; }

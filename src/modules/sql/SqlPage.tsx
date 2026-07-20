@@ -1,3 +1,4 @@
+import ErrorNote from "../../lib/ErrorNote";
 import { useEffect, useState } from "react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { EnvSummary, exportSql, listEnvironments, runSql, SqlResult } from "../../lib/ipc";
@@ -243,7 +244,7 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
       </p>
 
       {notice && <p className="notice">{notice}</p>}
-      {error && <p className="form-error">{error}</p>}
+      {error && <ErrorNote error={error} />}
 
       {savedQueries.length > 0 && (
         <section className="sql-saved">

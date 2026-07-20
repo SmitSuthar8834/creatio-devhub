@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-dialog";
+import ErrorNote from "../../lib/ErrorNote";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, Update } from "@tauri-apps/plugin-updater";
 import {
@@ -287,7 +288,7 @@ export default function SettingsPage() {
           <button className="primary" onClick={saveIdentity}>Save Git identity</button>
         </div>
         {githubNotice && <p className="notice">{githubNotice}</p>}
-        {githubError && <p className="form-error">{githubError}</p>}
+        {githubError && <ErrorNote error={githubError} />}
       </section>
 
       <section className="settings-card">

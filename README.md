@@ -275,6 +275,13 @@ installer, signatures, and updater metadata.
 
 ## Troubleshooting
 
+DevHub recognizes common failures and shows the cause plus numbered resolution steps — in the
+failure panel on the Jobs screen, and inline wherever an operation reports an error. Failures it
+does not recognize still show the raw tool output, so nothing is hidden. Currently recognized:
+damaged or locked clio installs, missing cliogate, a CLI that cannot be started, rejected Git
+pushes, GitHub repository access and credential failures, and Creatio environments that are
+unreachable, reject credentials, or refuse an operation.
+
 **"DevHub could not start the GitHub CLI (gh)" when gh is installed.** A desktop app inherits the
 PATH captured when you signed in to Windows, so a tool installed since then is invisible to it even
 though it works in a terminal. DevHub also re-reads the current system PATH and checks the usual
@@ -309,6 +316,7 @@ src-tauri/
     git.rs                        Git operations and remote conflict detection
     github.rs                     GitHub authentication and Git identity
     tools.rs                      locating the clio/git/gh/dotnet executables
+    diagnostics.rs                known failures mapped to causes and fixes
   capabilities/default.json      frontend plugin permissions
   tauri.conf.json                 application, bundle, and updater configuration
 
