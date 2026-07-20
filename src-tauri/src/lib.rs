@@ -33,6 +33,8 @@ pub fn run() {
             applications::deploy_application_between_environments,
             clio::list_environments,
             clio::set_default_environment,
+            clio::clio_status,
+            clio::install_or_update_clio,
             catalog::prefetch_env_catalog,
             github::github_status,
             github::set_git_identity,

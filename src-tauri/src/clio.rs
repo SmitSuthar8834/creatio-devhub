@@ -1,6 +1,7 @@
+use crate::jobs::JobState;
 use serde::Serialize;
 use std::path::PathBuf;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, State};
 
 /// clio's own settings file — the single source of truth for environments.
 /// We read it only to LIST environments; secrets are never exposed to the UI.
@@ -92,10 +93,200 @@ pub fn set_default_environment(app: AppHandle, name: String) -> Result<(), Strin
     Ok(())
 }
 
+/// Whether the clio CLI itself is installed, and whether a newer build exists.
+/// `clio ver` reports the installed version, the cliogate version and dotnet, and
+/// prints a "clio X is available" warning when an update is published.
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClioStatus {
+    pub installed: bool,
+    pub version: Option<String>,
+    pub latest: Option<String>,
+    pub update_available: bool,
+    pub gate_version: Option<String>,
+    pub dotnet: Option<String>,
+    /// clio runs but its install is damaged (e.g. a missing assembly) — needs a repair.
+    pub broken: bool,
+}
+
+/// Turn well-known clio / dotnet-tool failures into guidance the user can act on.
+/// Returns None when we don't recognize the failure (caller shows the raw output).
+pub fn diagnose(output: &str) -> Option<String> {
+    let lower = output.to_lowercase();
+    if lower.contains("could not load file or assembly") {
+        return Some(
+            "clio's installation is incomplete — a required assembly is missing. Use \"Repair clio\" in the header banner, or run: dotnet tool uninstall clio -g && dotnet tool install clio -g"
+                .to_string(),
+        );
+    }
+    if lower.contains("access to the path")
+        || lower.contains("failed to uninstall tool package")
+        || lower.contains("being used by another process")
+    {
+        return Some(
+            "clio's files are locked — this usually means a clio command is still running. Wait for running jobs to finish, close any terminal using clio, then retry. If it keeps failing, run DevHub as administrator."
+                .to_string(),
+        );
+    }
+    if lower.contains("cliogate") && lower.contains("install") {
+        return Some(
+            "This environment needs the cliogate helper. Install it from the Environments screen, then retry."
+                .to_string(),
+        );
+    }
+    if lower.contains("is not recognized") || lower.contains("no such file or directory") {
+        return Some("The .NET SDK (dotnet) was not found on PATH. Install it, then retry.".to_string());
+    }
+    None
+}
+
+/// Value after `key:` on the first line containing it, when it looks like a version.
+fn parse_labeled_version(out: &str, key: &str) -> Option<String> {
+    out.lines()
+        .find(|line| line.contains(key))
+        .and_then(|line| line.split(key).nth(1))
+        .map(|value| value.trim().to_string())
+        .filter(|value| value.chars().next().is_some_and(|c| c.is_ascii_digit()))
+}
+
+/// The version mentioned in clio's "clio X.Y.Z is available" update notice.
+fn parse_available_version(out: &str) -> Option<String> {
+    out.lines()
+        .find(|line| line.contains("is available"))
+        .and_then(|line| line.split("is available").next())
+        .and_then(|before| before.split_whitespace().last())
+        .map(str::to_string)
+        .filter(|value| value.chars().next().is_some_and(|c| c.is_ascii_digit()))
+}
+
+#[tauri::command]
+pub fn clio_status() -> ClioStatus {
+    let dotnet = std::process::Command::new("dotnet")
+        .arg("--version")
+        .stdin(std::process::Stdio::null())
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .filter(|v| !v.is_empty());
+
+    match clio_capture(&["ver"]) {
+        Ok((_, out)) => {
+            let version = parse_labeled_version(&out, "clio:");
+            let latest = parse_available_version(&out);
+            let update_available = match (&version, &latest) {
+                (Some(current), Some(newest)) => current != newest,
+                _ => false,
+            };
+            // clio started but can't load its own dependencies → damaged install.
+            let broken = out.to_lowercase().contains("could not load file or assembly");
+            ClioStatus {
+                installed: version.is_some() || broken,
+                version,
+                latest,
+                update_available,
+                gate_version: parse_labeled_version(&out, "gate:"),
+                dotnet,
+                broken,
+            }
+        }
+        // clio_capture only errors when the executable can't be started at all.
+        Err(_) => ClioStatus {
+            installed: false,
+            version: None,
+            latest: None,
+            update_available: false,
+            gate_version: None,
+            dotnet,
+            broken: false,
+        },
+    }
+}
+
+/// Install, update, or repair the clio CLI via the .NET global-tool installer.
+/// `mode` is "install" | "update" | "repair" — repair uninstalls first, which is
+/// what fixes a damaged install (e.g. a missing assembly).
+/// Output is captured rather than streamed so we can diagnose known failures
+/// (locked files, missing SDK) instead of showing a misleading generic message.
+#[tauri::command]
+pub fn install_or_update_clio(
+    app: AppHandle,
+    jobs: State<'_, JobState>,
+    mode: String,
+) -> Result<String, String> {
+    let mode = mode.trim().to_lowercase();
+    let action = match mode.as_str() {
+        "install" | "repair" => "install",
+        "update" => "update",
+        other => return Err(format!("Unknown clio action: {other}")),
+    };
+    let repair = mode == "repair";
+    let id = jobs.create_job(
+        &app,
+        match mode.as_str() {
+            "update" => "update-clio",
+            "repair" => "repair-clio",
+            _ => "install-clio",
+        },
+        None,
+        format!("dotnet tool {} clio -g", if repair { "reinstall" } else { action }),
+    );
+    let state = jobs.inner().clone();
+    let job_id = id.clone();
+    std::thread::spawn(move || {
+        let phase = if repair { "repairing clio".to_string() } else { format!("{action}ing clio") };
+        if !state.mark_running_phase(&app, &job_id, &phase, false) {
+            return;
+        }
+
+        let log_output = |out: &str| {
+            for line in out.lines().filter(|l| !l.trim().is_empty()) {
+                state.log(&app, &job_id, line.to_string());
+            }
+        };
+
+        if repair {
+            state.log(&app, &job_id, "$ dotnet tool uninstall clio -g");
+            match capture_cmd("dotnet", &["tool", "uninstall", "clio", "-g"]) {
+                Ok((_, out)) => log_output(&out), // a missing tool here is fine
+                Err(e) => state.log(&app, &job_id, e),
+            }
+        }
+
+        state.log(&app, &job_id, format!("$ dotnet tool {action} clio -g"));
+        match capture_cmd("dotnet", &["tool", action, "clio", "-g"]) {
+            Ok((0, out)) => {
+                log_output(&out);
+                state.log(&app, &job_id, "✓ clio is ready.");
+                state.finish(&app, &job_id, Some(0));
+            }
+            Ok((code, out)) => {
+                log_output(&out);
+                match diagnose(&out) {
+                    Some(hint) => state.log(&app, &job_id, format!("✗ {hint}")),
+                    None => state.log(&app, &job_id, "✗ Failed — see the output above."),
+                }
+                state.finish(&app, &job_id, Some(code));
+            }
+            Err(e) => {
+                state.log(&app, &job_id, format!("✗ {e}"));
+                state.log(&app, &job_id, "The .NET SDK (dotnet) is required to manage clio.");
+                state.finish(&app, &job_id, Some(1));
+            }
+        }
+    });
+    Ok(id)
+}
+
 /// Run clio synchronously and capture output (for quick reads like list-packages).
 pub fn clio_capture(args: &[&str]) -> Result<(i32, String), String> {
+    capture_cmd("clio", args)
+}
+
+/// Run any command synchronously, returning (exit code, stdout+stderr).
+pub fn capture_cmd(program: &str, args: &[&str]) -> Result<(i32, String), String> {
     use std::process::{Command, Stdio};
-    let mut cmd = Command::new("clio");
+    let mut cmd = Command::new(program);
     cmd.args(args).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
     #[cfg(windows)]
     {
@@ -166,6 +357,41 @@ CampaignElements.UI 7.8.0        Creatio
         // A new update banner must not register as drift.
         let with_banner = format!("[WAR] - clio 9.0.0.1 is available.\n{raw}");
         assert_eq!(parse_packages_snapshot(&with_banner), rows);
+    }
+
+    #[test]
+    fn diagnoses_real_clio_failures() {
+        // Reported: `dotnet tool update clio -g` blocked by a locked tool store.
+        let locked = "Tool 'clio' failed to update due to the following:\nFailed to uninstall tool package 'clio': Access to the path 'C:\\Users\\x\\.dotnet\\tools\\.store\\clio\\8.1.0.84' is denied.";
+        assert!(diagnose(locked).expect("locked hint").contains("still running"));
+
+        // Reported: clio list-apps failing on a damaged install.
+        let broken = "[ERR] - Could not load file or assembly 'Creatio.Metrics.Abstractions, Version=1.0.5.0'. The system cannot find the file specified.";
+        assert!(diagnose(broken).expect("broken hint").contains("Repair clio"));
+
+        // Unknown failures fall through so the raw output is shown instead.
+        assert_eq!(diagnose("some unexpected failure"), None);
+    }
+
+    #[test]
+    fn parses_clio_version_and_update_notice() {
+        // Real `clio ver` output shape.
+        let out = "\
+[WAR] - clio 8.1.0.86 is available. Run 'dotnet tool update clio -g' to update.
+[INF] - clio:   8.1.0.84
+[INF] - gate:   2.0.0.44
+[INF] - dotnet:   10.0.10
+[INF] - settings file path: C:\\Users\\x\\AppData\\Local\\creatio\\clio\\appsettings.json
+";
+        assert_eq!(parse_labeled_version(out, "clio:").as_deref(), Some("8.1.0.84"));
+        assert_eq!(parse_labeled_version(out, "gate:").as_deref(), Some("2.0.0.44"));
+        assert_eq!(parse_available_version(out).as_deref(), Some("8.1.0.86"));
+
+        // No update notice → nothing reported as available.
+        let current = "[INF] - clio:   8.1.0.86\n[INF] - gate:   2.0.0.44\n";
+        assert_eq!(parse_available_version(current), None);
+        // The settings-path line must not be mistaken for a version.
+        assert_eq!(parse_labeled_version("[INF] - settings file path: C:\\x\\clio\\a.json", "clio:"), None);
     }
 
     /// Runs against the machine's real clio settings file when present.

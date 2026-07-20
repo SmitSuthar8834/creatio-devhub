@@ -35,6 +35,23 @@ export const listEnvironments = () => invoke<EnvSummary[]>("list_environments");
 export const setDefaultEnvironment = (name: string) =>
   invoke<void>("set_default_environment", { name });
 
+export interface ClioStatus {
+  installed: boolean;
+  version: string | null;
+  latest: string | null;
+  updateAvailable: boolean;
+  gateVersion: string | null;
+  dotnet: string | null;
+  /** clio runs but its install is damaged (missing assembly) — needs a repair. */
+  broken: boolean;
+}
+
+export const getClioStatus = () => invoke<ClioStatus>("clio_status");
+
+/** Install, update, or repair (uninstall + reinstall) clio. Returns a job id. */
+export const installOrUpdateClio = (mode: "install" | "update" | "repair") =>
+  invoke<string>("install_or_update_clio", { mode });
+
 export interface GithubStatus {
   ghInstalled: boolean;
   authenticated: boolean;

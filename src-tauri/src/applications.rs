@@ -73,10 +73,11 @@ pub fn list_applications(
     }
     let (code, output) = clio::clio_capture(&["list-apps", "-e", &env, "--json"])?;
     if code != 0 {
-        return Err(format!(
-            "clio list-apps failed for {env} (exit {code}): {}",
-            output.trim()
-        ));
+        let base = format!("clio list-apps failed for {env} (exit {code}): {}", output.trim());
+        return Err(match clio::diagnose(&output) {
+            Some(hint) => format!("{base} — {hint}"),
+            None => base,
+        });
     }
     let applications = parse_applications_json(&output)?;
     Ok(cache.put("applications", &env, &applications))

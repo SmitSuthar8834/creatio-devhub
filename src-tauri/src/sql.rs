@@ -4,6 +4,8 @@
 //! the cliogate package and can emit the result as a table, CSV, or XLSX file.
 //! For the in-app grid we write a temporary semicolon-delimited CSV and parse it
 //! back; for export we let clio write straight to the file the user picked.
+//! The grid is capped at `DISPLAY_CAP` rows so a huge result set can't freeze the
+//! UI — `row_count` still reports the true total and exports are never capped.
 
 use crate::clio;
 use serde::Serialize;
@@ -11,7 +13,7 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Max rows returned to the UI grid. Export is unbounded (clio writes the file).
-const DISPLAY_CAP: usize = 2000;
+const DISPLAY_CAP: usize = 5000;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

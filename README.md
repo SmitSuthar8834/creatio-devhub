@@ -67,12 +67,23 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
 ### SQL runner
 
 - Run raw SQL against a selected Creatio environment through clio and cliogate.
-- Review result sets in a scrollable grid capped at 2,000 displayed rows.
+- Review result sets in a scrollable grid capped at 5,000 displayed rows.
 - Export the complete result directly to semicolon-delimited CSV or Excel.
 - Save named queries locally, reopen them for editing, or rerun them against their original
   environment. DevHub blocks reruns if that environment is no longer registered.
 - Keep credentials in clio; DevHub stages only the query in a temporary local file.
 - Raw SQL can modify data, so review `UPDATE` and `DELETE` statements carefully.
+
+### clio CLI management
+
+- Detect whether the clio CLI is installed, which version, and whether a newer build exists.
+- **Install clio** from a header banner when it is missing (requires the .NET SDK).
+- **Update clio** when a newer version is published; the prompt can be dismissed per version.
+- **Repair clio** (uninstall + reinstall) when an install is damaged — for example when clio
+  reports `Could not load file or assembly …` and commands start failing.
+- Explain known failures instead of showing raw output: a locked tool store (`Access to the
+  path … is denied`) means a clio command is still running, so finish jobs and close terminals
+  using clio, or run DevHub as administrator.
 
 ### Local catalog cache
 

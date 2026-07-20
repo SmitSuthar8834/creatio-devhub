@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import { listEnvironments, onEnvironmentChanged, prefetchEnvCatalog } from "./lib/ipc";
 import ApplicationsPage from "./modules/applications/ApplicationsPage";
+import ClioBanner from "./modules/clio/ClioBanner";
 import EnvironmentsPage from "./modules/environments/EnvironmentsPage";
 import JobsPage from "./modules/jobs/JobsPage";
 import JobToaster from "./modules/jobs/JobToaster";
@@ -80,6 +81,7 @@ export default function App() {
           <div><strong>{NAV.find((item) => item.id === page)?.label}</strong><span> / DevHub</span></div>
           <button className="topbar-help" onClick={() => setPage("settings")}>Help &amp; updates</button>
         </header>
+        <ClioBanner onShowJobs={() => setPage("jobs")} />
         <div className="content-scroll">
         {page === "environments" && <EnvironmentsPage />}
         {page === "jobs" && <JobsPage />}

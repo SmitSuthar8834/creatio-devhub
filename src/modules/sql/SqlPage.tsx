@@ -32,7 +32,7 @@ function readSavedQueries(): SavedSqlQuery[] {
 
 /**
  * Run SQL against a Creatio environment (via clio + cliogate) and export the
- * result to CSV or Excel. Read-heavy by nature — the grid caps at 2,000 rows,
+ * result to CSV or Excel. Read-heavy by nature — the grid caps at 5,000 rows,
  * but exports write the full result.
  */
 export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
@@ -239,7 +239,7 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
       <p className="hint">
         Runs raw SQL through clio (the environment needs the <code>cliogate</code> helper). Be careful with
         <code> UPDATE</code>/<code>DELETE</code> — it runs directly against the Creatio database. Export always
-        writes the full result; the grid below shows up to 2,000 rows.
+        writes the full result; the grid below shows up to 5,000 rows.
       </p>
 
       {notice && <p className="notice">{notice}</p>}

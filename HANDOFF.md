@@ -2,11 +2,11 @@
 
 Last verified: **2026-07-19**
 
-Current version: **0.2.9**
+Current version: **0.3.0**
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.2.9>
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.3.0>
 (v0.2.3 adds branding icons + light sidebar and persistent job history. There is no v0.2.2:
 that tag's workflow failed because the version bump wrote a UTF-8 BOM into package.json /
 tauri.conf.json — Windows PowerShell `Set-Content -Encoding utf8` writes a BOM; use
@@ -30,7 +30,8 @@ The main milestones are complete:
 | Global job toaster (top-right running-job indicator) | Complete |
 | Auto-captured catalog cache (background prefetch on launch / env change) | Complete |
 | Deploy from GitHub (clone/refresh a repo and push-workspace into an env) | Complete |
-| SQL query runner with CSV/Excel export | Complete |
+| SQL query runner with CSV/Excel export (grid capped at 5,000 rows) | Complete |
+| clio CLI management — install / update / repair, with failure diagnosis | Complete |
 | Push workspace to Creatio with drift guard and backup controls | Complete |
 | Package browsing, actions, archive installation, Git workspace bridge | Complete |
 | Package deployment between registered environments | Complete |
@@ -172,6 +173,48 @@ restore a broken environment from known-good source, or move a repo's packages o
   new name, deleted, or run again immediately.
 - A saved query is never silently redirected: rerunning is blocked when its original environment
   is no longer registered.
+
+## clio CLI management + SQL row cap (v0.3.0, 2026-07-20)
+
+DevHub now manages the clio CLI it depends on, and diagnoses clio failures instead of
+surfacing raw output.
+
+- **SQL grid cap raised 2,000 → 5,000 rows** (`DISPLAY_CAP` in `src-tauri/src/sql.rs`).
+  Exports are still uncapped (clio writes the file) and `row_count` reports the true total,
+  so the "grid shows first N" pill stays accurate.
+- **`clio::clio_status`** parses `clio ver`: installed version (`clio:`), cliogate (`gate:`),
+  the update notice (`clio X is available`), dotnet presence, and a `broken` flag when clio
+  starts but can't load its own assemblies.
+- **`clio::install_or_update_clio(mode)`** — `install` | `update` | `repair`. Repair does
+  `dotnet tool uninstall clio -g` then `install`, which is the only thing that fixes a damaged
+  install. Output is **captured, not streamed**, so failures can be diagnosed.
+- **`clio::diagnose(output)`** maps known failures to actionable guidance and is also applied to
+  `list_applications` / `list_packages` errors:
+  - `Could not load file or assembly …` → damaged install, use Repair.
+  - `Access to the path … is denied` / `failed to uninstall tool package` → clio's files are
+    **locked by a running clio process**; finish jobs / close terminals, or run as admin.
+    (This is the real cause of a failed `dotnet tool update clio -g` while DevHub is busy.)
+  - cliogate missing, dotnet missing.
+- **`src/modules/clio/ClioBanner.tsx`** — header strip: blocking red banner when clio is missing
+  (Install) or damaged (Repair); dismissible blue banner when an update exists (Update + Repair),
+  dismissal stored per version. Re-checks itself when a clio job settles.
+
+Tests added: `clio::tests::diagnoses_real_clio_failures` (asserts against both real failures above)
+and `parses_clio_version_and_update_notice`. Suite: **17 passing**.
+
+## Parked work and known environment state
+
+- Branch **`parked/team-locks`** (local, not pushed) holds a complete team-locks feature
+  (DataService `UsrTeamLock`/`UsrTeamActivity` shipped in a bundled package, hard package-lock via
+  `clio lock-package`, push conflict pre-check). **Parked deliberately**: true per-schema "only I
+  can edit" enforcement is only available through Creatio's **SVN** native lock, which is not
+  achievable via Git/GitHub (Creatio's native VC tooling is SVN-only; Git has no lock primitive).
+- The marketing/download site lives on branch **`gh-pages`**
+  (<https://smitsuthar8834.github.io/creatio-devhub/>), deployed via a `git worktree` so `main`
+  stays clean. Its download buttons re-target the newest release from the GitHub API at runtime.
+- Test env `187559-crm-bundle` still holds leftover experiment objects
+  (`UsrDevHubCollabPackage`, an empty `UsrDevHubCollab`, and unused `UsrDevHubLockItem` /
+  `UsrDevHubActivityItem` in `Custom`). Harmless; cliogate is installed there and should stay.
 
 ## Architecture
 

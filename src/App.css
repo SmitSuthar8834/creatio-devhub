@@ -824,6 +824,41 @@ body { font-family: Inter, "Segoe UI Variable", "Segoe UI", system-ui, sans-seri
 .topbar strong { color: var(--ink); font-size: 13px; }
 .topbar span { color: #9aa5b6; font-size: 12px; }
 .topbar-help { background: none; border: 0; color: var(--accent); font-size: 12px; font-weight: 600; }
+/* ---- clio tool banner (missing / update available) ---- */
+.tool-banner {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 30px; font-size: 13px; color: var(--ink);
+  border-bottom: 1px solid var(--line);
+}
+.tool-banner.bad { background: #fdecec; border-bottom-color: #f3c9c9; }
+.tool-banner.info { background: #eaf2ff; border-bottom-color: #cfe0ff; }
+.tool-banner .tb-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.tool-banner.bad .tb-dot { background: var(--bad); }
+.tool-banner.info .tb-dot { background: var(--accent); }
+.tool-banner .tb-text { flex: 1; min-width: 0; }
+.tool-banner .tb-text strong { font-weight: 650; }
+.tool-banner .tb-btn {
+  flex: none; cursor: pointer; border-radius: 7px; padding: 6px 13px;
+  font-size: 12.5px; font-weight: 600; border: 1px solid transparent;
+  background: var(--accent); color: var(--accent-ink);
+  transition: filter .18s ease;
+}
+.tool-banner.bad .tb-btn { background: var(--bad); }
+.tool-banner .tb-btn:hover:not(:disabled) { filter: brightness(1.08); }
+.tool-banner .tb-btn:disabled { opacity: .6; cursor: default; }
+.tool-banner .tb-btn.ghost { background: transparent; color: var(--ink-soft); border-color: var(--line); }
+.tool-banner .tb-btn.ghost:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); filter: none; }
+.tool-banner .tb-x {
+  flex: none; cursor: pointer; background: none; border: 0; color: var(--ink-soft);
+  font-size: 13px; line-height: 1; padding: 5px 7px; border-radius: 6px;
+}
+.tool-banner .tb-x:hover { background: rgba(0,0,0,.06); color: var(--ink); }
+@media (prefers-color-scheme: dark) {
+  .tool-banner.bad { background: #2a1618; border-bottom-color: #4a2226; }
+  .tool-banner.info { background: #14203a; border-bottom-color: #1e3157; }
+  .tool-banner .tb-x:hover { background: rgba(255,255,255,.08); }
+}
+
 .content-scroll { flex: 1; overflow-y: auto; }
 .page-body { max-width: 1220px; padding: 30px 34px 50px; }
 .page-bar { margin-bottom: 22px; }

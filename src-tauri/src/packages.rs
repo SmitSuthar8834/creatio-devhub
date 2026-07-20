@@ -104,10 +104,11 @@ pub fn list_packages(
     }
     let (code, output) = clio::clio_capture(&["list-packages", "-e", &env, "-j"])?;
     if code != 0 {
-        return Err(format!(
-            "clio list-packages failed for {env} (exit {code}): {}",
-            output.trim()
-        ));
+        let base = format!("clio list-packages failed for {env} (exit {code}): {}", output.trim());
+        return Err(match clio::diagnose(&output) {
+            Some(hint) => format!("{base} — {hint}"),
+            None => base,
+        });
     }
     let packages = parse_package_json(&output)?;
     Ok(cache.put("packages", &env, &packages))
