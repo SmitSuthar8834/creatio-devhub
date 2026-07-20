@@ -3,254 +3,247 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Creatio DevHub — a Windows desktop workbench over clio, Git, and GitHub. Download the signed installer.">
+<meta name="theme-color" content="#0F172A">
+<meta name="description" content="Creatio DevHub — a Windows desktop workbench over clio, Git and GitHub. Download the signed installer.">
 <meta property="og:title" content="Creatio DevHub">
-<meta property="og:description" content="The desktop workbench for Creatio developers — clio, Git and GitHub in one window.">
+<meta property="og:description" content="Ship Creatio work without living in the terminal. Environments, workspaces, deployment and GitHub in one desktop app.">
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">&#128421;</text></svg>'>
-<title>Creatio DevHub — desktop workbench for clio, Git & GitHub</title>
+<title>Creatio DevHub — the desktop workbench for Creatio developers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+  /* Design system: Dark Mode (OLED) — "code dark + run green".
+     Committed single-theme: this page is dark-only by design. */
   :root {
-    --bg: #eef1f6;
-    --surface: #ffffff;
-    --surface-2: #f5f7fb;
-    --ink: #0d1526;
-    --ink-soft: #55607a;
-    --ink-faint: #8a94ab;
-    --line: #dce1ec;
-    --accent: #2f6bff;
-    --accent-ink: #ffffff;
-    --ok: #17915a;
-    --shadow: 0 24px 60px -24px rgba(13, 30, 68, .28);
-    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
-    --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", "SF Mono", Consolas, monospace;
+    --bg:        #0F172A;
+    --surface:   #1E293B;
+    --surface-2: #172033;
+    --muted:     #272F42;
+    --border:    #2C3A52;
+    --border-2:  #475569;
+    --fg:        #F8FAFC;
+    --fg-soft:   #A3B0C6;
+    --fg-faint:  #6B7A94;
+    --accent:    #22C55E;
+    --accent-dim:#16A34A;
+    --on-accent: #04140A;
+    --danger:    #EF4444;
+    --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+    --r: 12px;
+    --shadow: 0 24px 64px -28px rgba(0,0,0,.85);
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #070b16;
-      --surface: #0f1526;
-      --surface-2: #0c1220;
-      --ink: #e9eef8;
-      --ink-soft: #9aa6be;
-      --ink-faint: #6b768f;
-      --line: #1d2740;
-      --accent: #4c86ff;
-      --ok: #34c489;
-      --shadow: 0 30px 70px -28px rgba(0, 0, 0, .7);
-    }
-  }
-  :root[data-theme="light"] {
-    --bg: #eef1f6; --surface: #ffffff; --surface-2: #f5f7fb;
-    --ink: #0d1526; --ink-soft: #55607a; --ink-faint: #8a94ab; --line: #dce1ec;
-    --accent: #2f6bff; --ok: #17915a; --shadow: 0 24px 60px -24px rgba(13, 30, 68, .28);
-  }
-  :root[data-theme="dark"] {
-    --bg: #070b16; --surface: #0f1526; --surface-2: #0c1220;
-    --ink: #e9eef8; --ink-soft: #9aa6be; --ink-faint: #6b768f; --line: #1d2740;
-    --accent: #4c86ff; --ok: #34c489; --shadow: 0 30px 70px -28px rgba(0, 0, 0, .7);
-  }
-
   * { box-sizing: border-box; }
   body {
-    margin: 0; background: var(--bg); color: var(--ink);
-    font-family: var(--font-sans);
-    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
-    line-height: 1.55;
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: var(--font-sans); line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
   }
   a { color: inherit; }
-  .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  .wrap { width: 100%; max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+  .ic { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none;
+        stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .eyebrow {
-    font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .06em;
-    text-transform: uppercase; color: var(--accent); font-weight: 600;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--accent);
   }
 
-  /* ---- top bar ---- */
-  .topbar {
-    position: sticky; top: 0; z-index: 50;
-    background: color-mix(in srgb, var(--bg) 82%, transparent);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--line);
-  }
-  .topbar-inner { display: flex; align-items: center; gap: 20px; height: 62px; }
+  /* ---------- nav ---------- */
+  .topbar { position: sticky; top: 0; z-index: 60; background: rgba(15,23,42,.86);
+    backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); }
+  .topbar-in { display: flex; align-items: center; gap: 22px; height: 64px; }
   .brand { display: flex; align-items: center; gap: 11px; font-weight: 700; letter-spacing: -.01em; }
-  .mark {
-    width: 32px; height: 32px; border-radius: 9px; flex: none;
-    display: grid; place-items: center;
-    background: linear-gradient(150deg, #3d7bff, #1e50e6 70%);
-    color: #fff; font-family: var(--font-mono); font-size: 14px; font-weight: 700;
-    box-shadow: 0 4px 14px -4px rgba(47, 107, 255, .6);
-  }
-  .brand small { display: block; font-family: var(--font-mono); font-size: 10.5px; font-weight: 500;
-    color: var(--ink-faint); letter-spacing: .02em; margin-top: -2px; }
+  .brand-mark { width: 34px; height: 34px; border-radius: 10px; flex: none; display: grid; place-items: center;
+    background: linear-gradient(150deg, var(--accent), var(--accent-dim)); color: var(--on-accent); }
+  .brand-mark svg { width: 19px; height: 19px; stroke-width: 2.4; }
+  .brand small { display: block; font-family: var(--font-mono); font-size: 10px; font-weight: 400;
+    color: var(--fg-faint); letter-spacing: .04em; margin-top: -3px; }
   .nav { margin-left: auto; display: flex; align-items: center; gap: 26px; }
-  .nav a { text-decoration: none; color: var(--ink-soft); font-size: 14.5px; font-weight: 500; }
-  .nav a:hover { color: var(--ink); }
-  .btn {
-    display: inline-flex; align-items: center; gap: 9px; cursor: pointer;
-    font-family: var(--font-sans); font-size: 14.5px; font-weight: 600;
-    padding: 10px 18px; border-radius: 10px; text-decoration: none;
-    border: 1px solid transparent; transition: transform .12s ease, box-shadow .2s ease, background .2s ease;
-  }
-  .btn-primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 10px 24px -12px var(--accent); }
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 30px -12px var(--accent); }
-  .btn-ghost { border-color: var(--line); color: var(--ink); background: var(--surface); }
+  .nav a:not(.btn) { text-decoration: none; color: var(--fg-soft); font-size: 14.5px; font-weight: 500;
+    transition: color .18s ease; }
+  .nav a:not(.btn):hover { color: var(--fg); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; cursor: pointer;
+    font-family: var(--font-sans); font-size: 14.5px; font-weight: 600; text-decoration: none;
+    padding: 11px 18px; border-radius: 10px; border: 1px solid transparent;
+    transition: background .2s ease, border-color .2s ease, transform .18s ease, box-shadow .2s ease; }
+  .btn-primary { background: var(--accent); color: var(--on-accent); }
+  .btn-primary:hover { background: #2BD46B; transform: translateY(-1px); box-shadow: 0 12px 28px -12px var(--accent); }
+  .btn-ghost { border-color: var(--border-2); color: var(--fg); background: transparent; }
   .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-  .nav .btn { padding: 8px 15px; }
+  .btn-lg { padding: 14px 24px; font-size: 15.5px; }
 
-  /* ---- hero ---- */
-  .hero { padding: 76px 0 40px; }
-  .hero-grid { display: grid; grid-template-columns: 1.02fr .98fr; gap: 52px; align-items: center; }
-  h1 {
-    font-size: clamp(34px, 5vw, 54px); line-height: 1.04; letter-spacing: -.028em;
-    font-weight: 800; margin: 18px 0 0; text-wrap: balance;
-  }
-  h1 .grad { background: linear-gradient(120deg, var(--accent), #7aa2ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .lede { font-size: 18.5px; color: var(--ink-soft); margin: 20px 0 0; max-width: 34ch; }
-  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
-  .cta-row .btn { padding: 13px 22px; font-size: 15.5px; }
-  .meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px 18px; font-family: var(--font-mono);
-    font-size: 12.5px; color: var(--ink-faint); }
-  .meta b { color: var(--ink-soft); font-weight: 600; }
-  .meta .ok { color: var(--ok); }
+  /* ---------- hero ---------- */
+  .hero { padding: 78px 0 46px; }
+  .hero-grid { display: grid; grid-template-columns: 1.04fr .96fr; gap: 56px; align-items: center; }
+  h1 { font-size: clamp(36px, 5.2vw, 58px); line-height: 1.05; letter-spacing: -.03em; font-weight: 800;
+    margin: 18px 0 0; text-wrap: balance; }
+  h1 em { font-style: normal; color: var(--accent); text-shadow: 0 0 22px rgba(34,197,94,.35); }
+  .lede { font-size: 18px; color: var(--fg-soft); margin: 20px 0 0; max-width: 40ch; }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+  .meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px 20px;
+    font-family: var(--font-mono); font-size: 12px; color: var(--fg-faint); }
+  .meta .ok { color: var(--accent); display: inline-flex; align-items: center; gap: 6px; }
+  .meta .ok .ic { width: 14px; height: 14px; }
 
-  /* ---- app window mock (fixed dark, both themes) ---- */
-  .window {
-    background: #0b1220; border: 1px solid #1c2740; border-radius: 14px;
-    box-shadow: var(--shadow); overflow: hidden; color: #cdd7ea;
-  }
-  .win-bar { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid #182238; background: #0e1728; }
-  .dot { width: 11px; height: 11px; border-radius: 50%; }
-  .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
-  .win-title { margin-left: 8px; font-family: var(--font-mono); font-size: 11.5px; color: #6b7793; }
-  .win-body { display: grid; grid-template-columns: 132px 1fr; min-height: 288px; }
-  .side { border-right: 1px solid #182238; padding: 10px 8px; background: #0a1120; }
-  .side-h { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: #4a5570; padding: 6px 8px; }
-  .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 7px; font-size: 12.5px; color: #93a1bd; }
-  .nav-item .ic { width: 15px; height: 15px; border-radius: 4px; background: linear-gradient(150deg,#3d7bff,#1e50e6); opacity: .55; flex: none; }
-  .nav-item.on { background: #14203a; color: #e7edf9; }
-  .nav-item.on .ic { opacity: 1; }
+  /* ---------- app mockup ---------- */
+  .window { background: #0B1220; border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); overflow: hidden; }
+  .win-bar { display: flex; align-items: center; gap: 7px; padding: 12px 14px;
+    border-bottom: 1px solid var(--border); background: var(--surface-2); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .win-title { margin-left: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--fg-faint); }
+  .win-body { display: grid; grid-template-columns: 146px 1fr; min-height: 300px; }
+  .side { border-right: 1px solid var(--border); padding: 10px 8px; background: #0A101E; }
+  .side-h { font-family: var(--font-mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
+    color: #4B5872; padding: 6px 9px; }
+  .nv { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 8px;
+    font-size: 12.5px; color: var(--fg-soft); }
+  .nv .ic { width: 15px; height: 15px; opacity: .7; }
+  .nv.on { background: rgba(34,197,94,.1); color: var(--fg); }
+  .nv.on .ic { color: var(--accent); opacity: 1; }
   .panel { padding: 14px 16px; display: flex; flex-direction: column; }
-  .panel-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .panel-h strong { font-size: 13.5px; color: #e7edf9; letter-spacing: -.01em; }
-  .chip { font-family: var(--font-mono); font-size: 10.5px; padding: 3px 9px; border-radius: 999px; background: #12213c; color: #6ea0ff; }
-  .log { background: #060b16; border: 1px solid #16203a; border-radius: 9px; padding: 12px 13px; flex: 1;
-    font-family: var(--font-mono); font-size: 11.6px; line-height: 1.7; overflow: hidden; }
-  .log .t { color: #4c5772; }
-  .log .c { color: #9fb2d4; }
-  .log .a { color: #6ea0ff; }
-  .log .ok { color: #43d493; }
-  .caret { display: inline-block; width: 7px; height: 14px; background: #6ea0ff; vertical-align: -2px; margin-left: 2px; animation: blink 1.1s steps(1) infinite; }
+  .panel-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+  .panel-h strong { font-size: 13.5px; letter-spacing: -.01em; }
+  .chip { font-family: var(--font-mono); font-size: 10px; padding: 3px 10px; border-radius: 999px;
+    background: rgba(34,197,94,.13); color: var(--accent); border: 1px solid rgba(34,197,94,.28); }
+  .log { background: #060B14; border: 1px solid var(--border); border-radius: 10px; padding: 13px;
+    flex: 1; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.75; }
+  .log .t { color: #46536E; } .log .c { color: #9FB0CC; } .log .g { color: var(--accent); }
+  .caret { display: inline-block; width: 7px; height: 13px; background: var(--accent);
+    vertical-align: -2px; margin-left: 3px; animation: blink 1.1s steps(1) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
 
-  /* ---- sections ---- */
-  section { padding: 52px 0; }
-  .sec-head { max-width: 60ch; margin-bottom: 34px; }
-  .sec-head h2 { font-size: clamp(24px, 3.4vw, 34px); letter-spacing: -.02em; font-weight: 750; margin: 10px 0 0; text-wrap: balance; }
-  .sec-head p { color: var(--ink-soft); font-size: 16.5px; margin: 12px 0 0; }
-
-  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .card {
-    background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px 22px 24px;
-    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
-  }
-  .card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); box-shadow: var(--shadow); }
-  .card .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
-  .card h3 { font-size: 17.5px; letter-spacing: -.01em; margin: 12px 0 8px; font-weight: 700; }
-  .card p { color: var(--ink-soft); font-size: 14.5px; margin: 0; }
-
-  /* ---- flow ---- */
-  .flow-band { background: var(--surface-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-  .step { position: relative; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 13px; }
-  .step .n { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 600; }
-  .step h4 { margin: 10px 0 6px; font-size: 15.5px; letter-spacing: -.01em; }
-  .step p { margin: 0; font-size: 13.5px; color: var(--ink-soft); }
-  .step .arrow { display: none; }
-
-  /* ---- specs / trust ---- */
-  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .spec { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 26px 26px 28px; }
-  .spec h3 { margin: 0 0 16px; font-size: 15px; font-family: var(--font-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; }
-  .spec ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 13px; }
-  .spec li { display: flex; gap: 12px; font-size: 14.5px; align-items: flex-start; }
-  .spec li .tick { color: var(--accent); flex: none; font-family: var(--font-mono); }
-  .spec li b { font-weight: 600; }
-  .spec li span { color: var(--ink-soft); }
-
-  /* ---- download callout ---- */
-  .download { text-align: center; }
-  .dl-box { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 46px 30px; box-shadow: var(--shadow); }
-  .dl-box h2 { font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -.02em; margin: 0 0 8px; }
-  .dl-box p { color: var(--ink-soft); margin: 0 auto 26px; max-width: 46ch; }
-  .dl-links { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
-  .dl-note { margin-top: 20px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint); }
-
-  /* ---- footer ---- */
-  footer { border-top: 1px solid var(--line); padding: 34px 0 46px; }
-  .foot { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; }
-  .foot a { color: var(--ink-soft); text-decoration: none; font-size: 14px; }
-  .foot a:hover { color: var(--accent); }
-  .made { flex-basis: 100%; margin-top: 4px; font-size: 14px; color: var(--ink-soft); }
-  .made b { color: var(--ink); font-weight: 700; }
-  .made a { color: var(--accent); text-decoration: none; font-family: var(--font-mono); font-size: 13px; }
-  .made a:hover { text-decoration: underline; }
-  .disclaimer { flex-basis: 100%; color: var(--ink-faint); font-size: 12.5px; margin-top: 2px; max-width: 70ch; }
-
-  a:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
-
-  /* ---- live download stats ---- */
-  .stats-band { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface-2); }
+  /* ---------- stats ---------- */
+  .stats-band { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    background: var(--surface-2); }
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); }
-  .stat { padding: 30px 10px 8px; text-align: center; }
-  .stat + .stat { border-left: 1px solid var(--line); }
-  .stat-num { font-size: clamp(30px, 4.4vw, 44px); font-weight: 800; letter-spacing: -.022em;
-    font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1; transition: color .3s ease; }
-  .stat-live .stat-num { color: var(--accent); }
-  .stat-cap { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 9px; }
-  .stats-note { text-align: center; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); padding: 14px 0 24px; }
+  .stat { padding: 30px 12px 10px; text-align: center; }
+  .stat + .stat { border-left: 1px solid var(--border); }
+  .stat-num { font-size: clamp(28px, 4.2vw, 42px); font-weight: 800; letter-spacing: -.025em;
+    font-variant-numeric: tabular-nums; line-height: 1; }
+  .stat-live .stat-num { color: var(--accent); text-shadow: 0 0 20px rgba(34,197,94,.28); }
+  .stat-cap { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--fg-faint); margin-top: 10px; }
+  .stats-note { text-align: center; font-family: var(--font-mono); font-size: 11px;
+    color: var(--fg-faint); padding: 14px 0 24px; }
   .stats-note a { color: var(--accent); text-decoration: none; }
   .stats-note a:hover { text-decoration: underline; }
 
-  /* ---- changelog ---- */
+  /* ---------- sections ---------- */
+  section { padding: 62px 0; }
+  .sec-head { max-width: 62ch; margin-bottom: 36px; }
+  .sec-head h2 { font-size: clamp(25px, 3.6vw, 36px); letter-spacing: -.025em; font-weight: 700;
+    margin: 10px 0 0; text-wrap: balance; }
+  .sec-head p { color: var(--fg-soft); font-size: 16.5px; margin: 12px 0 0; }
+
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+    padding: 24px; transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+  .card:hover { border-color: rgba(34,197,94,.5); transform: translateY(-3px); box-shadow: var(--shadow); }
+  .card-ic { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
+    background: rgba(34,197,94,.12); color: var(--accent); margin-bottom: 15px; }
+  .card-ic .ic { width: 19px; height: 19px; }
+  .card h3 { font-size: 17px; letter-spacing: -.01em; margin: 0 0 8px; font-weight: 650; }
+  .card p { color: var(--fg-soft); font-size: 14.5px; margin: 0; }
+
+  /* ---------- flow ---------- */
+  .band { background: var(--surface-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .step { padding: 22px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); }
+  .step .n { font-family: var(--font-mono); font-size: 11.5px; color: var(--accent); font-weight: 700; }
+  .step h4 { margin: 11px 0 6px; font-size: 15.5px; letter-spacing: -.01em; }
+  .step p { margin: 0; font-size: 13.5px; color: var(--fg-soft); }
+
+  /* ---------- changelog ---------- */
   .changelog { display: flex; flex-direction: column; }
-  .rel { display: grid; grid-template-columns: 138px 1fr; gap: 24px; padding: 24px 0; border-top: 1px solid var(--line); }
+  .rel { display: grid; grid-template-columns: 150px 1fr; gap: 24px; padding: 24px 0;
+    border-top: 1px solid var(--border); }
   .rel:first-child { border-top: 0; padding-top: 4px; }
   .rel-tag { font-family: var(--font-mono); font-weight: 700; font-size: 15px; color: var(--accent); white-space: nowrap; }
-  .rel-tag .badge { display: inline-block; margin-left: 7px; font-size: 9px; letter-spacing: .07em; text-transform: uppercase;
-    background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); padding: 2px 7px; border-radius: 999px; vertical-align: 2px; }
-  .rel-date { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-faint); margin-bottom: 5px; }
-  .rel h4 { margin: 0 0 7px; font-size: 17.5px; letter-spacing: -.01em; }
-  .rel p { margin: 0; color: var(--ink-soft); font-size: 14.5px; max-width: 64ch; }
+  .rel-tag .badge { display: inline-block; margin-left: 8px; font-size: 9px; letter-spacing: .08em;
+    text-transform: uppercase; background: rgba(34,197,94,.14); border: 1px solid rgba(34,197,94,.3);
+    color: var(--accent); padding: 2px 7px; border-radius: 999px; vertical-align: 2px; }
+  .rel-date { font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-faint); margin-bottom: 5px; }
+  .rel h4 { margin: 0 0 7px; font-size: 17px; letter-spacing: -.01em; }
+  .rel p { margin: 0; color: var(--fg-soft); font-size: 14.5px; max-width: 64ch; }
 
+  /* ---------- specs ---------- */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .spec { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 26px; }
+  .spec h3 { margin: 0 0 18px; font-size: 12px; font-family: var(--font-mono); letter-spacing: .1em;
+    text-transform: uppercase; color: var(--fg-faint); font-weight: 500; }
+  .spec ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+  .spec li { display: flex; gap: 12px; font-size: 14.5px; align-items: flex-start; color: var(--fg-soft); }
+  .spec li .ic { width: 17px; height: 17px; color: var(--accent); margin-top: 3px; }
+  .spec li b { color: var(--fg); font-weight: 600; }
+
+  /* ---------- download ---------- */
+  .dl-box { background: linear-gradient(180deg, var(--surface), var(--surface-2));
+    border: 1px solid var(--border); border-radius: 18px; padding: 50px 30px; text-align: center;
+    box-shadow: var(--shadow); }
+  .dl-box h2 { font-size: clamp(25px, 3.6vw, 34px); letter-spacing: -.025em; margin: 0 0 10px; }
+  .dl-box p { color: var(--fg-soft); margin: 0 auto 28px; max-width: 48ch; }
+  .dl-links { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .dl-note { margin-top: 22px; font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-faint); }
+
+  /* ---------- footer ---------- */
+  footer { border-top: 1px solid var(--border); padding: 36px 0 48px; }
+  .foot { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; }
+  .foot a:not(.brand) { color: var(--fg-soft); text-decoration: none; font-size: 14px; transition: color .18s ease; }
+  .foot a:not(.brand):hover { color: var(--accent); }
+  .made { flex-basis: 100%; margin-top: 6px; font-size: 14px; color: var(--fg-soft); }
+  .made b { color: var(--fg); font-weight: 700; }
+  .made a { color: var(--accent); text-decoration: none; font-family: var(--font-mono); font-size: 13px; }
+  .made a:hover { text-decoration: underline; }
+  .disclaimer { flex-basis: 100%; color: var(--fg-faint); font-size: 12.5px; margin: 2px 0 0; max-width: 72ch; }
+
+  a:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+
+  @media (max-width: 1024px) { .features { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 860px) {
+    .hero { padding: 52px 0 34px; }
     .hero-grid { grid-template-columns: 1fr; gap: 34px; }
     .lede { max-width: none; }
-    .features { grid-template-columns: 1fr; }
-    .flow { grid-template-columns: 1fr 1fr; }
-    .split { grid-template-columns: 1fr; }
-    .nav a:not(.btn) { display: none; }
+    .features, .flow, .split { grid-template-columns: 1fr; }
     .rel { grid-template-columns: 1fr; gap: 8px; }
-    .stat { padding: 22px 8px 6px; }
+    .nav a:not(.btn) { display: none; }
   }
-  @media (prefers-reduced-motion: reduce) {
-    * { animation: none !important; transition: none !important; }
-  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
 
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+  <symbol id="i-branch" viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
+  <symbol id="i-pkg" viewBox="0 0 24 24"><path d="m7.5 4.3 9 5.1"/><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.8 2.2a2 2 0 0 0-1.6 0L2.6 6.1a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.6 0l8.6-3.9a1 1 0 0 0 0-1.8Z"/><path d="m6.1 10.4-3.5 1.6a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.6 0l8.6-3.9a1 1 0 0 0 0-1.8l-3.5-1.6"/></symbol>
+  <symbol id="i-term" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.7 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.5 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="m8 3-4 4 4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-gh" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+</svg>
+
 <header class="topbar">
-  <div class="wrap topbar-inner">
-    <div class="brand">
-      <span class="mark">&lt;/&gt;</span>
+  <div class="wrap topbar-in">
+    <a class="brand" href="#" style="text-decoration:none">
+      <span class="brand-mark"><svg viewBox="0 0 24 24" class="ic"><use href="#i-code"/></svg></span>
       <span>DevHub<small>for Creatio</small></span>
-    </div>
+    </a>
     <nav class="nav">
       <a href="#features">Features</a>
       <a href="#whats-new">What's new</a>
       <a href="#specs">Requirements</a>
       <a href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">GitHub</a>
-      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.2.9/creatio-devhub_0.2.9_x64-setup.exe">Download</a>
+      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.2.6/creatio-devhub_0.2.6_x64-setup.exe">
+        <svg class="ic"><use href="#i-dl"/></svg> Download
+      </a>
     </nav>
   </div>
 </header>
@@ -260,33 +253,37 @@
     <div class="wrap hero-grid">
       <div>
         <span class="eyebrow">clio · git · gh — one window</span>
-        <h1>The desktop workbench for <span class="grad">Creatio developers</span>.</h1>
-        <p class="lede">Environments, source-controlled workspaces, package &amp; app deployment, and GitHub — driven from one native app instead of a dozen terminal commands.</p>
+        <h1>Ship Creatio work without living in the <em>terminal</em>.</h1>
+        <p class="lede">A native desktop workbench for Creatio developers: environments, source-controlled workspaces, package &amp; app deployment, SQL, and GitHub — all driven from one app.</p>
         <div class="cta-row">
-          <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.2.9/creatio-devhub_0.2.9_x64-setup.exe">
-            ↓ Download for Windows
+          <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.2.6/creatio-devhub_0.2.6_x64-setup.exe">
+            <svg class="ic"><use href="#i-dl"/></svg> Download for Windows
           </a>
-          <a class="btn btn-ghost" href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">View source</a>
+          <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">
+            <svg class="ic"><use href="#i-gh"/></svg> View source
+          </a>
         </div>
         <div class="meta">
-          <span><b>v0.2.9</b> · Windows 10/11 (x64)</span>
-          <span class="ok">✓ signed installer &amp; auto-updates</span>
+          <span>v0.2.6 · Windows 10/11 (x64)</span>
+          <span class="ok"><svg class="ic"><use href="#i-check"/></svg> signed installer &amp; auto-updates</span>
         </div>
       </div>
 
-      <div class="window" role="img" aria-label="Creatio DevHub application window showing a running workspace deployment job">
+      <div class="window" role="img" aria-label="Creatio DevHub window showing a workspace deployment job completing successfully">
         <div class="win-bar">
-          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="dot" style="background:#EF4444"></span>
+          <span class="dot" style="background:#F59E0B"></span>
+          <span class="dot" style="background:#22C55E"></span>
           <span class="win-title">Creatio DevHub</span>
         </div>
         <div class="win-body">
           <aside class="side">
             <div class="side-h">Workspace</div>
-            <div class="nav-item"><span class="ic"></span>Environments</div>
-            <div class="nav-item on"><span class="ic"></span>Workspaces</div>
-            <div class="nav-item"><span class="ic"></span>Packages</div>
-            <div class="nav-item"><span class="ic"></span>Applications</div>
-            <div class="nav-item"><span class="ic"></span>Jobs</div>
+            <div class="nv"><svg class="ic"><use href="#i-db"/></svg>Environments</div>
+            <div class="nv on"><svg class="ic"><use href="#i-branch"/></svg>Workspaces</div>
+            <div class="nv"><svg class="ic"><use href="#i-pkg"/></svg>Packages</div>
+            <div class="nv"><svg class="ic"><use href="#i-layers"/></svg>Applications</div>
+            <div class="nv"><svg class="ic"><use href="#i-term"/></svg>Jobs</div>
           </aside>
           <div class="panel">
             <div class="panel-h">
@@ -294,11 +291,11 @@
               <span class="chip">running</span>
             </div>
             <div class="log">
-              <div><span class="t">$</span> <span class="c">clio push-workspace -e</span> <span class="a">prod-eu</span></div>
+              <div><span class="t">$</span> <span class="c">clio push-workspace -e</span> <span class="g">prod-eu</span></div>
               <div><span class="t">›</span> packing 3 packages…</div>
               <div><span class="t">›</span> uploading UsrMyApp.gz</div>
               <div><span class="t">›</span> server compile…</div>
-              <div><span class="ok">✓ installed · compiled in 2m 41s</span></div>
+              <div><span class="g">✓ installed · compiled in 2m 41s</span></div>
               <div><span class="t">›</span> snapshot updated<span class="caret"></span></div>
             </div>
           </div>
@@ -310,18 +307,9 @@
   <div class="stats-band">
     <div class="wrap">
       <div class="stats">
-        <div class="stat stat-live">
-          <div class="stat-num" id="dl-count">—</div>
-          <div class="stat-cap">installer downloads</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num" id="dl-version">v0.2.9</div>
-          <div class="stat-cap">latest version</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num" id="dl-releases">5</div>
-          <div class="stat-cap">releases shipped</div>
-        </div>
+        <div class="stat stat-live"><div class="stat-num" id="dl-count">—</div><div class="stat-cap">installer downloads</div></div>
+        <div class="stat"><div class="stat-num" id="dl-version">v0.2.6</div><div class="stat-cap">latest version</div></div>
+        <div class="stat"><div class="stat-num" id="dl-releases">5</div><div class="stat-cap">releases shipped</div></div>
       </div>
       <div class="stats-note" id="stats-note">Counts update live from <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases" target="_blank" rel="noopener">GitHub Releases</a>.</div>
     </div>
@@ -331,61 +319,56 @@
     <div class="wrap">
       <div class="sec-head">
         <span class="eyebrow">What it does</span>
-        <h2>Everything clio can do, without living in the terminal.</h2>
-        <p>DevHub drives the tools you already have — clio, Git, and the GitHub CLI — and represents every long operation as a streamed, cancellable job.</p>
+        <h2>Everything clio can do, with a real interface.</h2>
+        <p>DevHub drives the tools you already have — clio, Git and the GitHub CLI — and turns every long operation into a streamed, cancellable job.</p>
       </div>
       <div class="features">
-        <div class="card">
-          <div class="k">Environments</div>
-          <h3>Register &amp; manage</h3>
-          <p>Add Creatio environments, ping them, set a default, and install the cliogate helper — credentials stay in clio, never in DevHub.</p>
-        </div>
-        <div class="card">
-          <div class="k">Workspaces &amp; Git</div>
-          <h3>Source control, visual</h3>
-          <p>Create empty or full workspaces, add packages, review colorized diffs, commit, and inspect history — GitHub Desktop, for Creatio packages.</p>
-        </div>
-        <div class="card">
-          <div class="k">GitHub, both ways</div>
-          <h3>Publish &amp; restore</h3>
-          <p>Create a GitHub repo straight from a workspace and push it — or deploy a package back <em>from</em> a repo to restore a broken environment.</p>
-        </div>
-        <div class="card">
-          <div class="k">Deployment</div>
-          <h3>Env → env, safely</h3>
+        <article class="card">
+          <div class="card-ic"><svg class="ic"><use href="#i-db"/></svg></div>
+          <h3>Environments</h3>
+          <p>Register Creatio environments, ping them, set a default, install cliogate. Credentials stay in clio — DevHub never stores them.</p>
+        </article>
+        <article class="card">
+          <div class="card-ic"><svg class="ic"><use href="#i-branch"/></svg></div>
+          <h3>Workspaces &amp; Git</h3>
+          <p>Create workspaces, add packages, review colorized diffs, commit and inspect history — GitHub Desktop, for Creatio packages.</p>
+        </article>
+        <article class="card">
+          <div class="card-ic"><svg class="ic"><use href="#i-gh"/></svg></div>
+          <h3>GitHub, both ways</h3>
+          <p>Create a repo straight from a workspace and push it — or deploy back <em>from</em> a repo to restore a broken environment.</p>
+        </article>
+        <article class="card">
+          <div class="card-ic"><svg class="ic"><use href="#i-swap"/></svg></div>
+          <h3>Deploy env → env</h3>
           <p>Move a package or a whole application between environments, with a drift guard that blocks pushing over changes you haven't pulled.</p>
-        </div>
-        <div class="card">
-          <div class="k">Jobs</div>
-          <h3>Watch everything run</h3>
-          <p>Streamed logs, a top-right activity indicator, safe cancellation of process trees, and a persistent job history across restarts.</p>
-        </div>
-        <div class="card">
-          <div class="k">SQL</div>
-          <h3>Query, inspect &amp; export</h3>
-          <p>Run SQL against a Creatio environment, inspect results in a fast grid, and export the complete result to CSV or Excel.</p>
-        </div>
-        <div class="card">
-          <div class="k">Updates</div>
-          <h3>Signed &amp; automatic</h3>
-          <p>Cryptographically verified releases from GitHub. DevHub checks, downloads, verifies, and installs — no manual reinstalls.</p>
-        </div>
+        </article>
+        <article class="card">
+          <div class="card-ic"><svg class="ic"><use href="#i-term"/></svg></div>
+          <h3>Jobs you can watch</h3>
+          <p>Streamed logs, a live activity indicator, safe cancellation of process trees, and a job history that survives restarts.</p>
+        </article>
+        <article class="card">
+          <div class="card-ic"><svg class="ic"><use href="#i-shield"/></svg></div>
+          <h3>Signed auto-updates</h3>
+          <p>Releases are cryptographically verified against the project key. DevHub checks, downloads, verifies and installs itself.</p>
+        </article>
       </div>
     </div>
   </section>
 
-  <div class="flow-band">
+  <div class="band">
     <section id="flow">
       <div class="wrap">
         <div class="sec-head">
           <span class="eyebrow">The loop</span>
-          <h2>Pull, edit, version, ship — a real workflow.</h2>
+          <h2>Pull, commit, publish, deploy.</h2>
         </div>
         <div class="flow">
           <div class="step"><div class="n">01</div><h4>Pull</h4><p>Bring editable packages from an environment into a local workspace.</p></div>
-          <div class="step"><div class="n">02</div><h4>Commit</h4><p>Diff the changes and commit them to Git — history you can trust.</p></div>
-          <div class="step"><div class="n">03</div><h4>Push to GitHub</h4><p>Create the repo from DevHub and push, private by default.</p></div>
-          <div class="step"><div class="n">04</div><h4>Deploy</h4><p>Install to the next environment — with a backup and drift check.</p></div>
+          <div class="step"><div class="n">02</div><h4>Commit</h4><p>Review the diff and commit to Git — history you can trust.</p></div>
+          <div class="step"><div class="n">03</div><h4>Publish</h4><p>Create the GitHub repo from DevHub and push, private by default.</p></div>
+          <div class="step"><div class="n">04</div><h4>Deploy</h4><p>Install to the next environment, with a backup and drift check.</p></div>
         </div>
       </div>
     </section>
@@ -396,52 +379,28 @@
       <div class="sec-head">
         <span class="eyebrow">Changelog</span>
         <h2>What's new</h2>
-        <p>DevHub ships often, and updates install themselves after the first download.</p>
+        <p>DevHub ships often — and updates install themselves after the first download.</p>
       </div>
       <div class="changelog">
         <div class="rel">
-          <div class="rel-tag">v0.2.9<span class="badge">latest</span></div>
-          <div class="rel-body">
-            <div class="rel-date">July 2026</div>
-            <h4>Save and rerun SQL queries</h4>
-            <p>Name frequently used queries, keep them locally across restarts, reopen them for editing, or run them again against their original environment with one click.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.2.8</div>
-          <div class="rel-body">
-            <div class="rel-date">July 2026</div>
-            <h4>Deployment errors you can act on</h4>
-            <p>Failed jobs now explain the outcome in plain language and separately preserve the real technical error. Partial package deployments identify skipped schemas and local-change conflicts instead of ending with only a generic error.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.2.7</div>
-          <div class="rel-body">
-            <div class="rel-date">July 2026</div>
-            <h4>SQL runner &amp; CSV/Excel export</h4>
-            <p>Choose an environment, run SQL from a keyboard-friendly editor, inspect up to 2,000 rows in a sticky, scrollable grid, and export the complete result directly to CSV or Excel.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.2.6</div>
-          <div class="rel-body">
+          <div class="rel-tag">v0.2.6<span class="badge">latest</span></div>
+          <div>
             <div class="rel-date">July 2026</div>
             <h4>Deploy from GitHub</h4>
-            <p>Clone a repository at a chosen branch and install it straight into an environment — restore a broken environment from known-good source, or move a package onto a fresh one. Repo &amp; branch picker, backup, and keep-as-workspace options.</p>
+            <p>Clone a repository at a chosen branch and install it straight into an environment — restore a broken environment from known-good source, or move a package onto a fresh one.</p>
           </div>
         </div>
         <div class="rel">
           <div class="rel-tag">v0.2.5</div>
-          <div class="rel-body">
+          <div>
             <div class="rel-date">July 2026</div>
             <h4>Live job indicator &amp; auto-captured catalog</h4>
-            <p>A top-right indicator shows running jobs from any screen and flashes each outcome. Package and application lists are now captured into the cache automatically on launch and when you switch environments.</p>
+            <p>An activity indicator shows running jobs from any screen. Package and application lists are captured into the cache automatically on launch and when you switch environments.</p>
           </div>
         </div>
         <div class="rel">
           <div class="rel-tag">v0.2.4</div>
-          <div class="rel-body">
+          <div>
             <div class="rel-date">July 2026</div>
             <h4>Empty-first workspaces &amp; GitHub from the app</h4>
             <p>Start an empty workspace and add only the packages you want, then create a private GitHub repo and push — without leaving DevHub.</p>
@@ -449,15 +408,15 @@
         </div>
         <div class="rel">
           <div class="rel-tag">v0.2.3</div>
-          <div class="rel-body">
+          <div>
             <div class="rel-date">July 2026</div>
             <h4>New look &amp; persistent job history</h4>
-            <p>Refreshed branding and a light sidebar, plus a job history that survives restarts so you can revisit past runs and their logs.</p>
+            <p>Refreshed branding, plus a job history that survives restarts so you can revisit past runs and their logs.</p>
           </div>
         </div>
         <div class="rel">
           <div class="rel-tag">v0.2.1</div>
-          <div class="rel-body">
+          <div>
             <div class="rel-date">July 2026</div>
             <h4>First public release</h4>
             <p>Signed Windows installers (NSIS &amp; MSI) published to GitHub, with cryptographically verified auto-updates.</p>
@@ -472,33 +431,35 @@
       <div class="spec">
         <h3>Requirements</h3>
         <ul>
-          <li><span class="tick">▹</span><span><b>Windows 10 or 11</b> (x64). A small, signed native installer.</span></li>
-          <li><span class="tick">▹</span><span>The <b>clio</b> CLI, <b>Git</b>, and the <b>GitHub CLI (gh)</b> installed — DevHub drives them.</span></li>
-          <li><span class="tick">▹</span><span>A registered Creatio environment (cloud or on-site) to connect to.</span></li>
+          <li><svg class="ic"><use href="#i-check"/></svg><span><b>Windows 10 or 11</b> (x64) — a small, signed native installer.</span></li>
+          <li><svg class="ic"><use href="#i-check"/></svg><span>The <b>clio</b> CLI, <b>Git</b> and the <b>GitHub CLI</b> installed — DevHub drives them.</span></li>
+          <li><svg class="ic"><use href="#i-check"/></svg><span>A registered Creatio environment, cloud or on-site, to connect to.</span></li>
         </ul>
       </div>
       <div class="spec">
         <h3>Built for trust</h3>
         <ul>
-          <li><span class="tick">▹</span><span><b>No credentials stored.</b> clio owns your environment secrets — DevHub never holds them.</span></li>
-          <li><span class="tick">▹</span><span><b>Every mutation is a job.</b> Streamed output, serialized per environment, safe to cancel.</span></li>
-          <li><span class="tick">▹</span><span><b>Signed updates.</b> Releases are verified against the project key before install.</span></li>
+          <li><svg class="ic"><use href="#i-check"/></svg><span><b>No credentials stored.</b> clio owns your environment secrets — DevHub never holds them.</span></li>
+          <li><svg class="ic"><use href="#i-check"/></svg><span><b>Every mutation is a job.</b> Streamed output, serialized per environment, safe to cancel.</span></li>
+          <li><svg class="ic"><use href="#i-check"/></svg><span><b>Signed updates.</b> Verified against the project key before anything installs.</span></li>
         </ul>
       </div>
     </div>
   </section>
 
-  <section class="download">
+  <section>
     <div class="wrap">
       <div class="dl-box">
         <h2>Get DevHub for Windows</h2>
-        <p>One installer. It reuses the clio, Git, and GitHub tools you already have.</p>
+        <p>One installer. It reuses the clio, Git and GitHub tools you already have.</p>
         <div class="dl-links">
-          <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.2.9/creatio-devhub_0.2.9_x64-setup.exe">↓ Download installer (.exe)</a>
-          <a class="btn btn-ghost" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.2.9/creatio-devhub_0.2.9_x64_en-US.msi">Get the .msi</a>
-          <a class="btn btn-ghost" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest" target="_blank" rel="noopener">All releases</a>
+          <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.2.6/creatio-devhub_0.2.6_x64-setup.exe">
+            <svg class="ic"><use href="#i-dl"/></svg> Download installer (.exe)
+          </a>
+          <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.2.6/creatio-devhub_0.2.6_x64_en-US.msi">Get the .msi</a>
+          <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest" target="_blank" rel="noopener">All releases</a>
         </div>
-        <div class="dl-note">v0.2.9 · NSIS &amp; MSI · signed · auto-updates after install</div>
+        <div class="dl-note">v0.2.6 · NSIS &amp; MSI · signed · auto-updates after install</div>
       </div>
     </div>
   </section>
@@ -506,7 +467,10 @@
 
 <footer>
   <div class="wrap foot">
-    <div class="brand"><span class="mark">&lt;/&gt;</span><span>DevHub<small>for Creatio</small></span></div>
+    <span class="brand">
+      <span class="brand-mark"><svg viewBox="0 0 24 24" class="ic"><use href="#i-code"/></svg></span>
+      <span>DevHub<small>for Creatio</small></span>
+    </span>
     <a href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">GitHub</a>
     <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest" target="_blank" rel="noopener">Releases</a>
     <a href="https://github.com/SmitSuthar8834/creatio-devhub/blob/main/README.md" target="_blank" rel="noopener">Docs</a>
@@ -542,8 +506,6 @@
       set('dl-releases', String(rel.length));
     })
     .catch(function () {
-      // The Claude artifact preview blocks external fetch (CSP); the hosted GitHub
-      // Pages site loads the live numbers. Show a graceful fallback here.
       set('dl-count', '5+');
       var n = document.getElementById('stats-note');
       if (n) n.innerHTML = 'Live counts load on the hosted site — <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases" target="_blank" rel="noopener">see release stats on GitHub</a>.';
