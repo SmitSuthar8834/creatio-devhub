@@ -831,6 +831,36 @@ These cost real trial-and-error; the built-in `--help` is wrong in places.
   needed from either command, and the per-schema hashes give duplicate-element detection for
   free. Build it on cached `save-state` snapshots — a 13-minute live `show-diff` cannot back a
   responsive screen.
+- `show-diff` between `dev-834` and `Dev-thoughtworks` produced 5,630 lines in three sections:
+  `features` (221), `settings` (265) and `packages` (5,143 — 156 packages with hash, maintainer
+  and per-schema hashes). No `webservices` section appeared even though `save-state` emits one,
+  and there is **no package version and no lock state** in the diff: it keys on hash. A Packages
+  comparison tab therefore needs three sources merged — `show-diff`/`save-state` for hashes,
+  `list-packages` for versions, `package_lock_states` for locks.
+
+**⚠ Environment state files contain live secrets — never export them unmasked**
+- Both `save-state` and `show-diff` write **setting values in plaintext**. The dev-834 ↔
+  Dev-thoughtworks diff contains a full `ApryseLicenseKey` among ordinary configuration. This is
+  the same hazard as raw `clio env` output, but easier to miss because most of the file is dull.
+- The roadmap's "Copy as report" button — markdown "suitable for pasting into Slack/Teams" —
+  would leak these into a chat history. **Mask setting values by default** (show `differs`, not
+  the values) and require a deliberate reveal per row; never mask only at copy time, because the
+  values are also on screen and in whatever file the snapshot cache writes.
+- **Do not rely on `SysSettings."ValueTypeName" = 'SecureText'` to identify secrets.** It is a
+  true positive when present but badly incomplete — verified on 187559-crm-bundle, only 13
+  settings carry it, and these credentials do **not**:
+
+  | Setting | Type |
+  |---|---|
+  | `FacebookConsumerSecret`, `GoogleConsumerSecret`, `TwitterConsumerSecret` | ShortText |
+  | `BingSearchApiKey`, `BpmAuthKey`, `FacebookConsumerKey`, `GoogleConsumerKey`, `TwitterConsumerKey` | ShortText |
+  | `ApolloApiKey`, `mandrillApiKey`, `GoogleMapsApiKey`, `EventTrackingApiKey` | MediumText |
+
+- Name matching alone is no better on its own — it over-matches harmless entries such as
+  `PortalRecoveryPasswordEmailTemplate` (a Lookup pointing at an email template). Treat
+  `SecureText` **plus** a `Code` pattern (`key|secret|password|token|auth|jwk|credential`) as a
+  *hint for what to warn about*, not as the security boundary. The boundary is masking
+  everything by default.
 
 **`execute-sql-script`** (backs the SQL screen)
 - `--View csv|xlsx` **requires** `--DestinationPath`; only the default `table` view prints to
