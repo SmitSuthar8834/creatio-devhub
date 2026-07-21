@@ -28,9 +28,12 @@ import {
 } from "@/components/ui/select";
 import ErrorNote from "../../lib/ErrorNote";
 import {
-  ApplicationInfo, deployApplicationBetweenEnvironments, EnvSummary,
-  listApplications, listEnvironments, onCatalogUpdated,
+  ApplicationDetails, applicationDetails, ApplicationExtras, applicationExtras, ApplicationInfo,
+  deployApplicationBetweenEnvironments, EnvSummary, listApplications, listEnvironments,
+  onCatalogUpdated,
 } from "../../lib/ipc";
+import ApplicationDetailsDialog from "./ApplicationDetailsDialog";
+import { shortDate } from "./format";
 
 export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => void }) {
   const [environments, setEnvironments] = useState<EnvSummary[]>([]);
@@ -45,6 +48,11 @@ export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => voi
   const [confirmation, setConfirmation] = useState("");
   const [cachedAt, setCachedAt] = useState<number | null>(null);
   const [fromCache, setFromCache] = useState(false);
+  /** Descriptor facts keyed by application code. Empty when SQL is unavailable. */
+  const [extras, setExtras] = useState<Record<string, ApplicationExtras>>({});
+  const [details, setDetails] = useState<ApplicationDetails | null>(null);
+  const [detailsFor, setDetailsFor] = useState<ApplicationInfo | null>(null);
+  const [detailsError, setDetailsError] = useState("");
 
   useEffect(() => {
     listEnvironments().then((list) => {
@@ -73,6 +81,33 @@ export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => voi
 
   useEffect(() => { refresh(false); }, [sourceEnv]);
 
+  // Maintainer, dates and package counts come from SQL, which not every
+  // environment allows. Purely additive: a failure leaves the tiles as clio
+  // described them and is never surfaced as an error.
+  useEffect(() => {
+    setExtras({});
+    if (!sourceEnv) return;
+    let current = true;
+    applicationExtras(sourceEnv)
+      .then((rows) => {
+        if (!current) return;
+        setExtras(Object.fromEntries(rows.map((row) => [row.code, row])));
+      })
+      .catch(() => { /* no SQL access here — tiles stay as they were */ });
+    return () => { current = false; };
+  }, [sourceEnv]);
+
+  const openDetails = async (application: ApplicationInfo) => {
+    setDetailsFor(application);
+    setDetails(null);
+    setDetailsError("");
+    try {
+      setDetails(await applicationDetails(sourceEnv, application.code));
+    } catch (reason) {
+      setDetailsError(String(reason));
+    }
+  };
+
   // When the background prefetch freshens this environment's cache, reload from it.
   useEffect(() => {
     const un = onCatalogUpdated((env) => { if (env === sourceEnv) refresh(false); });
@@ -86,8 +121,11 @@ export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => voi
       application.name.toLowerCase().includes(query) ||
       application.code.toLowerCase().includes(query) ||
       application.version.toLowerCase().includes(query) ||
-      application.description?.toLowerCase().includes(query));
-  }, [applications, filter]);
+      application.description?.toLowerCase().includes(query) ||
+      // Only searchable once the descriptor read succeeded — "Creatio" vs
+      // "Customer" is the split people actually want here.
+      extras[application.code]?.maintainer.toLowerCase().includes(query));
+  }, [applications, extras, filter]);
 
   const chooseTarget = (application: ApplicationInfo) => {
     const target = environments.find((environment) => environment.name !== sourceEnv)?.name ?? "";
@@ -156,7 +194,7 @@ export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => voi
             id="app-filter"
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            placeholder="Application name, code, or version"
+            placeholder="Name, code, version, or developer"
           />
         </div>
         <span className="pb-2.5 text-sm text-muted-foreground">
@@ -185,7 +223,9 @@ export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => voi
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((application) => (
-            <Card key={application.id || application.code}>
+            // h-full so every card fills its grid row: without it a card with
+            // fewer facts is shorter and its buttons sit above its neighbours'.
+            <Card key={application.id || application.code} className="h-full">
               <CardHeader>
                 <CardTitle className="text-base">{application.name || application.code}</CardTitle>
                 <code className="font-mono text-xs text-muted-foreground">{application.code}</code>
@@ -195,18 +235,59 @@ export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => voi
                   </Badge>
                 </CardAction>
               </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                {application.description || "No application description."}
+              {/* flex-1 pushes the footer to the bottom of every card, so the
+                  action buttons form one line across the row. */}
+              <CardContent className="flex flex-1 flex-col gap-3 text-sm text-muted-foreground">
+                <p>{application.description || "No application description."}</p>
+                {extras[application.code] && (
+                  // Fixed label column and a full set of rows — an app missing a
+                  // value shows an em dash rather than collapsing the row, which
+                  // would misalign it against the cards beside it.
+                  <dl className="mt-auto grid grid-cols-[7rem_1fr] gap-x-3 gap-y-1 text-xs">
+                    <dt className="text-muted-foreground/80">Developer</dt>
+                    <dd className="text-foreground">
+                      {extras[application.code].maintainer || "—"}
+                    </dd>
+                    <dt className="text-muted-foreground/80">Packages</dt>
+                    <dd className="text-foreground">{extras[application.code].packageCount}</dd>
+                    <dt className="text-muted-foreground/80">Needs Creatio</dt>
+                    <dd className="text-foreground">
+                      {extras[application.code].requiredPlatformVersion || "—"}
+                    </dd>
+                    <dt className="text-muted-foreground/80">Updated</dt>
+                    <dd className="text-foreground">
+                      {shortDate(extras[application.code].modifiedOn) || "—"}
+                    </dd>
+                  </dl>
+                )}
               </CardContent>
-              <CardFooter>
-                <Button size="sm" onClick={() => chooseTarget(application)}>
+              {/* Both actions share the footer width, so the buttons line up
+                  edge to edge across every card instead of ending wherever
+                  their own label happens to stop. */}
+              <CardFooter className="gap-2">
+                <Button size="sm" className="flex-1" onClick={() => chooseTarget(application)}>
                   Deploy to environment…
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => openDetails(application)}
+                >
+                  Details
                 </Button>
               </CardFooter>
             </Card>
           ))}
         </div>
       )}
+
+      <ApplicationDetailsDialog
+        application={detailsFor}
+        details={details}
+        error={detailsError}
+        onClose={() => { setDetailsFor(null); setDetails(null); setDetailsError(""); }}
+      />
 
       <Dialog open={selectedApp !== null} onOpenChange={(o) => !o && closeDialog()}>
         <DialogContent>

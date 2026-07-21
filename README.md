@@ -60,7 +60,13 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
 ### Applications
 
 - Browse Creatio applications using structured clio output.
-- Display application name, code, version, and description.
+- Display application name, code, version, and description, plus the developer, package count,
+  required Creatio version, and last-updated date on each tile. Filter by developer as well as
+  name, code, or version.
+- Open **Details** for the full descriptor: dates, required platform version, schema prefix,
+  marketplace and help links, the application's packages, and the pages it contributes. The
+  descriptor reads through clio and SQL independently, so an environment without cliogate still
+  shows what clio alone can report.
 - Deploy a whole application from one registered environment to another using
   `clio deploy-application`.
 - Lock both environments during transfer to prevent overlapping mutations.

@@ -2,15 +2,16 @@
 
 Last verified: **2026-07-21**
 
-Current version: **0.5.2** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
+Current version: **0.6.0** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
 table below was last written; see per-release commit messages for their scope. v0.4.0 is the
 shadcn/ui design-system release described below; v0.5.0 adds the automatic update notice and
 stops trusting clio's exit code over its own output; v0.5.1 stops reporting a successful SQL
-statement as an error, and v0.5.2 fixes the regression that came with it.)
+statement as an error, v0.5.2 fixes the regression that came with it; and v0.6.0 adds
+application descriptor details.)
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.5.2>
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.6.0>
 
 Website: <https://smitsuthar8834.github.io/creatio-devhub/> (branch `gh-pages`)
 
@@ -53,6 +54,40 @@ style, Radix + Tailwind v4, lucide icons). Shipped in v0.4.0.
 - **Note for this dev box**: the shoogle MCP is project-scoped in `.mcp.json`; a Claude session
   must be started from `A:\PersonalComponents\creatio-devhub` for it to load. This migration used
   the official `npx shadcn@latest` CLI instead.
+
+## Application details (v0.6.0, 2026-07-21)
+
+`clio list-apps --json` returns only Id, Name, Code, Version, Description — which is why the
+Applications tiles were so thin. Everything else Creatio shows on an application page lives in
+`SysInstalledApp`, and the package membership in `SysPackageInInstalledApp`.
+
+- **`applications::application_extras(env)`** — one SQL query for the whole list (developer,
+  created/modified, required platform version, package count), keyed by code. The tiles show
+  developer, package count, "Needs Creatio" and updated date, and the filter matches developer
+  too, so `Customer` finds your own apps and `Creatio` the stock ones.
+- **`applications::application_details(env, code)`** — the drill-down behind the tile's
+  **Details** button. It assembles from two sources that fail **independently**:
+  `clio get-app-info --code X --json` (pages, schema prefix — no cliogate needed) and SQL
+  (descriptor row, package list). Whatever answered is rendered; whatever did not becomes a note
+  at the bottom of the dialog rather than an error.
+- Enrichment is silent on failure by design: an environment without cliogate shows exactly the
+  tiles it showed before. Absent columns blank their field instead of failing the dialog, and the
+  application code is escaped into the SQL literal (tested).
+- Dates arrive as `dd-MM-yyyy HH:mm:ss`, which `Date` cannot parse — `modules/applications/
+  format.ts` handles it. That helper lives in its own file because React Fast Refresh cannot
+  hot-patch a component module that exports non-components; keep it that way.
+
+**This release was exercised in `dev.cmd` before publishing** — the first in the 0.5.x line that
+was. Running it immediately exposed four layout faults that types and tests cannot catch: cards of
+unequal height (a missing fact row shortened a card and lifted its buttons out of line), a
+collapsing row where a value was absent, a 50/50 label column, and footer buttons sized to their
+own labels. Cards are now `h-full` with `flex-1` content, all four fact rows always render with an
+em dash for missing values, the label column is a fixed `7rem`, and both footer buttons take
+`flex-1`.
+
+**Still unconfirmed:** only the *tiles* were seen running. Nobody opened the **Details** dialog
+before release, so its layout and the `dd-MM-yyyy` date parsing are backed by unit tests and live
+query output, not by having been looked at. Check it first if something there seems wrong.
 
 ## SQL errors are failures again + package filters (v0.5.2, 2026-07-21)
 
@@ -158,6 +193,7 @@ The main milestones are complete:
 | Persistent package/application catalog cache | Complete |
 | Creatio-inspired original DevHub UI | Complete |
 | Signed GitHub Releases updater | Complete and published |
+| Application descriptor details — enriched tiles + drill-down dialog | Complete |
 | Automatic new-release notice in the header (no manual check needed) | Complete |
 | Server errors (HTTP 500) fail a job even when the tool exits 0 | Complete |
 
@@ -496,11 +532,11 @@ cd src-tauri
 cargo test --lib
 ```
 
-Latest verified result (2026-07-21, v0.5.2):
+Latest verified result (2026-07-21, v0.6.0):
 
 - TypeScript check: passed
 - Vite production build: passed
-- Rust tests: **47 passed, 0 failed**
+- Rust tests: **51 passed, 0 failed**
 - GitHub v0.5.2 release workflow: passed (run 29832651086)
 - Published artifacts: signed NSIS + MSI, both signatures, `latest.json`
 - Public updater feed: verified reporting `0.5.2` with signatures on all three platform entries

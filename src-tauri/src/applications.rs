@@ -14,6 +14,84 @@ pub struct ApplicationInfo {
     pub description: Option<String>,
 }
 
+/// Descriptor facts clio's `list-apps` does not return. They live in
+/// `SysInstalledApp`, so reading them needs SQL (and therefore cliogate) — every
+/// caller treats this as an enhancement and still works without it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApplicationExtras {
+    pub code: String,
+    pub maintainer: String,
+    pub created_on: String,
+    pub modified_on: String,
+    pub required_platform_version: String,
+    pub package_count: usize,
+}
+
+/// One package belonging to an application.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApplicationPackage {
+    pub name: String,
+    pub version: String,
+    pub maintainer: String,
+}
+
+/// A page (client schema) the application contributes.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApplicationPage {
+    pub schema_name: String,
+    pub package_name: String,
+    pub parent_schema_name: String,
+}
+
+/// Everything the drill-down shows, assembled from two sources that fail
+/// independently: `clio get-app-info --json` (pages, schema prefix) and SQL
+/// (descriptor row, package list). Whichever answers is shown.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApplicationDetails {
+    pub code: String,
+    pub name: String,
+    pub version: String,
+    pub description: String,
+    pub maintainer: String,
+    pub created_on: String,
+    pub modified_on: String,
+    pub install_date: String,
+    pub last_update: String,
+    pub required_platform_version: String,
+    pub marketplace_link: String,
+    pub help_link: String,
+    pub support_email: String,
+    pub is_hidden: String,
+    pub needs_update: String,
+    pub schema_name_prefix: String,
+    pub packages: Vec<ApplicationPackage>,
+    pub pages: Vec<ApplicationPage>,
+    /// Why part of the picture is missing, when something failed. Shown as a
+    /// note rather than an error, because the rest of the dialog is still real.
+    pub notes: Vec<String>,
+}
+
+/// Read a column out of a SQL result row by header name. Missing columns yield
+/// an empty string: a Creatio version without one should blank the field, not
+/// fail the whole dialog.
+fn column<'a>(columns: &[String], row: &'a [String], name: &str) -> &'a str {
+    columns
+        .iter()
+        .position(|column| column.eq_ignore_ascii_case(name))
+        .and_then(|index| row.get(index))
+        .map(String::as_str)
+        .unwrap_or("")
+}
+
+/// SQL-escape a value for a single-quoted literal.
+fn sql_literal(value: &str) -> String {
+    value.replace('\'', "''")
+}
+
 pub fn parse_applications_json(raw: &str) -> Result<Vec<ApplicationInfo>, String> {
     let value = serde_json::Deserializer::from_str(raw)
         .into_iter::<serde_json::Value>()
@@ -81,6 +159,167 @@ pub fn list_applications(
     }
     let applications = parse_applications_json(&output)?;
     Ok(cache.put("applications", &env, &applications))
+}
+
+/// Descriptor facts for every application in `env`, keyed by code.
+///
+/// One query for the whole list rather than one per tile. Returns an error only
+/// when SQL itself is unavailable; the Applications screen ignores that and
+/// shows the plain clio data.
+#[tauri::command]
+pub fn application_extras(env: String) -> Result<Vec<ApplicationExtras>, String> {
+    let sql = r#"SELECT a."Code", a."Maintainer", a."CreatedOn", a."ModifiedOn",
+       a."RequiredPlatformVersion", COUNT(pa."SysPackageId") AS "PackageCount"
+FROM "SysInstalledApp" a
+LEFT JOIN "SysPackageInInstalledApp" pa ON pa."SysInstalledAppId" = a."Id"
+GROUP BY a."Code", a."Maintainer", a."CreatedOn", a."ModifiedOn", a."RequiredPlatformVersion""#;
+    let result = crate::sql::query_env(&env, sql)?;
+    Ok(result
+        .rows
+        .iter()
+        .map(|row| ApplicationExtras {
+            code: column(&result.columns, row, "Code").to_string(),
+            maintainer: column(&result.columns, row, "Maintainer").to_string(),
+            created_on: column(&result.columns, row, "CreatedOn").to_string(),
+            modified_on: column(&result.columns, row, "ModifiedOn").to_string(),
+            required_platform_version: column(&result.columns, row, "RequiredPlatformVersion")
+                .to_string(),
+            package_count: column(&result.columns, row, "PackageCount").parse().unwrap_or(0),
+        })
+        .filter(|extras| !extras.code.is_empty())
+        .collect())
+}
+
+/// Everything known about one application.
+///
+/// Assembled from `clio get-app-info --json` and two SQL reads. Each source is
+/// optional: a missing one adds a note and leaves its fields blank, so an
+/// environment without cliogate still gets the pages and package name that clio
+/// reports on its own.
+#[tauri::command]
+pub fn application_details(env: String, code: String) -> Result<ApplicationDetails, String> {
+    let code = code.trim().to_string();
+    if code.is_empty() {
+        return Err("No application code was supplied.".to_string());
+    }
+    let mut details = ApplicationDetails { code: code.clone(), ..Default::default() };
+
+    match clio::clio_capture(&["get-app-info", "-e", &env, "--code", &code, "--json"]) {
+        Ok((0, output)) => merge_app_info(&mut details, &output),
+        Ok((_, output)) => details
+            .notes
+            .push(format!("clio could not read the application descriptor: {}", output.trim())),
+        Err(error) => details.notes.push(error),
+    }
+
+    let literal = sql_literal(&code);
+    let descriptor_sql = format!(
+        r#"SELECT a."Name", a."Code", a."Version", a."Description", a."Maintainer",
+       a."CreatedOn", a."ModifiedOn", a."InstallDate", a."LastUpdate",
+       a."RequiredPlatformVersion", a."MarketplaceLink", a."HelpLink", a."SupportEmail",
+       a."IsHidden", a."NeedUpdate"
+FROM "SysInstalledApp" a WHERE a."Code" = '{literal}'"#
+    );
+    match crate::sql::query_env(&env, &descriptor_sql) {
+        Ok(result) => {
+            if let Some(row) = result.rows.first() {
+                let field = |name: &str| column(&result.columns, row, name).to_string();
+                if details.name.is_empty() {
+                    details.name = field("Name");
+                }
+                if details.version.is_empty() {
+                    details.version = field("Version");
+                }
+                details.description = field("Description");
+                details.maintainer = field("Maintainer");
+                details.created_on = field("CreatedOn");
+                details.modified_on = field("ModifiedOn");
+                details.install_date = field("InstallDate");
+                details.last_update = field("LastUpdate");
+                details.required_platform_version = field("RequiredPlatformVersion");
+                details.marketplace_link = field("MarketplaceLink");
+                details.help_link = field("HelpLink");
+                details.support_email = field("SupportEmail");
+                details.is_hidden = field("IsHidden");
+                details.needs_update = field("NeedUpdate");
+            }
+        }
+        Err(error) => details.notes.push(format!(
+            "Descriptor details need SQL access to this environment (cliogate): {error}"
+        )),
+    }
+
+    let packages_sql = format!(
+        r#"SELECT p."Name", p."Version", p."Maintainer"
+FROM "SysPackage" p
+JOIN "SysPackageInInstalledApp" pa ON pa."SysPackageId" = p."Id"
+JOIN "SysInstalledApp" a ON a."Id" = pa."SysInstalledAppId"
+WHERE a."Code" = '{literal}'
+ORDER BY p."Name""#
+    );
+    if let Ok(result) = crate::sql::query_env(&env, &packages_sql) {
+        details.packages = result
+            .rows
+            .iter()
+            .map(|row| ApplicationPackage {
+                name: column(&result.columns, row, "Name").to_string(),
+                version: column(&result.columns, row, "Version").to_string(),
+                maintainer: column(&result.columns, row, "Maintainer").to_string(),
+            })
+            .filter(|package| !package.name.is_empty())
+            .collect();
+    }
+
+    Ok(details)
+}
+
+/// Fold `clio get-app-info --json` into `details`.
+///
+/// clio prefixes the document with `[INF] - `, so parsing starts at the first
+/// `{`. A malformed answer is a note, never a failure — SQL may still have
+/// filled the dialog.
+fn merge_app_info(details: &mut ApplicationDetails, output: &str) {
+    let Some(start) = output.find('{') else {
+        details.notes.push("clio returned no application descriptor.".to_string());
+        return;
+    };
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(&output[start..]) else {
+        details.notes.push("clio's application descriptor could not be read.".to_string());
+        return;
+    };
+    let text = |key: &str| {
+        value.get(key).and_then(|value| value.as_str()).unwrap_or("").to_string()
+    };
+    details.name = text("ApplicationName");
+    details.version = text("ApplicationVersion");
+    details.schema_name_prefix = text("SchemaNamePrefix");
+    details.pages = value
+        .get("Pages")
+        .and_then(|pages| pages.as_array())
+        .map(|pages| {
+            pages
+                .iter()
+                .map(|page| ApplicationPage {
+                    schema_name: page
+                        .get("schema-name")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string(),
+                    package_name: page
+                        .get("packageName")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string(),
+                    parent_schema_name: page
+                        .get("parentSchemaName")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string(),
+                })
+                .filter(|page| !page.schema_name.is_empty())
+                .collect()
+        })
+        .unwrap_or_default();
 }
 
 #[tauri::command]
@@ -168,6 +407,61 @@ pub fn deploy_application_between_environments(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Real `clio get-app-info --code QntCreatioERD --json` output, [INF] prefix
+    /// and all.
+    const APP_INFO: &str = r#"[WAR] - clio 8.1.0.87 is available. Run 'dotnet tool update clio -g' to update.
+[INF] - {
+  "PackageUId": "2ffe3cd2-6221-4d3b-948c-54fc3ed0dda5",
+  "PackageName": "QntCreatioERD",
+  "Entities": [],
+  "Pages": [
+    {"schema-name":"QntERDDiagramPage","uId":"8c51dae3","packageName":"QntCreatioERD","parentSchemaName":"PageWithAreaFreedomTemplate"},
+    {"schema-name":"SystemDesigner","uId":"172b5440","packageName":"QntCreatioERD","parentSchemaName":"SystemDesigner"}
+  ],
+  "ApplicationId": "b5d1bbea-a974-449c-9fa4-33efdeb4f28e",
+  "ApplicationName": "Creatio ERD",
+  "ApplicationCode": "QntCreatioERD",
+  "ApplicationVersion": "1.0.0",
+  "SchemaNamePrefix": "Qnt"
+}"#;
+
+    #[test]
+    fn reads_the_descriptor_clio_prints_after_its_log_prefix() {
+        let mut details = ApplicationDetails::default();
+        merge_app_info(&mut details, APP_INFO);
+        assert_eq!(details.name, "Creatio ERD");
+        assert_eq!(details.version, "1.0.0");
+        assert_eq!(details.schema_name_prefix, "Qnt");
+        assert_eq!(details.pages.len(), 2);
+        assert_eq!(details.pages[1].schema_name, "SystemDesigner");
+        assert_eq!(details.pages[0].parent_schema_name, "PageWithAreaFreedomTemplate");
+        assert!(details.notes.is_empty());
+    }
+
+    #[test]
+    fn unreadable_descriptor_becomes_a_note_not_a_failure() {
+        let mut details = ApplicationDetails::default();
+        merge_app_info(&mut details, "[INF] - not json at all");
+        assert_eq!(details.notes.len(), 1);
+        assert!(details.pages.is_empty());
+    }
+
+    #[test]
+    fn columns_are_read_by_name_and_tolerate_absence() {
+        let columns = vec!["Code".to_string(), "Maintainer".to_string()];
+        let row = vec!["QntCreatioERD".to_string(), "Customer".to_string()];
+        assert_eq!(column(&columns, &row, "Maintainer"), "Customer");
+        // Case-insensitive, because clio echoes whatever the engine returned.
+        assert_eq!(column(&columns, &row, "code"), "QntCreatioERD");
+        // A column this Creatio version does not have blanks the field.
+        assert_eq!(column(&columns, &row, "InstallDate"), "");
+    }
+
+    #[test]
+    fn application_codes_cannot_break_out_of_the_sql_literal() {
+        assert_eq!(sql_literal("O'Brien"), "O''Brien");
+    }
 
     #[test]
     fn parses_application_array_and_trailing_warning() {

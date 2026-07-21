@@ -285,6 +285,14 @@ mod tests {
 /// Run `query` against `env` and return the result set for the grid.
 #[tauri::command]
 pub fn run_sql(env: String, query: String) -> Result<SqlResult, String> {
+    query_env(&env, &query)
+}
+
+/// The SQL path other modules reuse — the Applications screen reads descriptor
+/// fields clio's own commands do not expose. Same rules as the SQL screen: the
+/// environment needs cliogate, and callers that treat SQL as an enhancement
+/// should tolerate an `Err` rather than surface it.
+pub fn query_env(env: &str, query: &str) -> Result<SqlResult, String> {
     let env = env.trim();
     require_env(env)?;
     let query = require_query(&query)?;

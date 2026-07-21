@@ -33,6 +33,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             applications::list_applications,
+            applications::application_extras,
+            applications::application_details,
             applications::deploy_application_between_environments,
             clio::list_environments,
             clio::set_default_environment,

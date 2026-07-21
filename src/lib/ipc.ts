@@ -165,6 +165,57 @@ export interface CachedList<T> {
 export const listApplications = (env: string, forceRefresh = false) =>
   invoke<CachedList<ApplicationInfo>>("list_applications", { env, forceRefresh });
 
+/** Descriptor facts clio's list-apps omits. Needs SQL access (cliogate). */
+export interface ApplicationExtras {
+  code: string;
+  maintainer: string;
+  createdOn: string;
+  modifiedOn: string;
+  requiredPlatformVersion: string;
+  packageCount: number;
+}
+
+export interface ApplicationPackage {
+  name: string;
+  version: string;
+  maintainer: string;
+}
+
+export interface ApplicationPage {
+  schemaName: string;
+  packageName: string;
+  parentSchemaName: string;
+}
+
+export interface ApplicationDetails {
+  code: string;
+  name: string;
+  version: string;
+  description: string;
+  maintainer: string;
+  createdOn: string;
+  modifiedOn: string;
+  installDate: string;
+  lastUpdate: string;
+  requiredPlatformVersion: string;
+  marketplaceLink: string;
+  helpLink: string;
+  supportEmail: string;
+  isHidden: string;
+  needsUpdate: string;
+  schemaNamePrefix: string;
+  packages: ApplicationPackage[];
+  pages: ApplicationPage[];
+  /** Why part of the picture is missing — shown as a note, not an error. */
+  notes: string[];
+}
+
+export const applicationExtras = (env: string) =>
+  invoke<ApplicationExtras[]>("application_extras", { env });
+
+export const applicationDetails = (env: string, code: string) =>
+  invoke<ApplicationDetails>("application_details", { env, code });
+
 export const deployApplicationBetweenEnvironments = (opts: {
   sourceEnv: string;
   targetEnv: string;
