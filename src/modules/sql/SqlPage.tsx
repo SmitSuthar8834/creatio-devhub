@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { save } from "@tauri-apps/plugin-dialog";
-import { Download, Play } from "lucide-react";
+import { CircleCheck, Download, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,7 +87,11 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
     try {
       const res = await runSql(runEnv, runQuery);
       setResult(res);
-      if (res.rowCount === 0) setNotice("Query ran — 0 rows returned.");
+      // No columns at all means a statement rather than a query — an UPDATE or
+      // DDL that succeeded and has nothing to show. Saying "0 rows returned"
+      // there reads like it did nothing.
+      if (res.columns.length === 0) setNotice("Statement ran successfully.");
+      else if (res.rowCount === 0) setNotice("Query ran — 0 rows returned.");
     } catch (e) {
       setResult(null);
       setError(String(e));
@@ -190,6 +194,10 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
     }
   };
 
+  // An UPDATE/INSERT/DDL that worked: it reports success rather than a grid, and
+  // there is nothing to hand to CSV or Excel.
+  const statementSucceeded = !!result && result.columns.length === 0;
+
   const onKey = (e: React.KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
@@ -206,7 +214,8 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
           <Button
             variant="outline"
             onClick={() => doExport("csv")}
-            disabled={!result || exporting !== null}
+            disabled={!result || statementSucceeded || exporting !== null}
+            title={statementSucceeded ? "This statement returned no rows to export." : undefined}
           >
             <Download aria-hidden="true" />
             {exporting === "csv" ? "Exporting…" : "CSV"}
@@ -214,7 +223,8 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
           <Button
             variant="outline"
             onClick={() => doExport("xlsx")}
-            disabled={!result || exporting !== null}
+            disabled={!result || statementSucceeded || exporting !== null}
+            title={statementSucceeded ? "This statement returned no rows to export." : undefined}
           >
             <Download aria-hidden="true" />
             {exporting === "xlsx" ? "Exporting…" : "Excel"}
@@ -286,7 +296,16 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
         shows up to 5,000 rows.
       </p>
 
-      {notice && <p className="text-sm text-muted-foreground">{notice}</p>}
+      {notice && (
+        statementSucceeded
+          ? (
+            <p className="flex items-center gap-2 rounded-md border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
+              <CircleCheck className="size-4 shrink-0" aria-hidden="true" />
+              {notice}
+            </p>
+          )
+          : <p className="text-sm text-muted-foreground">{notice}</p>
+      )}
       {error && <ErrorNote error={error} />}
 
       {savedQueries.length > 0 && (
@@ -343,7 +362,7 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
         </section>
       )}
 
-      {result && (
+      {result && !statementSucceeded && (
         <div className="grid gap-3">
           <div className="flex flex-wrap gap-2">
             <Badge className="border-transparent bg-accent/15 text-accent-foreground">
@@ -358,36 +377,33 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
               </Badge>
             )}
           </div>
-          {result.columns.length === 0 ? (
-            <p className="text-muted-foreground">This statement returned no result set.</p>
-          ) : (
-            <div className="max-h-[60vh] overflow-auto rounded-lg border">
-              <Table>
-                <TableHeader className="sticky top-0 z-10 bg-card">
-                  <TableRow>
-                    <TableHead className="w-12 text-right text-muted-foreground">#</TableHead>
-                    {result.columns.map((c, i) => (
-                      <TableHead key={i} className="whitespace-nowrap">{c}</TableHead>
+          {/* A result with no columns is a statement, reported above as success. */}
+          <div className="max-h-[60vh] overflow-auto rounded-lg border">
+            <Table>
+              <TableHeader className="sticky top-0 z-10 bg-card">
+                <TableRow>
+                  <TableHead className="w-12 text-right text-muted-foreground">#</TableHead>
+                  {result.columns.map((c, i) => (
+                    <TableHead key={i} className="whitespace-nowrap">{c}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {result.rows.map((row, r) => (
+                  <TableRow key={r}>
+                    <TableCell className="text-right font-mono text-xs text-muted-foreground">
+                      {r + 1}
+                    </TableCell>
+                    {result.columns.map((_, c) => (
+                      <TableCell key={c} className="max-w-80 truncate" title={row[c] ?? ""}>
+                        {row[c] ?? ""}
+                      </TableCell>
                     ))}
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {result.rows.map((row, r) => (
-                    <TableRow key={r}>
-                      <TableCell className="text-right font-mono text-xs text-muted-foreground">
-                        {r + 1}
-                      </TableCell>
-                      {result.columns.map((_, c) => (
-                        <TableCell key={c} className="max-w-80 truncate" title={row[c] ?? ""}>
-                          {row[c] ?? ""}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
     </div>

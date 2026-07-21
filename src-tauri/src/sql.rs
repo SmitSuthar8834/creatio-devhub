@@ -32,8 +32,20 @@ fn temp_path(ext: &str) -> PathBuf {
     std::env::temp_dir().join(format!("devhub-sql-{n}.{ext}"))
 }
 
+/// Whether clio's run actually failed.
+///
+/// The exit code alone is not enough — clio reports some failures as `[ERR]`
+/// lines and still exits 0. A *missing result file* is deliberately not a
+/// failure signal: statements without a result set never produce one.
+fn is_failure(code: i32, out: &str) -> bool {
+    code != 0 || out.contains("[ERR]")
+}
+
 /// Pull a readable error out of clio's output. Recognizes the cliogate hint and
-/// [ERR] lines; otherwise returns the trimmed output.
+/// [ERR] lines; otherwise returns the trimmed output with clio's own chatter
+/// removed — the version-update warning it prepends to every command is never
+/// the reason a query failed, and leading it makes the real message look like
+/// an aside.
 fn friendly_error(out: &str) -> String {
     if out.contains("cliogate") && out.to_lowercase().contains("install") {
         return "This environment needs the cliogate helper to run SQL. Install it first (clio install-gate), then try again.".to_string();
@@ -47,7 +59,14 @@ fn friendly_error(out: &str) -> String {
     if !errs.is_empty() {
         return errs.join(" ");
     }
-    let trimmed = out.trim();
+    let signal: Vec<&str> = out
+        .lines()
+        .map(|line| line.trim_end())
+        .filter(|line| !line.trim_start().starts_with("[WAR]"))
+        .filter(|line| !line.trim_start().starts_with("[INF]"))
+        .filter(|line| !line.trim().is_empty())
+        .collect();
+    let trimmed = signal.join("\n");
     if trimmed.is_empty() {
         "The SQL command produced no output.".to_string()
     } else {
@@ -78,6 +97,32 @@ mod tests {
     fn extracts_clean_clio_error_messages() {
         let output = "[INF] Starting\n[ERR] First failure\n[ERR] Second failure\n";
         assert_eq!(friendly_error(output), "First failure Second failure");
+    }
+
+    #[test]
+    fn a_statement_without_a_result_set_is_not_a_failure() {
+        // Real output from an UPDATE: the version warning, the echoed statement,
+        // and "Done" — no [ERR], exit 0, and clio writes no CSV at all. This used
+        // to be reported as an error whose text was clio's own success output.
+        let out = "[WAR] - clio 8.1.0.87 is available. Run 'dotnet tool update clio -g' to update.\n\
+                   UPDATE \"SysPackage\" SET \"Maintainer\" = 'Customer' WHERE \"Name\" = 'QntCreatioERD';\n\
+                   \n\
+                   Done\n";
+        assert!(!is_failure(0, out));
+    }
+
+    #[test]
+    fn errors_are_still_failures_whatever_the_exit_code() {
+        assert!(is_failure(1, "something went wrong"));
+        assert!(is_failure(0, "[ERR] - relation \"foo\" does not exist"));
+    }
+
+    #[test]
+    fn clio_chatter_is_stripped_from_the_fallback_message() {
+        let out = "[WAR] - clio 8.1.0.87 is available. Run 'dotnet tool update clio -g' to update.\n\
+                   [INF] - connecting\n\
+                   syntax error at or near \"SELCT\"\n";
+        assert_eq!(friendly_error(out), "syntax error at or near \"SELCT\"");
     }
 
     #[test]
@@ -132,9 +177,17 @@ pub fn run_sql(env: String, query: String) -> Result<SqlResult, String> {
     let _ = std::fs::remove_file(&sql_path);
 
     let (code, out) = result?;
-    if code != 0 || out.contains("[ERR]") || !Path::new(&csv_path).exists() {
+    if is_failure(code, &out) {
         let _ = std::fs::remove_file(&csv_path);
         return Err(friendly_error(&out));
+    }
+    // A statement with no result set — UPDATE, INSERT, DDL, an anonymous block —
+    // succeeds without clio writing the CSV at all. Treating the missing file as
+    // a failure used to surface clio's own success output ("… Done") as the error
+    // text, so a working UPDATE looked broken. The UI already renders an empty
+    // column list as "This statement returned no result set."
+    if !Path::new(&csv_path).exists() {
+        return Ok(SqlResult { columns: Vec::new(), rows: Vec::new(), row_count: 0, truncated: false });
     }
 
     let parsed = parse_csv(&csv_path);
@@ -209,8 +262,14 @@ pub fn export_sql(env: String, query: String, format: String, path: String) -> R
     let _ = std::fs::remove_file(&sql_path);
 
     let (code, out) = result?;
-    if code != 0 || out.contains("[ERR]") || !Path::new(path.trim()).exists() {
+    if is_failure(code, &out) {
         return Err(friendly_error(&out));
+    }
+    if !Path::new(path.trim()).exists() {
+        return Err(
+            "The statement ran, but it produced no result set — there is nothing to export."
+                .to_string(),
+        );
     }
     Ok(())
 }

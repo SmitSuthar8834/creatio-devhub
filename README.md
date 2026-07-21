@@ -68,6 +68,8 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
 
 - Run raw SQL against a selected Creatio environment through clio and cliogate.
 - Review result sets in a scrollable grid capped at 5,000 displayed rows.
+- Report a statement that returns no rows — `UPDATE`, `INSERT`, DDL — as a plain success rather
+  than an empty grid, with export disabled because there is nothing to write.
 - Export the complete result directly to semicolon-delimited CSV or Excel.
 - Save named queries locally, reopen them for editing, or rerun them against their original
   environment. DevHub blocks reruns if that environment is no longer registered.

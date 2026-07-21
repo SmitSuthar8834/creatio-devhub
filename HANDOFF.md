@@ -2,14 +2,15 @@
 
 Last verified: **2026-07-21**
 
-Current version: **0.5.0** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
+Current version: **0.5.1** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
 table below was last written; see per-release commit messages for their scope. v0.4.0 is the
 shadcn/ui design-system release described below; v0.5.0 adds the automatic update notice and
-stops trusting clio's exit code over its own output.)
+stops trusting clio's exit code over its own output; v0.5.1 stops reporting a successful SQL
+statement as an error.)
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.5.0>
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.5.1>
 
 Website: <https://smitsuthar8834.github.io/creatio-devhub/> (branch `gh-pages`)
 
@@ -52,6 +53,24 @@ style, Radix + Tailwind v4, lucide icons). Shipped in v0.4.0.
 - **Note for this dev box**: the shoogle MCP is project-scoped in `.mcp.json`; a Claude session
   must be started from `A:\PersonalComponents\creatio-devhub` for it to load. This migration used
   the official `npx shadcn@latest` CLI instead.
+
+## Statements are not failed queries (v0.5.1, 2026-07-21)
+
+Running an `UPDATE` in the SQL screen reported an error whose text was clio's own **success**
+output — the `[WAR]` version notice, the echoed statement, and `Done`. `run_sql` treated "clio
+produced no CSV" as a failure alongside the exit code and `[ERR]` checks, but a statement with no
+result set never produces one; `friendly_error` then found no `[ERR]` line and fell back to
+dumping the raw output as the error.
+
+- Failure detection is now `sql::is_failure(code, out)` — **exit code or `[ERR]` only**. A missing
+  result file is a separate, successful path returning an empty `SqlResult`.
+- The SQL screen reports that case as a green **"Statement ran successfully."** line and hides the
+  results card; CSV/Excel are disabled with a tooltip, because there is nothing to export.
+  A `SELECT` is unchanged. The distinction is `columns.length === 0`.
+- `export_sql` had the same conflation and now says so plainly instead of dumping output.
+- `friendly_error` strips clio's `[WAR]`/`[INF]` chatter from the fallback text — the
+  version-update warning prefixes every clio command and is never why a query failed.
+- Reproduced before fixing with `DO $$ BEGIN END $$;` against dev-834: exit 0, no `[ERR]`, no CSV.
 
 ## Automatic update notice (v0.5.0, 2026-07-21)
 
@@ -438,11 +457,11 @@ cd src-tauri
 cargo test --lib
 ```
 
-Latest verified result (2026-07-21, v0.5.0):
+Latest verified result (2026-07-21, v0.5.1):
 
 - TypeScript check: passed
 - Vite production build: passed
-- Rust tests: **39 passed, 0 failed**
+- Rust tests: **42 passed, 0 failed**
 - GitHub v0.5.0 release workflow: passed (run 29827864716, 8m17s)
 - Published artifacts: signed NSIS + MSI, both signatures, `latest.json`
 - Public updater feed: verified reporting `0.5.0` with signatures on all three platform entries
