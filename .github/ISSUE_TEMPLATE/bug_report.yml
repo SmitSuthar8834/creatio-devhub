@@ -1,0 +1,48 @@
+name: Bug report
+description: Something in DevHub broke, failed silently, or reported the wrong thing.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. The version and the job log are what usually make a
+        bug reproducible — DevHub shows both: the version under **Settings → DevHub
+        updates**, and the full output under **Jobs** for whichever operation failed.
+
+        **Do not paste Creatio passwords, OAuth client secrets, or `clio env` output** —
+        that output contains credentials in plain text.
+  - type: input
+    id: version
+    attributes:
+      label: DevHub version
+      placeholder: "0.6.0"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what DevHub did instead.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Job log or error message
+      description: From the Jobs screen, or the error shown on the page. Optional but usually decisive.
+      render: text
+  - type: input
+    id: clio
+    attributes:
+      label: clio version
+      description: "`clio ver` reports it, or read it from the DevHub header banner."
+      placeholder: "8.1.0.84"
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Creatio environment
+      options:
+        - Creatio cloud
+        - On-site / local IIS
+        - Both
+        - Not related to an environment

@@ -1,0 +1,26 @@
+name: Feature request
+description: Something DevHub should do that it does not do yet.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        DevHub exists to keep Creatio work out of the terminal, so the most useful
+        requests describe the task you are stuck doing by hand.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The task itself, not the button you have in mind — it often has a better solution.
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: How do you do it today?
+      description: The clio command, the SQL, the manual step in Creatio — whatever DevHub would replace.
+  - type: input
+    id: screen
+    attributes:
+      label: Which screen would it belong to?
+      placeholder: "Environments, Workspaces, Packages, Applications, SQL, Jobs, Settings, or somewhere new"
