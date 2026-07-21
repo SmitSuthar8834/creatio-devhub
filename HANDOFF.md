@@ -580,6 +580,73 @@ git push origin v0.3.1
 Never reuse a version tag for different source. If a release fails, fix the workflow or secret and
 rerun the same failed workflow only when its source/tag is unchanged.
 
+## If the repository goes private
+
+Planned 2026-07-21, **not executed** — the repo is still public. Written up because flipping the
+visibility toggle alone would break distribution, and one of the breakages is silent.
+
+Private repositories cost nothing in version control: full history, branches, tags, Actions and
+unlimited collaborators all work. What breaks is that source, releases, updater feed and website
+currently live in **one public repo**, and three of those stop working for anonymous clients.
+
+### What breaks
+
+1. **The updater dies silently.** `tauri.conf.json` points at
+   `releases/latest/download/latest.json`; on a private repo that URL needs authentication and the
+   Tauri updater has no credentials. Worse, `UpdateBanner` treats a failed check as silence by
+   design (see the v0.5.0 section), so **no user sees anything** — they simply stop receiving
+   updates. Only Settings → DevHub updates would show the failure.
+2. **GitHub Pages may stop publishing.** Pages from a private repo requires GitHub Pro on a
+   personal account. Confirm the plan before switching; on Free the site goes away.
+3. **Every download link 404s** for anonymous visitors, and the landing page's live
+   download-count fetch falls back to its static numbers.
+4. Actions minutes stop being unlimited (public repos are free; private draws on the monthly
+   quota). At ~8 minutes per release this is not a real constraint.
+
+Unaffected: the signing key and pubkey, DevHub's own "Deploy from GitHub" (it uses the user's
+authenticated `gh`), and existing clones. **Going private stops future exposure — it does not
+retract code already published.** There is at least one fork, which keeps its copy regardless.
+
+### The two shapes
+
+- **Private source + public releases repo** — flip `creatio-devhub` private (all history hidden
+  at once), add a public `creatio-devhub-releases` holding only installers, `latest.json` and the
+  site. Costs an updater-endpoint change and a new site URL.
+- **Public release host + private source repo** — this repo stays public but carries only the site
+  and release assets; source moves to a new private repo. The updater endpoint and site URL never
+  change, so existing installs are never at risk — but this repo's history still contains the
+  source unless it is purged, and purging cannot reach the fork.
+
+### Sequencing — the part that strands users if rushed
+
+If the updater endpoint changes, **ship a release pointing at the new endpoint while the repo is
+still public**, confirm the new feed serves it, and only then flip the switch. In the other order,
+anyone who has not yet updated is stranded permanently: their client polls a URL it can no longer
+read, says nothing, and they must find and reinstall by hand.
+
+### Workflow change required
+
+`release.yml` publishes with `tauri-action` and the built-in `GITHUB_TOKEN`, which can only
+release into its own repo. To publish elsewhere, add a step after the build that copies the five
+assets forward and rewrites the URLs inside `latest.json` (they are absolute and would otherwise
+point back at the private repo):
+
+```yaml
+- name: Copy the release to the public distribution repo
+  env:
+    GH_TOKEN: ${{ secrets.RELEASES_REPO_TOKEN }}   # PAT with contents:write on the public repo
+  run: |
+    gh release download "$TAG" -D dist -R OWNER/creatio-devhub
+    # point every platform url at the public repo before republishing
+    node -e "const f='dist/latest.json',j=require('./'+f);for(const p of Object.values(j.platforms))
+      p.url=p.url.replace(/.*\/(?=[^/]+$)/,'https://github.com/OWNER/creatio-devhub-releases/releases/download/$TAG/');
+      require('fs').writeFileSync(f,JSON.stringify(j,null,2))"
+    gh release create "$TAG" dist/* -R OWNER/creatio-devhub-releases --title "DevHub $TAG"
+```
+
+The signing key stays in the private repo; only signed output crosses over, so the pubkey in
+`tauri.conf.json` keeps verifying and existing installs accept the updates.
+
 ## Known limitations and risks
 
 - Mutating package operations have not all been exercised against a disposable live environment.
