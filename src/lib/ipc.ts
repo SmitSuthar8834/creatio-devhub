@@ -224,6 +224,8 @@ export interface SqlResult {
   rows: string[][];
   rowCount: number;
   truncated: boolean;
+  /** True for UPDATE/INSERT/DDL, where returning no rows is the expected result. */
+  statement: boolean;
 }
 
 export const runSql = (env: string, query: string) =>

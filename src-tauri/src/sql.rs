@@ -22,6 +22,9 @@ pub struct SqlResult {
     pub rows: Vec<Vec<String>>,
     pub row_count: usize,
     pub truncated: bool,
+    /// The SQL was a statement (UPDATE/INSERT/DDL) rather than a query, so
+    /// having no rows is the expected outcome and not an empty answer.
+    pub statement: bool,
 }
 
 fn temp_path(ext: &str) -> PathBuf {
@@ -34,11 +37,77 @@ fn temp_path(ext: &str) -> PathBuf {
 
 /// Whether clio's run actually failed.
 ///
-/// The exit code alone is not enough — clio reports some failures as `[ERR]`
-/// lines and still exits 0. A *missing result file* is deliberately not a
-/// failure signal: statements without a result set never produce one.
+/// Neither the exit code nor an `[ERR]` line is enough. When the *database*
+/// rejects the SQL, clio exits 0, prints no `[ERR]`, and simply writes the
+/// engine's error followed by `Done` — verified against clio 8.1.x. So the
+/// output has to be read for the error itself.
+///
+/// A *missing result file* is deliberately not a failure signal: statements
+/// without a result set never produce one, and neither does a query that
+/// matched nothing.
 fn is_failure(code: i32, out: &str) -> bool {
-    code != 0 || out.contains("[ERR]")
+    code != 0 || out.contains("[ERR]") || database_error(out).is_some()
+}
+
+/// Phrases that only appear when an engine rejected the statement. Used for
+/// engines that do not print a SQLSTATE the way PostgreSQL does.
+const DB_ERROR_PHRASES: &[&str] = &[
+    "syntax error",
+    "does not exist",
+    "already exists",
+    "invalid column name",
+    "invalid object name",
+    "permission denied",
+    "duplicate key",
+    "violates",
+];
+
+/// A PostgreSQL SQLSTATE header such as `42703: column "x" does not exist`.
+/// Five alphanumerics, a colon, then a message.
+fn is_sqlstate_line(line: &str) -> bool {
+    let Some((code, message)) = line.split_once(':') else {
+        return false;
+    };
+    code.len() == 5
+        && code.chars().all(|c| c.is_ascii_digit() || c.is_ascii_uppercase())
+        && code.chars().any(|c| c.is_ascii_digit())
+        && !message.trim().is_empty()
+}
+
+/// The database's own complaint, pulled out of clio's output.
+///
+/// Returns everything from the error line up to clio's trailing `Done`, so the
+/// `POSITION:` hint travels with the message that needs it.
+fn database_error(out: &str) -> Option<String> {
+    let lines: Vec<&str> = out.lines().map(str::trim).collect();
+    let start = lines.iter().position(|line| {
+        is_sqlstate_line(line) || {
+            let lowered = line.to_lowercase();
+            DB_ERROR_PHRASES.iter().any(|phrase| lowered.contains(phrase))
+        }
+    })?;
+    let message: Vec<&str> = lines[start..]
+        .iter()
+        .take_while(|line| !line.eq_ignore_ascii_case("done"))
+        .filter(|line| !line.is_empty())
+        .copied()
+        .collect();
+    Some(message.join(" "))
+}
+
+/// Whether this SQL asks the database for rows back.
+///
+/// clio writes no result file for a statement *and* for a query that matched
+/// nothing, so the output cannot tell the two apart — only the SQL can. Getting
+/// this wrong just picks the wrong success wording, never a wrong outcome.
+fn returns_rows(query: &str) -> bool {
+    let head = query.trim_start().trim_start_matches(['(', '"']);
+    let first: String = head
+        .chars()
+        .take_while(|c| c.is_ascii_alphabetic())
+        .collect::<String>()
+        .to_lowercase();
+    matches!(first.as_str(), "select" | "with" | "show" | "explain" | "values" | "table")
 }
 
 /// Pull a readable error out of clio's output. Recognizes the cliogate hint and
@@ -49,6 +118,11 @@ fn is_failure(code: i32, out: &str) -> bool {
 fn friendly_error(out: &str) -> String {
     if out.contains("cliogate") && out.to_lowercase().contains("install") {
         return "This environment needs the cliogate helper to run SQL. Install it first (clio install-gate), then try again.".to_string();
+    }
+    // The engine's own message is the most useful thing available, and clio
+    // prints the failing statement above it — leading with that would bury it.
+    if let Some(message) = database_error(out) {
+        return message;
     }
     let errs: Vec<&str> = out
         .lines()
@@ -117,6 +191,64 @@ mod tests {
         assert!(is_failure(0, "[ERR] - relation \"foo\" does not exist"));
     }
 
+    /// Real clio 8.1.x output for a query the database rejected: exit code 0,
+    /// no [ERR], the SQLSTATE line, then "Done". Reporting this as success is
+    /// what made a broken query look like it had run.
+    const REJECTED_QUERY: &str = "[WAR] - clio 8.1.0.87 is available. Run 'dotnet tool update clio -g' to update.\n\
+        SELECT s.\"Name\", a.\"Name\" AS app\n\
+        FROM \"SysSchema\" s\n\
+        \n\
+        42703: column p.SysInstalledAppId does not exist\n\
+        \n\
+        POSITION: 186\n\
+        Done\n";
+
+    #[test]
+    fn a_rejected_query_is_a_failure_despite_exit_zero_and_no_err_marker() {
+        assert!(is_failure(0, REJECTED_QUERY));
+    }
+
+    #[test]
+    fn the_reported_error_is_the_database_message_not_the_echoed_sql() {
+        assert_eq!(
+            friendly_error(REJECTED_QUERY),
+            "42703: column p.SysInstalledAppId does not exist POSITION: 186",
+        );
+    }
+
+    #[test]
+    fn a_rejected_statement_is_a_failure_too() {
+        let out = "UPDATE \"NoSuchTableHere\" SET \"X\" = 1 WHERE 1 = 0;\n\
+                   \n\
+                   42P01: relation \"NoSuchTableHere\" does not exist\n\
+                   \n\
+                   POSITION: 8\n\
+                   Done\n";
+        assert!(is_failure(0, out));
+    }
+
+    #[test]
+    fn a_successful_statement_is_never_mistaken_for_an_error() {
+        // The echoed UPDATE contains none of the error signatures.
+        let out = "[WAR] - clio 8.1.0.87 is available.\n\
+                   UPDATE \"SysPackage\" SET \"Maintainer\" = 'Customer' WHERE \"Name\" = 'QntCreatioERD';\n\
+                   \n\
+                   Done\n";
+        assert!(!is_failure(0, out));
+        assert_eq!(database_error(out), None);
+    }
+
+    #[test]
+    fn queries_are_told_apart_from_statements() {
+        assert!(returns_rows("SELECT 1"));
+        assert!(returns_rows("  \n select \"Name\" from \"SysPackage\""));
+        assert!(returns_rows("WITH x AS (SELECT 1) SELECT * FROM x"));
+        assert!(returns_rows("(SELECT 1)"));
+        assert!(!returns_rows("UPDATE \"SysPackage\" SET \"IsChanged\" = TRUE"));
+        assert!(!returns_rows("DO $$ BEGIN END $$;"));
+        assert!(!returns_rows("insert into \"X\" values (1)"));
+    }
+
     #[test]
     fn clio_chatter_is_stripped_from_the_fallback_message() {
         let out = "[WAR] - clio 8.1.0.87 is available. Run 'dotnet tool update clio -g' to update.\n\
@@ -181,13 +313,18 @@ pub fn run_sql(env: String, query: String) -> Result<SqlResult, String> {
         let _ = std::fs::remove_file(&csv_path);
         return Err(friendly_error(&out));
     }
-    // A statement with no result set — UPDATE, INSERT, DDL, an anonymous block —
-    // succeeds without clio writing the CSV at all. Treating the missing file as
-    // a failure used to surface clio's own success output ("… Done") as the error
-    // text, so a working UPDATE looked broken. The UI already renders an empty
-    // column list as "This statement returned no result set."
+    // No result file means either a statement that succeeded or a query that
+    // matched nothing — clio writes one only when there are rows. Failures were
+    // already ruled out above, so this is a success either way; `statement` only
+    // decides how the UI words it.
     if !Path::new(&csv_path).exists() {
-        return Ok(SqlResult { columns: Vec::new(), rows: Vec::new(), row_count: 0, truncated: false });
+        return Ok(SqlResult {
+            columns: Vec::new(),
+            rows: Vec::new(),
+            row_count: 0,
+            truncated: false,
+            statement: !returns_rows(&query),
+        });
     }
 
     let parsed = parse_csv(&csv_path);
@@ -225,6 +362,7 @@ fn parse_csv(path: &Path) -> Result<SqlResult, String> {
         truncated: row_count > rows.len(),
         row_count,
         rows,
+        statement: false,
     })
 }
 

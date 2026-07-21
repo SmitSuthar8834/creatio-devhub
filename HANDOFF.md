@@ -2,15 +2,15 @@
 
 Last verified: **2026-07-21**
 
-Current version: **0.5.1** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
+Current version: **0.5.2** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
 table below was last written; see per-release commit messages for their scope. v0.4.0 is the
 shadcn/ui design-system release described below; v0.5.0 adds the automatic update notice and
 stops trusting clio's exit code over its own output; v0.5.1 stops reporting a successful SQL
-statement as an error.)
+statement as an error, and v0.5.2 fixes the regression that came with it.)
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.5.1>
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.5.2>
 
 Website: <https://smitsuthar8834.github.io/creatio-devhub/> (branch `gh-pages`)
 
@@ -54,6 +54,43 @@ style, Radix + Tailwind v4, lucide icons). Shipped in v0.4.0.
   must be started from `A:\PersonalComponents\creatio-devhub` for it to load. This migration used
   the official `npx shadcn@latest` CLI instead.
 
+## SQL errors are failures again + package filters (v0.5.2, 2026-07-21)
+
+**v0.5.1 shipped a regression: every rejected SQL statement reported success.** Read the section
+below first for what it was trying to fix, then this.
+
+`is_failure` was defined as "non-zero exit or an `[ERR]` line", which was never checked against a
+statement the *database* rejects. Verified live on dev-834 (clio 8.1.0.84, PostgreSQL): clio
+**exits 0, prints no `[ERR]`**, and writes the engine's error followed by `Done`. So the new
+"no result file means success" path swallowed every SQL error — a query with a bad column showed
+a green "Statement ran successfully."
+
+- `sql::database_error(out)` now reads the output for the error itself: a PostgreSQL SQLSTATE
+  header (`42703:`, `42P01:` — five alphanumerics, a colon, a message) or one of
+  `DB_ERROR_PHRASES` for engines that format differently. `is_failure` includes it, so both
+  `run_sql` and `export_sql` are covered.
+- `friendly_error` leads with that message plus its `POSITION:` hint rather than the echoed SQL.
+- clio writes no result file for a successful statement **and** for a query that matched nothing,
+  so the output alone cannot tell them apart — `sql::returns_rows(query)` classifies the SQL, and
+  `SqlResult.statement` carries it to the UI ("Statement ran successfully." vs "Query ran — 0 rows
+  returned."). Getting that classification wrong only picks the wrong wording, never a wrong
+  outcome. Export is gated on `hasGrid` (columns present).
+- All four cases were reproduced against dev-834 before the fix and the tests are built from that
+  captured output: rejected query, rejected statement, zero-row query, matching query.
+
+Also in this release: the Packages screen filters **by field** instead of one blurred match.
+The text box is now name + version only, and **Maintainer is its own dropdown** built from the
+loaded packages with per-maintainer counts; the two narrow together. The maintainer selection
+resets on environment change (maintainers differ per environment, and a stale one hides
+everything), a "Clear filters" button appears when either is active, and filtering to nothing says
+so instead of rendering an empty table. No backend change — `PackageInfo` already carried
+`maintainer`.
+
+**Lesson recorded:** v0.5.0 and v0.5.1 both shipped on `tsc` + unit tests without the app ever
+being run. The v0.5.1 regression would have been caught by executing one bad query. Claude Code
+cannot drive the native window (its browser tools target a web view), so **a human must exercise
+SQL and Packages before a release that touches them**.
+
 ## Statements are not failed queries (v0.5.1, 2026-07-21)
 
 Running an `UPDATE` in the SQL screen reported an error whose text was clio's own **success**
@@ -62,8 +99,10 @@ produced no CSV" as a failure alongside the exit code and `[ERR]` checks, but a 
 result set never produces one; `friendly_error` then found no `[ERR]` line and fell back to
 dumping the raw output as the error.
 
-- Failure detection is now `sql::is_failure(code, out)` — **exit code or `[ERR]` only**. A missing
+- Failure detection is now `sql::is_failure(code, out)` — exit code or `[ERR]` only. A missing
   result file is a separate, successful path returning an empty `SqlResult`.
+  **Superseded by v0.5.2**, which had to add database-error detection: those two signals alone
+  miss every statement the database itself rejects.
 - The SQL screen reports that case as a green **"Statement ran successfully."** line and hides the
   results card; CSV/Excel are disabled with a tooltip, because there is nothing to export.
   A `SELECT` is unchanged. The distinction is `columns.length === 0`.
@@ -457,11 +496,11 @@ cd src-tauri
 cargo test --lib
 ```
 
-Latest verified result (2026-07-21, v0.5.1):
+Latest verified result (2026-07-21, v0.5.2):
 
 - TypeScript check: passed
 - Vite production build: passed
-- Rust tests: **42 passed, 0 failed**
+- Rust tests: **47 passed, 0 failed**
 - GitHub v0.5.1 release workflow: passed (run 29830237906)
 - Published artifacts: signed NSIS + MSI, both signatures, `latest.json`
 - Public updater feed: verified reporting `0.5.1` with signatures on all three platform entries

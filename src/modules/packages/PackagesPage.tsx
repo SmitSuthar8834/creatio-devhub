@@ -54,6 +54,9 @@ type DialogState =
 
 const isArchive = (path: string) => /\.(zip|gz)$/i.test(path);
 
+/** Sentinel for "don't filter by maintainer" — Radix Select reserves "". */
+const ALL_MAINTAINERS = "__all__";
+
 export default function PackagesPage({
   onShowJobs,
   onOpenWorkspace,
@@ -65,6 +68,7 @@ export default function PackagesPage({
   const [env, setEnv] = useState("");
   const [packages, setPackages] = useState<PackageInfo[]>([]);
   const [filter, setFilter] = useState("");
+  const [maintainer, setMaintainer] = useState(ALL_MAINTAINERS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -109,7 +113,12 @@ export default function PackagesPage({
     }
   };
 
-  useEffect(() => { refresh(false); }, [env]);
+  useEffect(() => {
+    // Maintainers differ per environment, so a selection carried across would
+    // silently hide everything.
+    setMaintainer(ALL_MAINTAINERS);
+    refresh(false);
+  }, [env]);
 
   // Reload from cache when the background prefetch freshens this environment.
   useEffect(() => {
@@ -154,13 +163,33 @@ export default function PackagesPage({
     return () => { unlisten.then((fn) => fn()); };
   }, [env, pendingWorkspaceJob, onOpenWorkspace]);
 
+  /** Every maintainer present in this environment, with how many packages each owns. */
+  const maintainers = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const pkg of packages) {
+      const owner = pkg.maintainer.trim();
+      if (owner) counts.set(owner, (counts.get(owner) ?? 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [packages]);
+
+  // Two filters that narrow together: free text over name and version, and an
+  // exact maintainer. Keeping maintainer out of the text match is the point —
+  // searching "Customer" used to return every package whose *name* happened to
+  // contain it, so there was no way to ask for one field specifically.
   const visible = useMemo(() => {
     const query = filter.trim().toLowerCase();
-    return query ? packages.filter((pkg) =>
-      pkg.name.toLowerCase().includes(query) ||
-      pkg.version.toLowerCase().includes(query) ||
-      pkg.maintainer.toLowerCase().includes(query)) : packages;
-  }, [filter, packages]);
+    return packages.filter((pkg) => {
+      const matchesText = !query
+        || pkg.name.toLowerCase().includes(query)
+        || pkg.version.toLowerCase().includes(query);
+      const matchesMaintainer = maintainer === ALL_MAINTAINERS
+        || pkg.maintainer.trim() === maintainer;
+      return matchesText && matchesMaintainer;
+    });
+  }, [filter, maintainer, packages]);
+
+  const filtered = filter.trim() !== "" || maintainer !== ALL_MAINTAINERS;
 
   const start = async (opts: {
     package: string; action: PackageAction; path?: string; value?: string; skipBackup?: boolean;
@@ -309,17 +338,41 @@ export default function PackagesPage({
           </Select>
         </div>
         <div className="grid min-w-64 flex-1 gap-2">
-          <Label htmlFor="pkg-filter">Filter</Label>
+          <Label htmlFor="pkg-filter">Package name</Label>
           <Input
             id="pkg-filter"
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            placeholder="Package, version, or maintainer"
+            placeholder="Name or version"
           />
+        </div>
+        <div className="grid min-w-52 gap-2">
+          <Label htmlFor="pkg-maintainer">Maintainer</Label>
+          <Select value={maintainer} onValueChange={setMaintainer}>
+            <SelectTrigger id="pkg-maintainer" className="w-full">
+              <SelectValue placeholder="All maintainers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_MAINTAINERS}>All maintainers</SelectItem>
+              {maintainers.map(([name, count]) => (
+                <SelectItem key={name} value={name}>{name} ({count})</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <span className="pb-2.5 text-sm text-muted-foreground">
           {visible.length} of {packages.length}
         </span>
+        {filtered && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mb-1"
+            onClick={() => { setFilter(""); setMaintainer(ALL_MAINTAINERS); }}
+          >
+            Clear filters
+          </Button>
+        )}
       </div>
 
       {cachedAt && (
@@ -344,6 +397,10 @@ export default function PackagesPage({
 
       {!loading && packages.length === 0 && !error ? (
         <p className="text-muted-foreground">No packages returned for this environment.</p>
+      ) : !loading && visible.length === 0 && filtered ? (
+        <p className="text-muted-foreground">
+          No packages match these filters — {packages.length} in this environment.
+        </p>
       ) : (
         <div className="overflow-x-auto rounded-lg border">
           <Table>

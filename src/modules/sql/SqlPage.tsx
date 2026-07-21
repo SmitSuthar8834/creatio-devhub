@@ -87,10 +87,9 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
     try {
       const res = await runSql(runEnv, runQuery);
       setResult(res);
-      // No columns at all means a statement rather than a query — an UPDATE or
-      // DDL that succeeded and has nothing to show. Saying "0 rows returned"
-      // there reads like it did nothing.
-      if (res.columns.length === 0) setNotice("Statement ran successfully.");
+      // Three outcomes, and the wording has to match: a statement that did its
+      // work, a query that matched nothing, and a query with rows to show.
+      if (res.statement) setNotice("Statement ran successfully.");
       else if (res.rowCount === 0) setNotice("Query ran — 0 rows returned.");
     } catch (e) {
       setResult(null);
@@ -194,9 +193,10 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
     }
   };
 
-  // An UPDATE/INSERT/DDL that worked: it reports success rather than a grid, and
-  // there is nothing to hand to CSV or Excel.
-  const statementSucceeded = !!result && result.columns.length === 0;
+  // An UPDATE/INSERT/DDL that worked: it reports success rather than a grid.
+  const statementSucceeded = !!result && result.statement;
+  // Only a query that actually returned rows has something to show or export.
+  const hasGrid = !!result && result.columns.length > 0;
 
   const onKey = (e: React.KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
@@ -214,8 +214,8 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
           <Button
             variant="outline"
             onClick={() => doExport("csv")}
-            disabled={!result || statementSucceeded || exporting !== null}
-            title={statementSucceeded ? "This statement returned no rows to export." : undefined}
+            disabled={!hasGrid || exporting !== null}
+            title={result && !hasGrid ? "There are no rows to export." : undefined}
           >
             <Download aria-hidden="true" />
             {exporting === "csv" ? "Exporting…" : "CSV"}
@@ -223,8 +223,8 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
           <Button
             variant="outline"
             onClick={() => doExport("xlsx")}
-            disabled={!result || statementSucceeded || exporting !== null}
-            title={statementSucceeded ? "This statement returned no rows to export." : undefined}
+            disabled={!hasGrid || exporting !== null}
+            title={result && !hasGrid ? "There are no rows to export." : undefined}
           >
             <Download aria-hidden="true" />
             {exporting === "xlsx" ? "Exporting…" : "Excel"}
@@ -362,7 +362,7 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
         </section>
       )}
 
-      {result && !statementSucceeded && (
+      {hasGrid && (
         <div className="grid gap-3">
           <div className="flex flex-wrap gap-2">
             <Badge className="border-transparent bg-accent/15 text-accent-foreground">

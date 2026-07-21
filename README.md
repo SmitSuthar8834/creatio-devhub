@@ -49,7 +49,8 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
 
 ### Packages
 
-- Browse and filter packages for an environment.
+- Browse packages for an environment, and filter by field: name or version in the search box,
+  maintainer from its own dropdown (with per-maintainer counts). The two narrow together.
 - Pull, push, lock, unlock, activate, deactivate, hotfix, change version, and delete packages.
 - Install `.zip` and `.gz` package archives by file selection or drag and drop.
 - Deploy a package from one registered environment to another.
@@ -70,6 +71,8 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
 - Review result sets in a scrollable grid capped at 5,000 displayed rows.
 - Report a statement that returns no rows — `UPDATE`, `INSERT`, DDL — as a plain success rather
   than an empty grid, with export disabled because there is nothing to write.
+- Surface the database's own error when it rejects a statement, including the position hint. clio
+  reports these with a success exit code, so DevHub reads the output rather than trusting it.
 - Export the complete result directly to semicolon-delimited CSV or Excel.
 - Save named queries locally, reopen them for editing, or rerun them against their original
   environment. DevHub blocks reruns if that environment is no longer registered.
