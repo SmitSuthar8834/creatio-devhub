@@ -147,6 +147,8 @@
   .card-ic .ic { width: 19px; height: 19px; }
   .card h3 { font-size: 17px; letter-spacing: -.01em; margin: 0 0 8px; font-weight: 650; }
   .card p { color: var(--fg-soft); font-size: 14.5px; margin: 0; }
+  /* Feedback cards carry an action; the rest of the card grid does not. */
+  .card .btn { margin-top: 18px; }
 
   /* ---------- flow ---------- */
   .band { background: var(--surface-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
@@ -243,6 +245,7 @@
       <a href="#features">Features</a>
       <a href="#whats-new">What's new</a>
       <a href="#specs">Requirements</a>
+      <a href="#feedback">Feedback</a>
       <a href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">GitHub</a>
       <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.6.0/creatio-devhub_0.6.0_x64-setup.exe">
         <svg class="ic"><use href="#i-dl"/></svg> Download
@@ -539,6 +542,36 @@
           <li><svg class="ic"><use href="#i-check"/></svg><span><b>Every mutation is a job.</b> Streamed output, serialized per environment, safe to cancel.</span></li>
           <li><svg class="ic"><use href="#i-check"/></svg><span><b>Signed updates.</b> Verified against the project key before anything installs.</span></li>
         </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="feedback">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">Feedback</span>
+        <h2>Found a bug? Want something added?</h2>
+        <p>DevHub is built by one developer, and every report shapes what gets fixed next. Requests and bug reports both go through GitHub issues — you'll need a free GitHub account, and you can follow the thread until it ships.</p>
+      </div>
+      <div class="features">
+        <article class="card">
+          <div class="card-ic"><svg class="ic"><use href="#i-shield"/></svg></div>
+          <h3>Report a bug</h3>
+          <p>Something broke, failed silently, or told you the wrong thing. Include the DevHub version, what you did, and the job log if there is one.</p>
+          <a class="btn btn-ghost" href="https://github.com/SmitSuthar8834/creatio-devhub/issues/new?labels=bug&amp;template=bug_report.yml" target="_blank" rel="noopener">Report a bug</a>
+        </article>
+        <article class="card">
+          <div class="card-ic"><svg class="ic"><use href="#i-layers"/></svg></div>
+          <h3>Request a feature</h3>
+          <p>A clio command you want a button for, a screen that should show more, a workflow that still sends you back to the terminal.</p>
+          <a class="btn btn-ghost" href="https://github.com/SmitSuthar8834/creatio-devhub/issues/new?labels=enhancement&amp;template=feature_request.yml" target="_blank" rel="noopener">Request a feature</a>
+        </article>
+        <article class="card">
+          <div class="card-ic"><svg class="ic"><use href="#i-term"/></svg></div>
+          <h3>See what's already open</h3>
+          <p>Check whether your problem is already known, add what you're seeing to an existing thread, or watch what's coming next.</p>
+          <a class="btn btn-ghost" href="https://github.com/SmitSuthar8834/creatio-devhub/issues" target="_blank" rel="noopener">Browse issues</a>
+        </article>
       </div>
     </div>
   </section>
