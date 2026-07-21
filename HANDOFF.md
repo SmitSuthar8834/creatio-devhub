@@ -124,22 +124,22 @@ The main milestones are complete:
 
 ## Verified release state
 
-Release `v0.5.0` was built and published by GitHub Actions (2026-07-21).
+Release `v0.5.1` was built and published by GitHub Actions (2026-07-21).
 
-- Workflow: `.github/workflows/release.yml` (run 29827864716, conclusion: success, 8m17s)
-- Release: `DevHub v0.5.0` (not a draft)
+- Workflow: `.github/workflows/release.yml` (run 29830237906, conclusion: success)
+- Release: `DevHub v0.5.1` (not a draft)
 - Update endpoint:
   `https://github.com/SmitSuthar8834/creatio-devhub/releases/latest/download/latest.json`
 - Published artifacts:
-  - `creatio-devhub_0.5.0_x64-setup.exe` (NSIS setup executable)
-  - `creatio-devhub_0.5.0_x64-setup.exe.sig` (NSIS signature)
-  - `creatio-devhub_0.5.0_x64_en-US.msi` (MSI installer)
-  - `creatio-devhub_0.5.0_x64_en-US.msi.sig` (MSI signature)
+  - `creatio-devhub_0.5.1_x64-setup.exe` (NSIS setup executable)
+  - `creatio-devhub_0.5.1_x64-setup.exe.sig` (NSIS signature)
+  - `creatio-devhub_0.5.1_x64_en-US.msi` (MSI installer)
+  - `creatio-devhub_0.5.1_x64_en-US.msi.sig` (MSI signature)
   - `latest.json`
-- `latest.json` reports version `0.5.0` with signed `windows-x86_64`, `windows-x86_64-nsis`,
+- `latest.json` reports version `0.5.1` with signed `windows-x86_64`, `windows-x86_64-nsis`,
   and `windows-x86_64-msi` entries.
 
-Released so far: v0.2.1, v0.2.3 → v0.2.9, v0.3.0 → v0.3.2, v0.4.0, v0.5.0. The first
+Released so far: v0.2.1, v0.2.3 → v0.2.9, v0.3.0 → v0.3.2, v0.4.0, v0.5.0, v0.5.1. The first
 published/verified release was `v0.2.1`; the signed updater flow has been stable across every
 release since.
 
@@ -462,10 +462,10 @@ Latest verified result (2026-07-21, v0.5.1):
 - TypeScript check: passed
 - Vite production build: passed
 - Rust tests: **42 passed, 0 failed**
-- GitHub v0.5.0 release workflow: passed (run 29827864716, 8m17s)
+- GitHub v0.5.1 release workflow: passed (run 29830237906)
 - Published artifacts: signed NSIS + MSI, both signatures, `latest.json`
-- Public updater feed: verified reporting `0.5.0` with signatures on all three platform entries
-- Website `gh-pages` updated (commit 8276ba0)
+- Public updater feed: verified reporting `0.5.1` with signatures on all three platform entries
+- Website `gh-pages` updated (commit d52e665)
 
 Not covered by that run: the update banner has never been *seen* rendering, because the
 development machine is always on the newest version and the check therefore finds nothing. To
