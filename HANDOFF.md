@@ -2,7 +2,7 @@
 
 Last verified: **2026-07-21**
 
-Current version: **0.6.0** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
+Current version: **0.7.0** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
 table below was last written; see per-release commit messages for their scope. v0.4.0 is the
 shadcn/ui design-system release described below; v0.5.0 adds the automatic update notice and
 stops trusting clio's exit code over its own output; v0.5.1 stops reporting a successful SQL
@@ -55,7 +55,64 @@ style, Radix + Tailwind v4, lucide icons). Shipped in v0.4.0.
   must be started from `A:\PersonalComponents\creatio-devhub` for it to load. This migration used
   the official `npx shadcn@latest` CLI instead.
 
-## Package lock state (on `main`, unreleased, 2026-07-21)
+## Compare environments (v0.7.0, 2026-07-21)
+
+A new **Compare** section answers the question the roadmap called the moat: is pre-prod still
+the same as dev, and what exactly differs. Read-only — nothing in this feature writes to any
+environment.
+
+- **One command supplies everything.** `clio save-state <file> -e <env>` returns features,
+  system settings, web services and every package with a hash per package *and per schema*.
+  `src-tauri/src/envstate.rs` captures that into app-data `snapshots/<env>.yaml` as a
+  **cancellable** job, then compares two files. Comparison is local, so re-comparing is
+  instant and never re-reads an environment.
+- **Do not rebuild this on live `show-diff`.** It took ~13 minutes for one pair and cannot
+  back a screen; it also emits the same YAML shape, so there is no parsing advantage.
+- **The YAML parser is hand-written, deliberately.** `serde_yaml` is deprecated and the
+  maintained forks are unvetted — poor company for a path holding credentials. clio's output is
+  machine-generated in four fixed shapes with no block scalars, anchors or flow collections
+  (verified across a 986 KB capture). Parsed counts match a raw grep of that file exactly:
+  713 settings, 456 features, 445 packages, 10,945 schemas, 3 web services. **If clio's output
+  ever grows real YAML constructs, replace the parser rather than patch it.**
+- **Capture duration is measured, not estimated**, and stored in `snapshots/durations.json`.
+  The spread is too wide to hardcode: dev-834 (local IIS) takes ~2 minutes, the cloud tenant
+  187559-crm-bundle took ~13. Before a first capture the UI states an honest range; afterwards
+  it reports that environment's real previous time.
+- **Schemas are compared only inside packages whose hash already differs.** A matching package
+  hash means matching contents, so expanding all 10,945 would be noise. A real dev-834 ↔
+  187559 comparison yields 230 differing packages (180 changed, 19 source-only, 31
+  target-only), 133 settings, 10 features, and 2,519 schema rows — e.g. `CoreForecast` alone
+  has 24 differing schemas. That schema level is the duplicate-element collision warning.
+- **Absent by design:** package version and lock state are not in `save-state`. The diff keys
+  on hash, so a version change reads as "differs". Adding them means merging `list-packages`
+  and `package_lock_states` into the packages tab — three sources for one view.
+- `--overwrite` must **not** be passed to `save-state`. It is a bare switch that already
+  defaults to true, and supplying a value made clio consume `true` as the next positional and
+  fail with `Active environment 'true' is not found`. Re-capture overwrites correctly without
+  it (verified: 16 bytes → 1,259,334).
+
+### Secrets handling — do not weaken this
+
+Snapshots store setting values verbatim, so a snapshot file is a file full of API keys sitting
+in app-data. Three layers, none of which is optional:
+
+1. Values render as `••••••` until revealed **per row**; nothing bulk-reveals.
+2. Exported markdown omits setting values entirely and says so in the document — a setting row
+   reads `set`, never the value.
+3. Capture logs a warning naming the risk, and the screen has a Delete control per snapshot.
+
+The credential-name heuristic (`looks_sensitive`) only decides where a warning icon appears. It
+is **never** the boundary, because both it and Creatio's own `SecureText` marking miss real
+keys — see the settings-secrets entry under clio behaviours.
+
+**UI verified** by driving the vite dev server with a stubbed IPC layer at realistic volume:
+230 package rows render instantly, expanding a package adds exactly its differing schemas,
+all 268 setting value cells mask, revealing one row reveals exactly two cells, and no secret
+appears in the DOM before reveal. The **capture job itself has not been run in the packaged
+app** — its clio invocation is the one verified by hand, but nobody has watched it complete
+from the UI.
+
+## Package lock state (v0.7.0, 2026-07-21)
 
 The Packages table has a **State** column — Locked / Unlocked / `—` — and the Lock and Unlock
 menu items collapsed into one state-aware toggle. Previously both were always offered with no
