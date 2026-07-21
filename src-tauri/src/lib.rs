@@ -3,6 +3,7 @@ mod cache;
 mod catalog;
 mod clio;
 mod diagnostics;
+mod envstate;
 mod git;
 mod github;
 mod jobs;
@@ -42,6 +43,11 @@ pub fn run() {
             clio::install_or_update_clio,
             catalog::prefetch_env_catalog,
             diagnostics::diagnose_error,
+            envstate::capture_env_state,
+            envstate::list_snapshots,
+            envstate::delete_snapshot,
+            envstate::diff_environments,
+            envstate::export_diff_report,
             github::github_status,
             github::set_git_identity,
             github::start_github_login,

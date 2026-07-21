@@ -254,6 +254,58 @@ export const listPackages = (env: string, forceRefresh = false) =>
 export const packageLockStates = (env: string) =>
   invoke<PackageLockState[]>("package_lock_states", { env });
 
+// ---------- environment comparison ----------
+
+export type DiffStatus = "same" | "different" | "missingTarget" | "missingSource";
+
+export interface DiffRow {
+  category: "package" | "setting" | "feature" | "webservice" | "schema";
+  key: string;
+  /** null means absent on that side — not the same as an empty value. */
+  source: string | null;
+  target: string | null;
+  status: DiffStatus;
+  /** Code looks credential-shaped. A warning hint only; every setting value is
+   *  masked regardless of this flag. */
+  sensitive: boolean;
+  /** Schema-level rows, present on packages whose hash differs. */
+  detail: DiffRow[];
+}
+
+export interface DiffReport {
+  sourceEnv: string;
+  targetEnv: string;
+  sourceCapturedAt: number;
+  targetCapturedAt: number;
+  rows: DiffRow[];
+  counts: Record<string, number>;
+}
+
+export interface SnapshotInfo {
+  env: string;
+  capturedAt: number;
+  sizeBytes: number;
+  /** How long this environment's last successful capture took. 0 = never
+   *  captured. Used instead of a built-in estimate, because a local install and
+   *  a cloud tenant differ by minutes. */
+  durationMs: number;
+}
+
+/** Long-running, read-only, cancellable. Returns a job id. */
+export const captureEnvState = (env: string) =>
+  invoke<string>("capture_env_state", { env });
+
+export const listSnapshots = () => invoke<SnapshotInfo[]>("list_snapshots");
+
+export const deleteSnapshot = (env: string) =>
+  invoke<void>("delete_snapshot", { env });
+
+export const diffEnvironments = (sourceEnv: string, targetEnv: string) =>
+  invoke<DiffReport>("diff_environments", { sourceEnv, targetEnv });
+
+export const exportDiffReport = (sourceEnv: string, targetEnv: string, path: string) =>
+  invoke<void>("export_diff_report", { sourceEnv, targetEnv, path });
+
 export const runPackageAction = (opts: {
   env: string;
   package: string;

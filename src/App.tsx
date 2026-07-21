@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Blocks,
   Database,
+  GitCompare,
   FolderGit2,
   ListChecks,
   Package,
@@ -29,6 +30,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { listEnvironments, onEnvironmentChanged, prefetchEnvCatalog } from "./lib/ipc";
 import ApplicationsPage from "./modules/applications/ApplicationsPage";
 import ClioBanner from "./modules/clio/ClioBanner";
+import ComparePage from "./modules/compare/ComparePage";
 import EnvironmentsPage from "./modules/environments/EnvironmentsPage";
 import JobsPage from "./modules/jobs/JobsPage";
 import JobToaster from "./modules/jobs/JobToaster";
@@ -39,13 +41,14 @@ import UpdateBanner from "./modules/updates/UpdateBanner";
 import WorkspacesPage from "./modules/workspaces/WorkspacesPage";
 import logoMark from "./assets/icons/logo-mark.png";
 
-type Page = "environments" | "workspaces" | "packages" | "applications" | "sql" | "jobs" | "settings";
+type Page = "environments" | "workspaces" | "packages" | "applications" | "compare" | "sql" | "jobs" | "settings";
 
 const NAV: { id: Page; label: string; icon: typeof Server }[] = [
   { id: "environments", label: "Environments", icon: Server },
   { id: "workspaces", label: "Workspaces", icon: FolderGit2 },
   { id: "packages", label: "Packages", icon: Package },
   { id: "applications", label: "Applications", icon: Blocks },
+  { id: "compare", label: "Compare", icon: GitCompare },
   { id: "sql", label: "SQL", icon: Database },
   { id: "jobs", label: "Jobs", icon: ListChecks },
   { id: "settings", label: "Settings", icon: Settings },
@@ -154,6 +157,7 @@ export default function App() {
             }}
           />}
           {page === "applications" && <ApplicationsPage onShowJobs={() => setPage("jobs")} />}
+          {page === "compare" && <ComparePage onShowJobs={() => setPage("jobs")} />}
           {page === "sql" && <SqlPage onShowJobs={() => setPage("jobs")} />}
           {page === "settings" && <SettingsPage />}
         </div>
