@@ -43,7 +43,7 @@ function failureSummary(job: JobInfo | undefined, lines: string[]): FailureSumma
       if (/^\[ERR\]\s*-\s*Error\s*$/i.test(text)) return false;
       return (
         text.includes("[ERR]") ||
-        /\b(unable to|exception|failed|failure|conflict|unauthorized|forbidden|timed out)\b/i.test(text)
+        /\b(unable to|exception|failed|failure|conflict|unauthorized|forbidden|timed out|internal server error)\b/i.test(text)
       );
     })
     .slice(-4);

@@ -110,10 +110,15 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
   screen on click.
 - Failed jobs summarize the outcome in plain language and separately show the meaningful technical
   error, including partial package deployments caused by locally modified Creatio schemas.
+- A job whose output reports a Creatio server error (HTTP 500) is marked failed even when clio
+  ends with a success exit code, so a deployment that failed on the server is never shown as green.
 
 ### Updates
 
-- Check GitHub Releases from **Settings → DevHub updates**.
+- Announce a new release in the header on its own — DevHub checks shortly after launch and every
+  six hours, so nobody has to remember to look. The notice can be dismissed per version, and a
+  failed check stays silent so working offline is never interrupted.
+- Check GitHub Releases on demand from **Settings → DevHub updates**.
 - Show the available version, release notes, and download progress.
 - Cryptographically verify downloaded updates.
 - Install the update and restart DevHub.

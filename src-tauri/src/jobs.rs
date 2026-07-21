@@ -307,12 +307,29 @@ impl JobState {
     }
 
     pub fn finish(&self, app: &AppHandle, id: &str, code: Option<i32>) {
-        // Explain the failure while the log is still in memory.
-        let diagnosis = if code == Some(0) {
-            None
-        } else {
-            self.logs.lock().unwrap().get(id).and_then(|lines| crate::diagnostics::diagnose_log(lines))
+        // Explain the failure while the log is still in memory. A zero exit is not
+        // taken at face value: clio can exit 0 after Creatio answered with a 500,
+        // so the log gets the final word on whether the job succeeded.
+        let (diagnosis, failed) = {
+            let logs = self.logs.lock().unwrap();
+            let lines = logs.get(id);
+            if code == Some(0) {
+                let diagnosis = lines.and_then(|l| crate::diagnostics::failure_despite_zero_exit(l));
+                let failed = diagnosis.is_some();
+                (diagnosis, failed)
+            } else {
+                (lines.and_then(|l| crate::diagnostics::diagnose_log(l)), true)
+            }
         };
+        if failed && code == Some(0) {
+            self.log(
+                app,
+                id,
+                "[DevHub] The tool exited 0, but its output reports a server error — \
+                 this job is marked failed. Verify the target environment before retrying."
+                    .to_string(),
+            );
+        }
         self.update(app, id, |j| {
             j.diagnosis = diagnosis.clone();
             j.exit_code = code;
@@ -322,10 +339,8 @@ impl JobState {
                 j.status = "cancelled".to_string();
                 j.phase = "cancelled".to_string();
             } else {
-                j.status =
-                    if code == Some(0) { "succeeded".to_string() } else { "failed".to_string() };
-                j.phase =
-                    if code == Some(0) { "completed".to_string() } else { "failed".to_string() };
+                j.status = if failed { "failed".to_string() } else { "succeeded".to_string() };
+                j.phase = if failed { "failed".to_string() } else { "completed".to_string() };
             }
         });
         // Persist the terminal state and dump this job's log to its file.

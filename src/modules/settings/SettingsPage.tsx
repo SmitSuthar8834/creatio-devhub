@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-dialog";
-import { relaunch } from "@tauri-apps/plugin-process";
-import { check, Update } from "@tauri-apps/plugin-updater";
 import { ArrowUpFromLine, Monitor, Moon, RefreshCw, Sun } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { checkForAppUpdate, installAppUpdate, Update } from "../../lib/appUpdate";
 import ErrorNote from "../../lib/ErrorNote";
 import { setThemeMode, ThemeMode, useTheme } from "../../lib/theme";
 import {
@@ -56,7 +55,9 @@ export default function SettingsPage() {
   const [toolError, setToolError] = useState("");
   const [appVersion, setAppVersion] = useState("");
   const [update, setUpdate] = useState<Update | null>(null);
-  const [updateStatus, setUpdateStatus] = useState("Ready to check for updates.");
+  const [updateStatus, setUpdateStatus] = useState(
+    "DevHub checks for new releases on its own and tells you in the header when one arrives. You can also check now.",
+  );
   const [updateBusy, setUpdateBusy] = useState(false);
   const [updateProgress, setUpdateProgress] = useState<number | null>(null);
   const { mode } = useTheme();
@@ -85,7 +86,7 @@ export default function SettingsPage() {
     setUpdateProgress(null);
     setUpdateStatus("Checking GitHub Releases…");
     try {
-      const available = await check({ timeout: 15000 });
+      const available = await checkForAppUpdate();
       setUpdate(available);
       setUpdateStatus(available
         ? `Version ${available.version} is available.`
@@ -102,22 +103,11 @@ export default function SettingsPage() {
     if (!update) return;
     setUpdateBusy(true);
     setUpdateStatus(`Downloading version ${update.version}…`);
-    let downloaded = 0;
-    let total = 0;
     try {
-      await update.downloadAndInstall((event) => {
-        if (event.event === "Started") {
-          total = event.data.contentLength ?? 0;
-          setUpdateProgress(0);
-        } else if (event.event === "Progress") {
-          downloaded += event.data.chunkLength;
-          setUpdateProgress(total ? Math.min(100, Math.round(downloaded / total * 100)) : null);
-        } else if (event.event === "Finished") {
-          setUpdateProgress(100);
-          setUpdateStatus("Update installed. Restarting DevHub…");
-        }
+      await installAppUpdate(update, (percent) => {
+        setUpdateProgress(percent);
+        if (percent === 100) setUpdateStatus("Update installed. Restarting DevHub…");
       });
-      await relaunch();
     } catch (reason) {
       setUpdateStatus(`Update installation failed: ${String(reason)}`);
       setUpdateBusy(false);

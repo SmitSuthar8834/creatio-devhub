@@ -35,6 +35,7 @@ import JobToaster from "./modules/jobs/JobToaster";
 import PackagesPage from "./modules/packages/PackagesPage";
 import SettingsPage from "./modules/settings/SettingsPage";
 import SqlPage from "./modules/sql/SqlPage";
+import UpdateBanner from "./modules/updates/UpdateBanner";
 import WorkspacesPage from "./modules/workspaces/WorkspacesPage";
 import logoMark from "./assets/icons/logo-mark.png";
 
@@ -136,6 +137,7 @@ export default function App() {
           </Button>
         </header>
         <ClioBanner onShowJobs={() => setPage("jobs")} />
+        <UpdateBanner onShowSettings={() => setPage("settings")} />
         <div className="flex-1 overflow-y-auto">
           {page === "environments" && <EnvironmentsPage />}
           {page === "jobs" && <JobsPage />}

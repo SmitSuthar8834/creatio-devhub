@@ -168,6 +168,27 @@ const RULES: &[Rule] = &[
         ],
     },
     Rule {
+        code: "creatio-server-error",
+        all: &[],
+        any: &[
+            "internal server error",
+            "(500)",
+            "http 500",
+            "status code 500",
+            "statuscode: 500",
+            "error 500",
+        ],
+        none: &["github.com", "repository not found"],
+        summary: "Creatio answered the request with a server error (500).",
+        cause: "The request reached Creatio and failed inside it — a package installation that hit a schema or database problem, an add-on that threw during install, or a site still warming up after a restart. clio does not always turn this into a non-zero exit code, so DevHub treats it as a failure on its own.",
+        steps: &[
+            "Open the full log below and find the operation that preceded the 500.",
+            "Check the target environment's state — the deployment may have applied partially.",
+            "Read the Creatio server log for the matching timestamp; the real exception is only recorded there.",
+            "If the site had just restarted or was compiling, wait for it to finish and retry.",
+        ],
+    },
+    Rule {
         code: "creatio-unreachable",
         all: &[],
         any: &[
@@ -227,6 +248,50 @@ pub fn diagnose_log(lines: &[String]) -> Option<Diagnosis> {
     const TAIL: usize = 40;
     let start = lines.len().saturating_sub(TAIL);
     diagnose(&lines[start..].join("\n"))
+}
+
+/// Failures that a zero exit code hides.
+///
+/// clio does not consistently propagate a Creatio server error into its own exit
+/// status: a `push-pkg` whose install request came back 500 can print the error
+/// and still exit 0, which would show a red deployment as a succeeded job. When a
+/// finished job exited 0 but its log carries one of these signatures, DevHub
+/// fails the job instead of trusting the exit code.
+///
+/// Only signatures that cannot mean anything else belong here — a bare `500`
+/// appears in row counts and identifiers, so every needle pins it to an HTTP
+/// status.
+const ZERO_EXIT_FAILURES: &[&str] = &[
+    "internal server error",
+    "(500)",
+    "http 500",
+    "status code 500",
+    "statuscode: 500",
+    "error 500",
+];
+
+/// The diagnosis for a job that exited 0 but actually failed, if the log says so.
+/// `None` means the zero exit stands.
+pub fn failure_despite_zero_exit(lines: &[String]) -> Option<Diagnosis> {
+    let haystack = lines.join("\n").to_lowercase();
+    if !ZERO_EXIT_FAILURES.iter().any(|needle| haystack.contains(needle)) {
+        return None;
+    }
+    // The whole log is searched, because the swallowed error is often followed by
+    // pages of output that continued as if nothing happened. That breadth is also
+    // why the explanation is the server-error rule rather than whatever `diagnose`
+    // makes of the full text — an unrelated warning from minute one must not
+    // become this job's stated cause.
+    by_code("creatio-server-error")
+}
+
+fn by_code(code: &str) -> Option<Diagnosis> {
+    RULES.iter().find(|rule| rule.code == code).map(|rule| Diagnosis {
+        code: rule.code.to_string(),
+        summary: rule.summary.to_string(),
+        cause: rule.cause.to_string(),
+        steps: rule.steps.iter().map(|step| step.to_string()).collect(),
+    })
 }
 
 /// Explain an error string for the frontend's inline error areas.
@@ -291,6 +356,46 @@ mod tests {
     fn recognizes_an_unreachable_environment() {
         let raw = "No connection could be made because the target machine actively refused it 127.0.0.1:8080";
         assert_eq!(code_for(raw).as_deref(), Some("creatio-unreachable"));
+    }
+
+    #[test]
+    fn recognizes_a_creatio_server_error() {
+        let raw = "[ERR] - Response status code does not indicate success: 500 (Internal Server Error).";
+        assert_eq!(code_for(raw).as_deref(), Some("creatio-server-error"));
+    }
+
+    #[test]
+    fn fails_a_zero_exit_job_whose_log_reports_a_500() {
+        // Shape of a push-pkg that clio ended with exit code 0 anyway.
+        let lines: Vec<String> = vec![
+            "[INF] - Install package".to_string(),
+            "[ERR] - The remote server returned an error: (500) Internal Server Error."
+                .to_string(),
+            "[INF] - Done".to_string(),
+        ];
+        assert_eq!(
+            failure_despite_zero_exit(&lines).map(|d| d.code).as_deref(),
+            Some("creatio-server-error"),
+        );
+    }
+
+    #[test]
+    fn a_swallowed_error_counts_however_far_above_the_tail_it_is() {
+        // Unlike diagnose_log, this scan covers the whole log: the point of the
+        // check is an error the tool kept running past.
+        let mut lines = vec!["[ERR] - (500) Internal Server Error".to_string()];
+        lines.extend(vec!["[INF] - continuing".to_string(); 200]);
+        assert!(failure_despite_zero_exit(&lines).is_some());
+    }
+
+    #[test]
+    fn a_clean_log_keeps_its_zero_exit() {
+        let lines: Vec<String> = vec![
+            "[INF] - 500 rows exported".to_string(),
+            "[INF] - Package installation finished".to_string(),
+            "[INF] - Deployed UsrPackage v1.0.500".to_string(),
+        ];
+        assert_eq!(failure_despite_zero_exit(&lines), None);
     }
 
     #[test]

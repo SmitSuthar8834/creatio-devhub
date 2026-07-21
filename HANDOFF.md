@@ -1,10 +1,11 @@
 # Creatio DevHub — Engineering Handoff
 
-Last verified: **2026-07-20**
+Last verified: **2026-07-21**
 
-Current version: **0.4.0** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
+Current version: **0.5.0** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
 table below was last written; see per-release commit messages for their scope. v0.4.0 is the
-shadcn/ui design-system release described below.)
+shadcn/ui design-system release described below; v0.5.0 adds the automatic update notice and
+stops trusting clio's exit code over its own output.)
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
@@ -51,6 +52,25 @@ style, Radix + Tailwind v4, lucide icons). Shipped in v0.4.0.
 - **Note for this dev box**: the shoogle MCP is project-scoped in `.mcp.json`; a Claude session
   must be started from `A:\PersonalComponents\creatio-devhub` for it to load. This migration used
   the official `npx shadcn@latest` CLI instead.
+
+## Automatic update notice (v0.5.0, 2026-07-21)
+
+Users no longer have to visit Settings and press "Check for updates" to learn that a release
+exists. `src/modules/updates/UpdateBanner.tsx` sits in the header under `ClioBanner` and checks
+the signed feed **4 s after launch and every 6 hours** the app stays open, then shows a
+dismissible strip with Install and restart / What's new / ✕.
+
+- Dismissal is stored per version (`creatio-devhub.app-update-dismissed.v1`), so hiding one
+  release does not hide the next — same contract as the clio banner.
+- **A failed check is silent.** DevHub is useful offline and behind VPNs that block github.com;
+  Settings → DevHub updates still reports the reason when asked. Do not turn this into a toast.
+- The check/download/relaunch calls moved into `src/lib/appUpdate.ts`
+  (`checkForAppUpdate`, `installAppUpdate`), which the banner and the Settings card both use —
+  the two paths must not drift on verification or restart behaviour.
+- Signature verification is unchanged: `check()` only resolves for a release signed with the
+  project key in `tauri.conf.json`, so the banner cannot offer an unsigned build.
+- There is no "check automatically" opt-out setting. Per-version dismissal was judged enough;
+  add a toggle if anyone finds the banner intrusive.
 
 ## Current state
 
@@ -415,14 +435,19 @@ cd src-tauri
 cargo test --lib
 ```
 
-Latest verified result (2026-07-20, v0.3.0):
+Latest verified result (2026-07-21, v0.5.0):
 
 - TypeScript check: passed
 - Vite production build: passed
-- Rust tests: **17 passed, 0 failed**
-- GitHub v0.3.0 release workflow: passed (run 29722892404)
+- Rust tests: **39 passed, 0 failed**
+- GitHub v0.5.0 release workflow: pending at commit time — confirm before announcing
 - Published artifacts: signed NSIS + MSI, both signatures, `latest.json`
-- Public updater feed: verified reporting `0.3.0`
+- Public updater feed: confirm it reports `0.5.0`
+
+Not covered by that run: the update banner has never been *seen* rendering, because the
+development machine is always on the newest version and the check therefore finds nothing. To
+exercise it, temporarily lower the version in `tauri.conf.json` below the published release and
+run `dev.cmd`.
 
 ## Publishing the next release
 
@@ -528,6 +553,16 @@ These cost real trial-and-error; the built-in `--help` is wrong in places.
   find the first `{` before parsing (see `locks.rs`/`sql.rs` handling).
 - An unreachable or restarting environment answers with an **HTML error page** (e.g. 401), not
   JSON. Detect `<!doctype` / `<html` and report it as transient rather than dumping the page.
+
+**Exit codes lie**
+- clio can exit **0** after Creatio answered a request with **HTTP 500** — a `push-pkg` whose
+  install failed server-side prints the error and still ends cleanly, so a job trusting only the
+  exit code showed a red deployment as succeeded. `JobState::finish` therefore re-reads the log
+  on a zero exit (`diagnostics::failure_despite_zero_exit`) and flips the job to **failed**, adds
+  a `[DevHub]` line explaining the override, and attaches the `creatio-server-error` diagnosis.
+  The needles are pinned to HTTP forms (`internal server error`, `(500)`, `http 500`, …) because a
+  bare `500` shows up in row counts and version strings. Shipped in v0.5.0; `exit_code` still
+  records the truthful `0`, and the override is stated in the job log as a `[DevHub]` line.
 
 **Commands that require cliogate** (`clio install-gate -e <env>`)
 - `execute-sql-script`, `lock-package` / `unlock-package`, `install-sql-schema`.
