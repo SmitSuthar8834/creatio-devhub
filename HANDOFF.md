@@ -55,6 +55,28 @@ style, Radix + Tailwind v4, lucide icons). Shipped in v0.4.0.
   must be started from `A:\PersonalComponents\creatio-devhub` for it to load. This migration used
   the official `npx shadcn@latest` CLI instead.
 
+## Package lock state (on `main`, unreleased, 2026-07-21)
+
+The Packages table has a **State** column — Locked / Unlocked / `—` — and the Lock and Unlock
+menu items collapsed into one state-aware toggle. Previously both were always offered with no
+indication of which one applied.
+
+- `clio list-packages -j` returns **no lock field at all** (Descriptor carries UId,
+  PackageVersion, Name, Type, ProjectPath, ModifiedOnUtc, Maintainer, DependsOn — nothing else).
+  So `packages::package_lock_states(env)` reads `SysPackage."InstallType"` over SQL instead:
+  **1 = locked, 0 = unlocked**, which is the same column `clio lock-package` writes.
+- Verified live: dev-834 reports 434 locked / 11 unlocked, and every unlocked one is a Customer
+  or Qnovate package. 187559-crm-bundle reports 447 / 10.
+- Same contract as `applications::application_extras`: one query for the whole list, and an
+  environment without cliogate gets an `Err` the screen swallows — the column reads `—` and
+  nothing else changes. Do not promote that failure into a banner; the listing is still valid.
+- The state is re-read after a lock/unlock job succeeds, not polled.
+- Cost: one extra SQL round-trip per environment on the Packages screen and on the launch
+  prefetch. Against a cloud environment that is a real network call, not a local one.
+
+**Not built: the compile half of roadmap #5** — see the compile-package entry under "clio
+behaviours worth knowing". It was written, then removed once the wait proved unbounded.
+
 ## Application details (v0.6.0, 2026-07-21)
 
 `clio list-apps --json` returns only Id, Name, Code, Version, Description — which is why the
@@ -702,6 +724,13 @@ The signing key stays in the private repo; only signed output crosses over, so t
   to disk at finish — a hard crash mid-job loses that job's log tail (record survives).
 - Catalog cache invalidation is explicit via Refresh or selected successful mutations; it is not a
   real-time subscription to Creatio changes.
+- **Killing the DevHub window orphans the clio processes it spawned.** Observed 2026-07-21: a
+  clio child outlived the app by 86 minutes after the window was force-closed. Job cancellation
+  terminates the whole Windows process tree, but application exit does not — nothing reaps
+  children on shutdown. This matters beyond tidiness: a lingering clio process is exactly what
+  makes `dotnet tool update clio -g` fail with `Access to the path … is denied`, so a user who
+  force-closes DevHub can then find the Update button in the clio banner failing for no visible
+  reason. A shutdown hook terminating live job process trees would fix it.
 - **Windows only.** No macOS/Linux build exists — the release workflow produces NSIS + MSI on a
   Windows runner. Tauri and the clio/Git/gh dependencies are all cross-platform, so a macOS build
   is feasible, but it needs a `macos` runner job, a replacement for the Windows-specific
@@ -722,16 +751,18 @@ The signing key stays in the private repo; only signed output crosses over, so t
 
 1. **Fix the "Start empty" workspace bug** (see Known limitations) — switch that path to
    `clio createw <name> --empty --directory <parent>` and adjust the destination handling.
-2. Run a controlled end-to-end validation matrix using disposable packages/applications and
+2. **Reap clio child processes on app exit** (see Known limitations) — small, and it removes a
+   confusing downstream failure in the clio Update button.
+3. Run a controlled end-to-end validation matrix using disposable packages/applications and
    non-production environments.
-3. Add automated integration tests around cache invalidation and deployment job locking.
-4. Add a **macOS build** if there is demand: macOS runner job, non-Windows job cancellation, and
+4. Add automated integration tests around cache invalidation and deployment job locking.
+5. Add a **macOS build** if there is demand: macOS runner job, non-Windows job cancellation, and
    Apple signing/notarization (needs a paid Apple Developer account).
-5. Add configurable clio executable path and log retention/export settings.
-6. Add optional scheduled workspace refresh / tray behavior.
-7. Clean up the leftover experiment objects on `187559-crm-bundle` when that env is no longer
+6. Add configurable clio executable path and log retention/export settings.
+7. Add optional scheduled workspace refresh / tray behavior.
+8. Clean up the leftover experiment objects on `187559-crm-bundle` when that env is no longer
    needed for testing.
-8. Design a proper ALM promotion flow if approvals, environment policies, or release gates are
+9. Design a proper ALM promotion flow if approvals, environment policies, or release gates are
    required.
 
 Done previously and no longer open: persist job history (`JobStore` in `jobs.rs` + Clear-history
@@ -761,6 +792,45 @@ These cost real trial-and-error; the built-in `--help` is wrong in places.
 
 **Commands that require cliogate** (`clio install-gate -e <env>`)
 - `execute-sql-script`, `lock-package` / `unlock-package`, `install-sql-schema`.
+- **cliogate SQL works against Creatio Cloud**, not only local IIS installs — verified on
+  `187559-crm-bundle` (`https://187559-crm-bundle.creatio.com`). This was an open question for
+  the roadmap's environment-diff work: reading settings/features/packages does **not** need
+  database access a cloud tenant would refuse.
+
+**`compile-package` can block indefinitely (why roadmap #5's compile half was dropped)**
+- `clio compile-package UsrDevHubCollabPackage -e 187559-crm-bundle` ran **22 minutes with zero
+  bytes of output** — not even the per-package start message its help promises — and used 2.9
+  seconds of CPU, i.e. it sat on a socket. It had to be killed; it never returned.
+- A DevHub job wrapping it is **non-cancellable** (the "modifying environment" phase), so the
+  user would get a pinned job with no output and no way out. Do not ship a compile action
+  without a timeout, a cancellable phase, or at minimum a warning for cloud environments.
+- Untested either way: whether the rebuild actually completed server-side after clio gave up.
+- Consequently **a populated `errors[]` from `last-compilation-log` has never been observed.**
+  A clean build returns `{"errors":[],"buildResult":0,"success":true}`. The element shape is
+  clio's own `CreatioCompilationError(line, column, errorNumber, errorText, warning, fileName)`
+  from `clio/Common/CompilationLogParser.cs` — read from source, never seen live. Note clio's
+  non-`--raw` rendering prints `Error` for warnings too; it never inspects the `warning` flag.
+
+**Entity-schema `.cs` files are regenerated on install**
+- Writing C# into `Schemas/<Name>/<Name>.cs` of an entity schema and pushing it does **nothing**:
+  Creatio regenerates the file from `metadata.json`, and a re-pull shows 0 bytes again. There is
+  no way to inject a deliberate compile error this way — it is the wrong schema type.
+- Real C# lives in a **Source code** schema. `clio create-schema --schema-name X --package-name Y`
+  creates one on a remote environment and `update-schema` sets its body; `get-schema` reads it.
+- Corollary: a `push-pkg` that ends on a bare `[ERR] - Error` after
+  `Package installation finished` may have installed fine. That trailing-message case is already
+  handled by the v0.2.8 work — do not read it as proof the payload was rejected.
+
+**`save-state` is the whole environment in one file**
+- `clio save-state <file> -e <env>` writes YAML with four top-level sections — `features`
+  (per-audience values), `settings` (code/value), `webservices` (name/url), and `packages`
+  (name, hash, maintainer, **and a per-schema name+hash list**). ~1 MB and ~2 minutes for
+  dev-834. `show-diff --source A --target B --file F` emits the same shape containing only the
+  differences, but took ~13 minutes for one pair.
+- This is the data source for the roadmap's environment-diff feature: no CLI-text parsing is
+  needed from either command, and the per-schema hashes give duplicate-element detection for
+  free. Build it on cached `save-state` snapshots — a 13-minute live `show-diff` cannot back a
+  responsive screen.
 
 **`execute-sql-script`** (backs the SQL screen)
 - `--View csv|xlsx` **requires** `--DestinationPath`; only the default `table` view prints to

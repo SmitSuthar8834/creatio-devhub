@@ -230,6 +230,11 @@ export interface PackageInfo {
   maintainer: string;
 }
 
+export interface PackageLockState {
+  name: string;
+  locked: boolean;
+}
+
 export type PackageAction =
   | "pull"
   | "push"
@@ -243,6 +248,11 @@ export type PackageAction =
 
 export const listPackages = (env: string, forceRefresh = false) =>
   invoke<CachedList<PackageInfo>>("list_packages", { env, forceRefresh });
+
+/** Lock state per package. Rejects when the environment has no cliogate — the
+ *  Packages screen treats that as "unknown" rather than an error. */
+export const packageLockStates = (env: string) =>
+  invoke<PackageLockState[]>("package_lock_states", { env });
 
 export const runPackageAction = (opts: {
   env: string;

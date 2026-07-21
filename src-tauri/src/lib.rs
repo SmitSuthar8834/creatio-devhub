@@ -53,6 +53,7 @@ pub fn run() {
             jobs::cancel_job,
             jobs::clear_job_history,
             packages::list_packages,
+            packages::package_lock_states,
             packages::run_package_action,
             packages::deploy_package_between_environments,
             sql::run_sql,

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { open } from "@tauri-apps/plugin-dialog";
 import { ChevronDown, Upload } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -41,7 +42,7 @@ import ErrorNote from "../../lib/ErrorNote";
 import {
   addPackageToWorkspace, deployPackageBetweenEnvironments, EnvSummary, listEnvironments,
   listPackages, listWorkspaces, onCatalogUpdated, onJobUpdate, PackageAction, PackageInfo,
-  runPackageAction, WorkspaceSummary,
+  packageLockStates, runPackageAction, WorkspaceSummary,
 } from "../../lib/ipc";
 
 type DialogState =
@@ -87,6 +88,9 @@ export default function PackagesPage({
   const [deployConfirm, setDeployConfirm] = useState("");
   const [cachedAt, setCachedAt] = useState<number | null>(null);
   const [fromCache, setFromCache] = useState(false);
+  /** Lock state by package name. Empty when the environment has no cliogate,
+   *  in which case the column reads "—" rather than claiming "unlocked". */
+  const [locks, setLocks] = useState<Map<string, boolean>>(new Map());
 
   useEffect(() => {
     listEnvironments().then((list) => {
@@ -96,10 +100,24 @@ export default function PackagesPage({
     }).catch((e) => setError(String(e)));
   }, []);
 
+  /** Lock state is an enhancement, not part of the listing: clio reports none,
+   *  and reading it needs SQL access this environment may not have. A failure
+   *  clears the column and is never surfaced as an error. */
+  const refreshLocks = async () => {
+    if (!env) return;
+    try {
+      const states = await packageLockStates(env);
+      setLocks(new Map(states.map((state) => [state.name, state.locked])));
+    } catch {
+      setLocks(new Map());
+    }
+  };
+
   const refresh = async (forceRefresh = true) => {
     if (!env) return;
     setLoading(true);
     setError("");
+    void refreshLocks();
     try {
       const result = await listPackages(env, forceRefresh);
       setPackages(result.items);
@@ -158,6 +176,10 @@ export default function PackagesPage({
       if (job.env === env && job.status === "succeeded" &&
           ["install-package", "delete-package", "set-package-version"].includes(job.kind)) {
         refresh(true);
+      }
+      if (job.env === env && job.status === "succeeded" &&
+          ["lock-package", "unlock-package"].includes(job.kind)) {
+        void refreshLocks();
       }
     });
     return () => { unlisten.then((fn) => fn()); };
@@ -409,6 +431,7 @@ export default function PackagesPage({
                 <TableHead>Package</TableHead>
                 <TableHead>Version</TableHead>
                 <TableHead>Maintainer</TableHead>
+                <TableHead>State</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -420,6 +443,15 @@ export default function PackagesPage({
                     <code className="font-mono text-xs">{pkg.version || "—"}</code>
                   </TableCell>
                   <TableCell>{pkg.maintainer || "—"}</TableCell>
+                  <TableCell>
+                    {locks.get(pkg.name) === undefined ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : locks.get(pkg.name) ? (
+                      <Badge variant="secondary">Locked</Badge>
+                    ) : (
+                      <Badge variant="outline">Unlocked</Badge>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-2">
                       <Button size="sm" variant="outline" onClick={() => pull(pkg)}>Pull</Button>
@@ -433,8 +465,18 @@ export default function PackagesPage({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => simpleAction(pkg, "lock")}>Lock</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => simpleAction(pkg, "unlock")}>Unlock</DropdownMenuItem>
+                          {/* One meaningful choice when the state is known;
+                              both only when it isn't. */}
+                          {locks.get(pkg.name) !== false && (
+                            <DropdownMenuItem onClick={() => simpleAction(pkg, "unlock")}>
+                              Unlock
+                            </DropdownMenuItem>
+                          )}
+                          {locks.get(pkg.name) !== true && (
+                            <DropdownMenuItem onClick={() => simpleAction(pkg, "lock")}>
+                              Lock
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={() => simpleAction(pkg, "activate")}>Activate</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => simpleAction(pkg, "deactivate")}>Deactivate</DropdownMenuItem>
                           <DropdownMenuSeparator />
