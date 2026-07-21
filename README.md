@@ -153,6 +153,21 @@ Rust commands ── job engine ── streamed UI events
    └── git / gh ── local workspace and GitHub
 ```
 
+## Installing
+
+Download the `.exe` (NSIS) or `.msi` installer from the
+[latest release](https://github.com/SmitSuthar8834/creatio-devhub/releases/latest).
+
+**Windows will warn you before it runs.** SmartScreen shows *"Windows protected your PC — unknown
+publisher"*; choose **More info → Run anyway**. The installer is not signed with a Windows code
+signing certificate, so Windows has no publisher identity to check. This is expected, not a sign
+that anything is wrong with the download.
+
+Releases *are* cryptographically signed, but with the Tauri updater key — that is what lets DevHub
+verify an update genuinely came from this project before installing it. Windows does not use that
+signature. Removing the SmartScreen warning would need a separate Authenticode certificate; see the
+handoff for what that involves.
+
 ## Prerequisites
 
 - Windows 10 or Windows 11.

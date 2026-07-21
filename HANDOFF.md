@@ -580,6 +580,35 @@ git push origin v0.3.1
 Never reuse a version tag for different source. If a release fails, fix the workflow or secret and
 rerun the same failed workflow only when its source/tag is unchanged.
 
+## SmartScreen blocks the installer (open, costs money to fix)
+
+Every new user hits *"Windows protected your PC — unknown publisher"* and must click
+**More info → Run anyway**. Existing installs updating in place are not affected.
+
+**The updater signature is not Windows code signing.** They solve different problems and are
+easy to confuse:
+
+- `TAURI_SIGNING_PRIVATE_KEY` (minisign) proves an update payload came from this project. Only
+  DevHub's own updater checks it. Windows has never heard of that key.
+- **Authenticode** is what Windows checks, and `src-tauri/tauri.conf.json` has no
+  `bundle.windows.certificateThumbprint` or `signCommand` — the installers ship unsigned.
+
+To remove the warning you need an Authenticode certificate. Since the 2023 CA/Browser Forum rule
+change, **every** OV certificate must live on a hardware token or cloud HSM, so the old "cheap
+cert in a file" route no longer exists:
+
+- **Azure Trusted Signing** — roughly $10/month, cloud-signed, no token to keep. Cheapest realistic
+  option; requires identity validation and Tauri's `bundle.windows.signCommand` pointing at the
+  Azure signing tool. Check current individual-vs-organisation eligibility before committing.
+- **OV certificate** (~$200–400/yr + token) — reputation with SmartScreen still builds gradually,
+  so early downloads may warn anyway until enough installs accumulate.
+- **EV certificate** (~$300–600/yr, hardware token) — immediate SmartScreen reputation, the only
+  option that removes the warning from day one.
+
+Whichever is chosen, the certificate must be reachable from the GitHub Actions runner, which means
+another repository secret alongside the updater key. Until then, keep the warning documented in
+the README and on the website download section rather than letting users guess.
+
 ## If the repository goes private
 
 Planned 2026-07-21, **not executed** — the repo is still public. Written up because flipping the
