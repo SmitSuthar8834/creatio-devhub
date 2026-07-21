@@ -2,7 +2,7 @@
 
 Last verified: **2026-07-21**
 
-Current version: **0.6.0** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
+Current version: **0.7.0** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
 table below was last written; see per-release commit messages for their scope. v0.4.0 is the
 shadcn/ui design-system release described below; v0.5.0 adds the automatic update notice and
 stops trusting clio's exit code over its own output; v0.5.1 stops reporting a successful SQL
@@ -54,6 +54,85 @@ style, Radix + Tailwind v4, lucide icons). Shipped in v0.4.0.
 - **Note for this dev box**: the shoogle MCP is project-scoped in `.mcp.json`; a Claude session
   must be started from `A:\PersonalComponents\creatio-devhub` for it to load. This migration used
   the official `npx shadcn@latest` CLI instead.
+
+## Compare environments (v0.7.0, 2026-07-21)
+
+A new **Compare** section answers the question the roadmap called the moat: is pre-prod still
+the same as dev, and what exactly differs. Read-only — nothing in this feature writes to any
+environment.
+
+- **One command supplies everything.** `clio save-state <file> -e <env>` returns features,
+  system settings, web services and every package with a hash per package *and per schema*.
+  `src-tauri/src/envstate.rs` captures that into app-data `snapshots/<env>.yaml` as a
+  **cancellable** job, then compares two files. Comparison is local, so re-comparing is
+  instant and never re-reads an environment.
+- **Do not rebuild this on live `show-diff`.** It took ~13 minutes for one pair and cannot
+  back a screen; it also emits the same YAML shape, so there is no parsing advantage.
+- **The YAML parser is hand-written, deliberately.** `serde_yaml` is deprecated and the
+  maintained forks are unvetted — poor company for a path holding credentials. clio's output is
+  machine-generated in four fixed shapes with no block scalars, anchors or flow collections
+  (verified across a 986 KB capture). Parsed counts match a raw grep of that file exactly:
+  713 settings, 456 features, 445 packages, 10,945 schemas, 3 web services. **If clio's output
+  ever grows real YAML constructs, replace the parser rather than patch it.**
+- **Capture duration is measured, not estimated**, and stored in `snapshots/durations.json`.
+  The spread is too wide to hardcode: dev-834 (local IIS) takes ~2 minutes, the cloud tenant
+  187559-crm-bundle took ~13. Before a first capture the UI states an honest range; afterwards
+  it reports that environment's real previous time.
+- **Schemas are compared only inside packages whose hash already differs.** A matching package
+  hash means matching contents, so expanding all 10,945 would be noise. A real dev-834 ↔
+  187559 comparison yields 230 differing packages (180 changed, 19 source-only, 31
+  target-only), 133 settings, 10 features, and 2,519 schema rows — e.g. `CoreForecast` alone
+  has 24 differing schemas. That schema level is the duplicate-element collision warning.
+- **Absent by design:** package version and lock state are not in `save-state`. The diff keys
+  on hash, so a version change reads as "differs". Adding them means merging `list-packages`
+  and `package_lock_states` into the packages tab — three sources for one view.
+- `--overwrite` must **not** be passed to `save-state`. It is a bare switch that already
+  defaults to true, and supplying a value made clio consume `true` as the next positional and
+  fail with `Active environment 'true' is not found`. Re-capture overwrites correctly without
+  it (verified: 16 bytes → 1,259,334).
+
+### Secrets handling — do not weaken this
+
+Snapshots store setting values verbatim, so a snapshot file is a file full of API keys sitting
+in app-data. Three layers, none of which is optional:
+
+1. Values render as `••••••` until revealed **per row**; nothing bulk-reveals.
+2. Exported markdown omits setting values entirely and says so in the document — a setting row
+   reads `set`, never the value.
+3. Capture logs a warning naming the risk, and the screen has a Delete control per snapshot.
+
+The credential-name heuristic (`looks_sensitive`) only decides where a warning icon appears. It
+is **never** the boundary, because both it and Creatio's own `SecureText` marking miss real
+keys — see the settings-secrets entry under clio behaviours.
+
+**UI verified** by driving the vite dev server with a stubbed IPC layer at realistic volume:
+230 package rows render instantly, expanding a package adds exactly its differing schemas,
+all 268 setting value cells mask, revealing one row reveals exactly two cells, and no secret
+appears in the DOM before reveal. The **capture job itself has not been run in the packaged
+app** — its clio invocation is the one verified by hand, but nobody has watched it complete
+from the UI.
+
+## Package lock state (v0.7.0, 2026-07-21)
+
+The Packages table has a **State** column — Locked / Unlocked / `—` — and the Lock and Unlock
+menu items collapsed into one state-aware toggle. Previously both were always offered with no
+indication of which one applied.
+
+- `clio list-packages -j` returns **no lock field at all** (Descriptor carries UId,
+  PackageVersion, Name, Type, ProjectPath, ModifiedOnUtc, Maintainer, DependsOn — nothing else).
+  So `packages::package_lock_states(env)` reads `SysPackage."InstallType"` over SQL instead:
+  **1 = locked, 0 = unlocked**, which is the same column `clio lock-package` writes.
+- Verified live: dev-834 reports 434 locked / 11 unlocked, and every unlocked one is a Customer
+  or Qnovate package. 187559-crm-bundle reports 447 / 10.
+- Same contract as `applications::application_extras`: one query for the whole list, and an
+  environment without cliogate gets an `Err` the screen swallows — the column reads `—` and
+  nothing else changes. Do not promote that failure into a banner; the listing is still valid.
+- The state is re-read after a lock/unlock job succeeds, not polled.
+- Cost: one extra SQL round-trip per environment on the Packages screen and on the launch
+  prefetch. Against a cloud environment that is a real network call, not a local one.
+
+**Not built: the compile half of roadmap #5** — see the compile-package entry under "clio
+behaviours worth knowing". It was written, then removed once the wait proved unbounded.
 
 ## Application details (v0.6.0, 2026-07-21)
 
@@ -702,6 +781,13 @@ The signing key stays in the private repo; only signed output crosses over, so t
   to disk at finish — a hard crash mid-job loses that job's log tail (record survives).
 - Catalog cache invalidation is explicit via Refresh or selected successful mutations; it is not a
   real-time subscription to Creatio changes.
+- **Killing the DevHub window orphans the clio processes it spawned.** Observed 2026-07-21: a
+  clio child outlived the app by 86 minutes after the window was force-closed. Job cancellation
+  terminates the whole Windows process tree, but application exit does not — nothing reaps
+  children on shutdown. This matters beyond tidiness: a lingering clio process is exactly what
+  makes `dotnet tool update clio -g` fail with `Access to the path … is denied`, so a user who
+  force-closes DevHub can then find the Update button in the clio banner failing for no visible
+  reason. A shutdown hook terminating live job process trees would fix it.
 - **Windows only.** No macOS/Linux build exists — the release workflow produces NSIS + MSI on a
   Windows runner. Tauri and the clio/Git/gh dependencies are all cross-platform, so a macOS build
   is feasible, but it needs a `macos` runner job, a replacement for the Windows-specific
@@ -722,16 +808,18 @@ The signing key stays in the private repo; only signed output crosses over, so t
 
 1. **Fix the "Start empty" workspace bug** (see Known limitations) — switch that path to
    `clio createw <name> --empty --directory <parent>` and adjust the destination handling.
-2. Run a controlled end-to-end validation matrix using disposable packages/applications and
+2. **Reap clio child processes on app exit** (see Known limitations) — small, and it removes a
+   confusing downstream failure in the clio Update button.
+3. Run a controlled end-to-end validation matrix using disposable packages/applications and
    non-production environments.
-3. Add automated integration tests around cache invalidation and deployment job locking.
-4. Add a **macOS build** if there is demand: macOS runner job, non-Windows job cancellation, and
+4. Add automated integration tests around cache invalidation and deployment job locking.
+5. Add a **macOS build** if there is demand: macOS runner job, non-Windows job cancellation, and
    Apple signing/notarization (needs a paid Apple Developer account).
-5. Add configurable clio executable path and log retention/export settings.
-6. Add optional scheduled workspace refresh / tray behavior.
-7. Clean up the leftover experiment objects on `187559-crm-bundle` when that env is no longer
+6. Add configurable clio executable path and log retention/export settings.
+7. Add optional scheduled workspace refresh / tray behavior.
+8. Clean up the leftover experiment objects on `187559-crm-bundle` when that env is no longer
    needed for testing.
-8. Design a proper ALM promotion flow if approvals, environment policies, or release gates are
+9. Design a proper ALM promotion flow if approvals, environment policies, or release gates are
    required.
 
 Done previously and no longer open: persist job history (`JobStore` in `jobs.rs` + Clear-history
@@ -761,6 +849,75 @@ These cost real trial-and-error; the built-in `--help` is wrong in places.
 
 **Commands that require cliogate** (`clio install-gate -e <env>`)
 - `execute-sql-script`, `lock-package` / `unlock-package`, `install-sql-schema`.
+- **cliogate SQL works against Creatio Cloud**, not only local IIS installs — verified on
+  `187559-crm-bundle` (`https://187559-crm-bundle.creatio.com`). This was an open question for
+  the roadmap's environment-diff work: reading settings/features/packages does **not** need
+  database access a cloud tenant would refuse.
+
+**`compile-package` can block indefinitely (why roadmap #5's compile half was dropped)**
+- `clio compile-package UsrDevHubCollabPackage -e 187559-crm-bundle` ran **22 minutes with zero
+  bytes of output** — not even the per-package start message its help promises — and used 2.9
+  seconds of CPU, i.e. it sat on a socket. It had to be killed; it never returned.
+- A DevHub job wrapping it is **non-cancellable** (the "modifying environment" phase), so the
+  user would get a pinned job with no output and no way out. Do not ship a compile action
+  without a timeout, a cancellable phase, or at minimum a warning for cloud environments.
+- Untested either way: whether the rebuild actually completed server-side after clio gave up.
+- Consequently **a populated `errors[]` from `last-compilation-log` has never been observed.**
+  A clean build returns `{"errors":[],"buildResult":0,"success":true}`. The element shape is
+  clio's own `CreatioCompilationError(line, column, errorNumber, errorText, warning, fileName)`
+  from `clio/Common/CompilationLogParser.cs` — read from source, never seen live. Note clio's
+  non-`--raw` rendering prints `Error` for warnings too; it never inspects the `warning` flag.
+
+**Entity-schema `.cs` files are regenerated on install**
+- Writing C# into `Schemas/<Name>/<Name>.cs` of an entity schema and pushing it does **nothing**:
+  Creatio regenerates the file from `metadata.json`, and a re-pull shows 0 bytes again. There is
+  no way to inject a deliberate compile error this way — it is the wrong schema type.
+- Real C# lives in a **Source code** schema. `clio create-schema --schema-name X --package-name Y`
+  creates one on a remote environment and `update-schema` sets its body; `get-schema` reads it.
+- Corollary: a `push-pkg` that ends on a bare `[ERR] - Error` after
+  `Package installation finished` may have installed fine. That trailing-message case is already
+  handled by the v0.2.8 work — do not read it as proof the payload was rejected.
+
+**`save-state` is the whole environment in one file**
+- `clio save-state <file> -e <env>` writes YAML with four top-level sections — `features`
+  (per-audience values), `settings` (code/value), `webservices` (name/url), and `packages`
+  (name, hash, maintainer, **and a per-schema name+hash list**). ~1 MB and ~2 minutes for
+  dev-834. `show-diff --source A --target B --file F` emits the same shape containing only the
+  differences, but took ~13 minutes for one pair.
+- This is the data source for the roadmap's environment-diff feature: no CLI-text parsing is
+  needed from either command, and the per-schema hashes give duplicate-element detection for
+  free. Build it on cached `save-state` snapshots — a 13-minute live `show-diff` cannot back a
+  responsive screen.
+- `show-diff` between `dev-834` and `Dev-thoughtworks` produced 5,630 lines in three sections:
+  `features` (221), `settings` (265) and `packages` (5,143 — 156 packages with hash, maintainer
+  and per-schema hashes). No `webservices` section appeared even though `save-state` emits one,
+  and there is **no package version and no lock state** in the diff: it keys on hash. A Packages
+  comparison tab therefore needs three sources merged — `show-diff`/`save-state` for hashes,
+  `list-packages` for versions, `package_lock_states` for locks.
+
+**⚠ Environment state files contain live secrets — never export them unmasked**
+- Both `save-state` and `show-diff` write **setting values in plaintext**. The dev-834 ↔
+  Dev-thoughtworks diff contains a full `ApryseLicenseKey` among ordinary configuration. This is
+  the same hazard as raw `clio env` output, but easier to miss because most of the file is dull.
+- The roadmap's "Copy as report" button — markdown "suitable for pasting into Slack/Teams" —
+  would leak these into a chat history. **Mask setting values by default** (show `differs`, not
+  the values) and require a deliberate reveal per row; never mask only at copy time, because the
+  values are also on screen and in whatever file the snapshot cache writes.
+- **Do not rely on `SysSettings."ValueTypeName" = 'SecureText'` to identify secrets.** It is a
+  true positive when present but badly incomplete — verified on 187559-crm-bundle, only 13
+  settings carry it, and these credentials do **not**:
+
+  | Setting | Type |
+  |---|---|
+  | `FacebookConsumerSecret`, `GoogleConsumerSecret`, `TwitterConsumerSecret` | ShortText |
+  | `BingSearchApiKey`, `BpmAuthKey`, `FacebookConsumerKey`, `GoogleConsumerKey`, `TwitterConsumerKey` | ShortText |
+  | `ApolloApiKey`, `mandrillApiKey`, `GoogleMapsApiKey`, `EventTrackingApiKey` | MediumText |
+
+- Name matching alone is no better on its own — it over-matches harmless entries such as
+  `PortalRecoveryPasswordEmailTemplate` (a Lookup pointing at an email template). Treat
+  `SecureText` **plus** a `Code` pattern (`key|secret|password|token|auth|jwk|credential`) as a
+  *hint for what to warn about*, not as the security boundary. The boundary is masking
+  everything by default.
 
 **`execute-sql-script`** (backs the SQL screen)
 - `--View csv|xlsx` **requires** `--DestinationPath`; only the default `table` view prints to

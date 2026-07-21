@@ -13,6 +13,53 @@ pub struct PackageInfo {
     pub maintainer: String,
 }
 
+/// Whether a package is locked, keyed by name. Separate from `PackageInfo`
+/// because `clio list-packages -j` does not report it at all — see
+/// `package_lock_states`.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackageLockState {
+    pub name: String,
+    pub locked: bool,
+}
+
+/// Lock state for every package in `env`, read from `SysPackage.InstallType`.
+///
+/// `clio lock-package` works by setting `InstallType = 1`, and `list-packages`
+/// returns no lock field whatsoever, so the list can only show a lock badge —
+/// or offer a meaningful toggle — with this second read. One query for the
+/// whole list, following `applications::application_extras`: an environment
+/// without cliogate gets an `Err` the Packages screen ignores, and the table
+/// renders exactly as it did before.
+#[tauri::command]
+pub fn package_lock_states(env: String) -> Result<Vec<PackageLockState>, String> {
+    let sql = r#"SELECT p."Name", p."InstallType" FROM "SysPackage" p ORDER BY p."Name""#;
+    let result = crate::sql::query_env(&env, sql)?;
+    let index = |name: &str| {
+        result
+            .columns
+            .iter()
+            .position(|column| column.eq_ignore_ascii_case(name))
+    };
+    let (Some(name_at), Some(type_at)) = (index("Name"), index("InstallType")) else {
+        return Err("SysPackage did not return Name and InstallType.".to_string());
+    };
+    Ok(result
+        .rows
+        .iter()
+        .filter_map(|row| {
+            let name = row.get(name_at)?.trim();
+            if name.is_empty() {
+                return None;
+            }
+            Some(PackageLockState {
+                name: name.to_string(),
+                locked: row.get(type_at).map(|value| value.trim() == "1")?,
+            })
+        })
+        .collect())
+}
+
 /// Parse the human-readable `clio list-packages` table. clio may prepend
 /// [INF]/[WAR] messages and may render a separator row below the header.
 #[cfg(test)]
