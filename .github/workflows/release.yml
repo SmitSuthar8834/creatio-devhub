@@ -10,8 +10,20 @@ permissions:
   contents: write
 
 jobs:
-  publish-windows:
-    runs-on: windows-latest
+  publish:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows: NSIS + MSI, signed updater artifacts.
+          - platform: windows-latest
+            args: ""
+            rust-targets: ""
+          # macOS: one universal .dmg/.app for Apple Silicon and Intel.
+          - platform: macos-latest
+            args: "--target universal-apple-darwin"
+            rust-targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
 
@@ -21,10 +33,14 @@ jobs:
           cache: npm
 
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
 
       - name: Install frontend dependencies
         run: npm ci
 
+      # Both platform jobs publish to the same tag/release; tauri-action merges
+      # each platform's signed entry into a single latest.json.
       - name: Build, sign, and publish
         uses: tauri-apps/tauri-action@v1
         env:
@@ -34,8 +50,9 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: DevHub v__VERSION__
-          releaseBody: "Signed Windows release of Creatio DevHub."
+          releaseBody: "Signed release of Creatio DevHub. macOS builds are not yet Apple-notarized — on first launch, right-click the app and choose Open."
           generateReleaseNotes: true
           releaseDraft: false
           prerelease: false
           updaterJsonPreferNsis: true
+          args: ${{ matrix.args }}

@@ -418,6 +418,14 @@ impl JobState {
             const CREATE_NO_WINDOW: u32 = 0x0800_0000;
             cmd.creation_flags(CREATE_NO_WINDOW);
         }
+        // On Unix, put the child in its own process group so we can signal the
+        // whole tree (clio spawns dotnet, git spawns helpers) with one negative
+        // PID — plain `kill <pid>` would leave the descendants running.
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::CommandExt;
+            cmd.process_group(0);
+        }
 
         let mut child = cmd
             .spawn()
@@ -567,7 +575,19 @@ fn terminate_process_tree(pid: u32) {
     }
     #[cfg(not(windows))]
     {
-        let _ = Command::new("kill").args(["-TERM", &pid.to_string()]).status();
+        // stream_process spawns children with process_group(0), so the child's
+        // PID is also its process-group id. `kill -TERM -<pgid>` signals every
+        // process in that group (clio + the dotnet/git children it forked).
+        // Fall back to the bare PID if the group signal finds nothing.
+        let group = format!("-{pid}");
+        let killed_group = Command::new("kill")
+            .args(["-TERM", &group])
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false);
+        if !killed_group {
+            let _ = Command::new("kill").args(["-TERM", &pid.to_string()]).status();
+        }
     }
 }
 

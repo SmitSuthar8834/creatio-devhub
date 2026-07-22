@@ -1,0 +1,48 @@
+name: macOS build check
+
+# Proves the app still compiles and bundles on macOS without cutting a release.
+# There is no Mac on the main dev box, so this is the only signal that the
+# cross-platform code and the .dmg bundle are healthy before a mac tag.
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"] # release.yml owns v* tag builds
+  pull_request: # a feature branch gets its mac check when it opens a PR
+
+permissions:
+  contents: read
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Typecheck frontend
+        run: npx tsc --noEmit
+
+      - name: Rust tests
+        working-directory: src-tauri
+        run: cargo test --lib
+
+      # Full universal build — no tagName, so tauri-action bundles the app and
+      # attaches the artifacts to this run instead of publishing a release.
+      - name: Build universal macOS bundle (no publish)
+        uses: tauri-apps/tauri-action@v1
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          args: "--target universal-apple-darwin"

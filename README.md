@@ -1,9 +1,15 @@
 # Creatio DevHub
 
-Creatio DevHub is a Windows desktop workbench for Creatio developers. It provides a visual,
-job-based interface over the installed [clio](https://github.com/Advance-Technologies-Foundation/clio)
+Creatio DevHub is a cross-platform (Windows and macOS) desktop workbench for Creatio developers.
+It provides a visual, job-based interface over the installed
+[clio](https://github.com/Advance-Technologies-Foundation/clio)
 and Git command-line tools for managing environments, packages, applications, and source-controlled
 workspaces.
+
+> **Platform status.** Windows installers are published for every release. macOS support is in the
+> codebase and is compiled and bundled on every push by the `macOS build check` CI workflow, but a
+> macOS installer is not published yet — it is released only after the build has been run and
+> exercised on a real Mac. See the handoff for the release gate.
 
 DevHub does not connect directly to Creatio APIs and does not store Creatio passwords. Environment
 registration and credentials remain owned by clio.
@@ -143,7 +149,8 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
 - Every long-running operation is represented as a job with streamed output.
 - Operations against the same environment are serialized.
 - Credentials and secret command arguments are masked in logs.
-- Safe phases can be cancelled, including termination of the Windows child-process tree.
+- Safe phases can be cancelled, including termination of the whole child-process tree (via
+  `taskkill /T` on Windows and a process-group signal on macOS/Linux).
 - Server-side installation, compilation, Git push, and other unsafe phases cannot be terminated
   after they begin.
 - Desktop notifications report completed jobs when DevHub is not focused.
@@ -199,12 +206,19 @@ verify an update genuinely came from this project before installing it. Windows 
 signature. Removing the SmartScreen warning would need a separate Authenticode certificate; see the
 handoff for what that involves.
 
+**On macOS** (once a build is published) the app is not yet Apple-notarized, so Gatekeeper blocks
+the first launch with *"cannot be opened because it is from an unidentified developer."* Right-click
+(or Control-click) the app in Finder and choose **Open** once; after that it launches normally.
+Notarization needs a paid Apple Developer account and is not set up yet — see the handoff.
+
 ## Prerequisites
 
-- Windows 10 or Windows 11.
+- Windows 10/11, or macOS 12 (Monterey) or newer.
 - Node.js 22 or a compatible current LTS version.
-- Rust stable with the MSVC target.
-- Visual Studio 2022 Build Tools with the C++ desktop workload.
+- Rust stable — the MSVC target on Windows; the default toolchain on macOS. A universal macOS build
+  also needs the `aarch64-apple-darwin` and `x86_64-apple-darwin` targets (`build.sh` adds them).
+- **Windows only:** Visual Studio 2022 Build Tools with the C++ desktop workload. macOS builds use
+  the Xcode command-line tools (`xcode-select --install`).
 - clio, Git, and (for the integrated GitHub account flow) GitHub CLI installed. DevHub finds them
   on `PATH`, in the current system PATH, or in their usual install directories; if a tool lives
   somewhere else, pin its path under Settings → Command-line tools.
@@ -223,6 +237,13 @@ Run the Tauri development application:
 
 ```powershell
 .\dev.cmd
+```
+
+On macOS or Linux, use the shell wrappers instead (`dev.cmd`/`build.cmd` exist only to shim this
+Windows box's Visual Studio toolchain — the Unix toolchains need no such wrapper):
+
+```bash
+./dev.sh
 ```
 
 Run frontend validation:
@@ -295,8 +316,12 @@ git push origin v0.2.2
 5. Wait for **Publish DevHub release** to succeed.
 6. Verify the new release contains the installers, signatures, and `latest.json`.
 
-The workflow at `.github/workflows/release.yml` builds the Windows release and publishes the
-installer, signatures, and updater metadata.
+The workflow at `.github/workflows/release.yml` is a Windows + macOS matrix: it builds the Windows
+installers and the universal macOS bundle and publishes both, their signatures, and the merged
+`latest.json` updater metadata to one release. A separate `.github/workflows/ci.yml` builds the
+macOS bundle on every push without publishing, so cross-platform breakage is caught without a Mac on
+hand. **Do not tag a release that ships a macOS build until that build has actually been run on a
+Mac** — see the handoff's platform gate.
 
 ## Main workflows
 

@@ -18,6 +18,23 @@ SysPackageId remap, adds an opt-in SQL write path that bypasses OData's mandator
 validation, and a per-entity column picker — **released on tests+build only, not yet
 live-verified in the GUI.**)
 
+> **START HERE (next session) — v0.8.6 live verification is owed.** v0.8.6 was
+> tagged, pushed, and **published green on 2026-07-22** (CI *Release v0.8.6*
+> success; release DevHub v0.8.6 non-draft with signed `*-setup.exe`, `*.msi`,
+> their `.sig`s, and `latest.json`). What's still owed is the live GUI check that
+> was NOT possible from the coding session (the native window can't be driven
+> there — see [[verify-before-shipping-ui]]).
+> Run `./dev.cmd`, Migration → Marketing content, Dev-thoughtworks → pre-thoughtworks:
+> 1. **SQL overwrite:** enable *Write through SQL*, overwrite the failing Campaigns
+>    → the OData `500 "Owner field must be filled in"` should be gone.
+> 2. **Flow package remap:** run *Migrate flow diagrams* → the `23503` / `42501`
+>    should be gone. This assumes `SysSchema.SysPackageId` was the failing FK and
+>    that OData exposes `SysPackage`; if it still errors, capture the exact message
+>    and either switch the package lookup to cliogate SQL or introspect the real
+>    constraint via `pg_constraint`. Full detail: `HANDOFF-content-migration.md`
+>    ("fourth pass"). Still also unexercised end-to-end: finalize (redis+restart)
+>    and the post-restart designer check.
+
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
 Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.8.6>
@@ -28,6 +45,58 @@ Website: <https://smitsuthar8834.github.io/creatio-devhub/> (branch `gh-pages`)
 > into `package.json` / `tauri.conf.json` — Windows PowerShell `Set-Content -Encoding utf8` writes
 > a BOM. Use `[System.IO.File]::WriteAllText` with `UTF8Encoding($false)` (or an editor that
 > preserves encoding) for JSON the toolchain parses. The broken tag was deleted, never reused.
+
+## macOS support — code + CI, release gated on a real-Mac run (2026-07-22)
+
+DevHub was Windows-only. It now compiles and bundles on macOS too, but **no mac installer is
+published yet, by choice**: the main dev box has no Mac, so a mac build has only ever been compiled,
+never launched. A junior with a Mac is the release gate (see below). This was scoped as *"code + CI,
+no release"* precisely because of [[verify-before-shipping-ui]].
+
+**What already made this easy.** The Rust code was mostly platform-guarded already — `CommandExt`
+creation-flags behind `#[cfg(windows)]`, `candidates()`/`well_known()` already had non-Windows
+branches, `terminate_process_tree` already had a `#[cfg(not(windows))]` arm. The gaps were narrow.
+
+**Code changes (all pushed to `main`, 96 Rust tests green on Windows):**
+
+- **`jobs.rs` — real process-tree kill on Unix.** The old Unix arm was `kill -TERM <pid>`, which
+  kills only the direct child and orphans clio's `dotnet`/git grandchildren. `stream_process` now
+  spawns Unix children with `process_group(0)` (their PID becomes their process-group id), and
+  `terminate_process_tree` sends `kill -TERM -<pid>` (negative = whole group), falling back to the
+  bare PID if the group signal finds nothing. Windows still uses `taskkill /T /F`. This is the
+  "non-Windows job cancellation" the old roadmap #5 called for.
+- **`tools.rs` — clio discovery on macOS.** The clio well-known path was `~/.dotnet\tools` (a
+  backslash literal — one nonsense filename on Unix). Now `~/.dotnet/tools` via the `push` closure
+  (Windows accepts `/` as a separator, so one string is correct on both). The Homebrew/`/usr/local`
+  bin dirs were already in the Unix well-known list.
+
+**CI / release (`.github/workflows/`):**
+
+- **`release.yml` is now a `windows-latest` + `macos-latest` matrix.** The mac job builds a
+  **universal** bundle (`--target universal-apple-darwin`, both `aarch64`/`x86_64` rust targets) so
+  one `.dmg` covers Apple Silicon and Intel. Both jobs publish to the same tag; `tauri-action`
+  merges each platform's signed entry into one `latest.json`. It only runs on a `v*` tag / dispatch,
+  so nothing ships until someone tags.
+- **`ci.yml` (new) — `macOS build check`.** Runs on every push/PR (not on `v*` tags): `tsc`,
+  `cargo test --lib`, then a full universal `tauri build` with **no `tagName`** so it bundles the
+  app and attaches artifacts to the run without publishing. This is the only signal that the
+  cross-platform code and the `.dmg` bundle are healthy, given there is no local Mac.
+- **`dev.sh` / `build.sh` (new).** Unix wrappers. `dev.cmd`/`build.cmd` exist only to shim this
+  box's partial VS toolchain; the Unix toolchains need none, so these are thin. `dev.sh` is what the
+  junior runs to test (dev mode builds no updater artifacts, so it needs no signing key). `build.sh`
+  adds the two apple-darwin targets and builds universal; it uses `~/.tauri/creatio-devhub.key` if
+  present, else builds unsigned (local test only).
+
+**tauri.conf.json** already had `bundle.targets: "all"` (→ `.app`/`.dmg`/updater tarball on macOS)
+and the `.icns` icon, so no bundle-config change was needed. `updater.windows.installMode` is
+Windows-scoped and harmless on mac.
+
+**Release gate before tagging any mac build (do NOT skip — this is the whole point of the scoping):**
+1. Junior runs `./dev.sh` on the Mac; confirm the shell renders and clio/git/gh resolve.
+2. Exercise **job cancellation** (the new process-group kill) and a real clio job end-to-end.
+3. Confirm tool discovery finds Homebrew-installed clio/git/gh (`~/.dotnet/tools`, `/opt/homebrew/bin`).
+4. Only then bump the version and tag — the mac job in `release.yml` will publish the universal dmg.
+5. First launch on any other Mac needs **right-click → Open** until Apple notarization is added.
 
 ## Design system: shadcn/ui migration (v0.4.0, 2026-07-20)
 
@@ -954,10 +1023,13 @@ The signing key stays in the private repo; only signed output crosses over, so t
   makes `dotnet tool update clio -g` fail with `Access to the path … is denied`, so a user who
   force-closes DevHub can then find the Update button in the clio banner failing for no visible
   reason. A shutdown hook terminating live job process trees would fix it.
-- **Windows only.** No macOS/Linux build exists — the release workflow produces NSIS + MSI on a
-  Windows runner. Tauri and the clio/Git/gh dependencies are all cross-platform, so a macOS build
-  is feasible, but it needs a `macos` runner job, a replacement for the Windows-specific
-  process-tree cancellation, and Apple signing/notarization to avoid Gatekeeper warnings.
+- **Cross-platform: code + CI done, macOS release gated on a real-Mac run** (2026-07-22). The app
+  now compiles and bundles on macOS as well as Windows — see "macOS support" below. The one thing
+  that is *not* done, deliberately, is publishing a macOS installer: nobody on the main dev box has
+  a Mac, so a mac build has never been *launched*, only compiled. A junior with a Mac is to run
+  `./dev.sh` and exercise the screens before any tag ships a mac build. Apple notarization (paid
+  Apple Developer account) is also still absent, so a published mac build warns at first launch
+  until a tester right-click → Opens it. [[verify-before-shipping-ui]].
 - **Open bug — "Start empty" workspace is not actually empty.** `create_workspace_flow` still
   passes `-e <env>` to `clio create-workspace`, so clio connects and populates the package
   selection instead of scaffolding an empty workspace (and it fails outright if the environment is
@@ -979,8 +1051,11 @@ The signing key stays in the private repo; only signed output crosses over, so t
 3. Run a controlled end-to-end validation matrix using disposable packages/applications and
    non-production environments.
 4. Add automated integration tests around cache invalidation and deployment job locking.
-5. Add a **macOS build** if there is demand: macOS runner job, non-Windows job cancellation, and
-   Apple signing/notarization (needs a paid Apple Developer account).
+5. **Finish macOS support** (code + CI landed 2026-07-22, see "macOS support"): (a) have the junior
+   with a Mac run `./dev.sh` and exercise the screens, especially job cancellation (the new Unix
+   process-group kill) and tool discovery (clio/git/gh under Homebrew); (b) only then tag a release
+   that ships the mac build; (c) optionally add Apple notarization (paid Apple Developer account +
+   `bundle.macOS` signing identity) to remove the first-launch Gatekeeper warning.
 6. Add configurable clio executable path and log retention/export settings.
 7. Add optional scheduled workspace refresh / tray behavior.
 8. Clean up the leftover experiment objects on `187559-crm-bundle` when that env is no longer

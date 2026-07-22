@@ -274,7 +274,10 @@ fn well_known(program: &str) -> Vec<PathBuf> {
             push(local.clone(), "Programs\\Git\\cmd");
         }
         "clio" => {
-            push(home.clone(), ".dotnet\\tools");
+            // A dotnet global tool: `~/.dotnet/tools` on every platform. Use a
+            // forward slash — Windows accepts it as a separator, and a literal
+            // ".dotnet\\tools" would be one nonsense filename on macOS/Linux.
+            push(home.clone(), ".dotnet/tools");
         }
         "dotnet" => {
             push(program_files.clone(), "dotnet");
