@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0F172A">
-<meta name="description" content="Creatio DevHub — a Windows desktop workbench over clio, Git and GitHub. Download the signed installer.">
+<meta name="description" content="Creatio DevHub — a Windows and macOS desktop workbench over clio, Git and GitHub. Download the signed installer.">
 <meta property="og:title" content="Creatio DevHub">
 <meta property="og:description" content="Ship Creatio work without living in the terminal. Environments, workspaces, SQL, deployment and GitHub in one desktop app.">
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">&#128421;</text></svg>'>
@@ -191,6 +191,18 @@
   .dl-box p { color: var(--fg-soft); margin: 0 auto 28px; max-width: 48ch; }
   .dl-links { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
   .dl-note { margin-top: 22px; font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-faint); }
+  .dl-note a { color: var(--accent); text-decoration: none; }
+  .dl-note a:hover { text-decoration: underline; }
+  .dl-platform { padding: 26px 0; border-top: 1px solid var(--border); }
+  .dl-platform:first-of-type { border-top: 0; padding-top: 6px; }
+  .dl-os { display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 15px; letter-spacing: .01em; margin: 0 0 16px; }
+  .dl-os .ic { width: 16px; height: 16px; color: var(--accent); }
+  .dl-arch { font-family: var(--font-mono); font-size: 11px; color: var(--fg-faint);
+    font-weight: 400; letter-spacing: 0; }
+  .dl-gatekeeper { margin-top: 12px; max-width: 60ch; margin-left: auto; margin-right: auto; line-height: 1.6; }
+  .dl-gatekeeper b { color: var(--fg); }
+  .dl-all { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--border); }
 
   /* ---------- footer ---------- */
   footer { border-top: 1px solid var(--border); padding: 36px 0 48px; }
@@ -262,15 +274,15 @@
         <h1>Ship Creatio work without living in the <em>terminal</em>.</h1>
         <p class="lede">A native desktop workbench for Creatio developers: environments, source-controlled workspaces, package &amp; app deployment, SQL, and GitHub — all driven from one app.</p>
         <div class="cta-row">
-          <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.4/creatio-devhub_0.8.4_x64-setup.exe">
-            <svg class="ic"><use href="#i-dl"/></svg> Download for Windows
+          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.4/creatio-devhub_0.8.4_x64-setup.exe">
+            <svg class="ic"><use href="#i-dl"/></svg> <span class="hero-dl-label">Download for Windows</span>
           </a>
           <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">
             <svg class="ic"><use href="#i-gh"/></svg> View source
           </a>
         </div>
         <div class="meta">
-          <span data-ver="%s · Windows 10/11 (x64)">v0.8.4 · Windows 10/11 (x64)</span>
+          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.8.4 · Windows 10/11 (x64)</span>
           <span class="ok"><svg class="ic"><use href="#i-check"/></svg> signed installer &amp; auto-updates</span>
         </div>
       </div>
@@ -563,6 +575,7 @@
         <h3>Requirements</h3>
         <ul>
           <li><svg class="ic"><use href="#i-check"/></svg><span><b>Windows 10 or 11</b> (x64) — a small, signed native installer.</span></li>
+          <li><svg class="ic"><use href="#i-check"/></svg><span><b>macOS 12 or newer</b> — a universal build for Apple Silicon and Intel <em>(coming soon)</em>.</span></li>
           <li><svg class="ic"><use href="#i-check"/></svg><span>The <b>clio</b> CLI, <b>Git</b> and the <b>GitHub CLI</b> installed — DevHub drives them.</span></li>
           <li><svg class="ic"><use href="#i-check"/></svg><span>A registered Creatio environment, cloud or on-site, to connect to.</span></li>
         </ul>
@@ -611,16 +624,35 @@
   <section>
     <div class="wrap">
       <div class="dl-box">
-        <h2>Get DevHub for Windows</h2>
-        <p>One installer. It reuses the clio, Git and GitHub tools you already have.</p>
-        <div class="dl-links">
-          <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.4/creatio-devhub_0.8.4_x64-setup.exe">
-            <svg class="ic"><use href="#i-dl"/></svg> Download installer (.exe)
-          </a>
-          <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.4/creatio-devhub_0.8.4_x64_en-US.msi">Get the .msi</a>
+        <h2>Get DevHub</h2>
+        <p>It reuses the clio, Git and GitHub tools you already have.</p>
+
+        <div class="dl-platform">
+          <h3 class="dl-os"><svg class="ic"><use href="#i-check"/></svg> Windows</h3>
+          <div class="dl-links">
+            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.4/creatio-devhub_0.8.4_x64-setup.exe">
+              <svg class="ic"><use href="#i-dl"/></svg> Download installer (.exe)
+            </a>
+            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.4/creatio-devhub_0.8.4_x64_en-US.msi">Get the .msi</a>
+          </div>
+          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.7.0 · NSIS &amp; MSI · signed · auto-updates after install</div>
+        </div>
+
+        <div class="dl-platform">
+          <h3 class="dl-os"><svg class="ic"><use href="#i-check"/></svg> macOS <span class="dl-arch">Apple Silicon &amp; Intel</span></h3>
+          <!-- Revealed by the release script the moment a .dmg ships; until then the "coming soon" note shows. -->
+          <div class="dl-links" id="mac-dl-links" hidden>
+            <a class="btn btn-primary btn-lg" id="mac-dl" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest">
+              <svg class="ic"><use href="#i-dl"/></svg> Download for macOS (.dmg)
+            </a>
+          </div>
+          <div class="dl-note" id="mac-soon">Coming soon — the macOS build is verified in CI and ships after a final test pass. <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest" target="_blank" rel="noopener">Watch the releases</a>.</div>
+          <div class="dl-note dl-gatekeeper" id="mac-note" hidden>Not yet notarized: on first launch, right-click (or Control-click) the app in Finder and choose <b>Open</b>. After that it opens normally.</div>
+        </div>
+
+        <div class="dl-links dl-all">
           <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest" target="_blank" rel="noopener">All releases</a>
         </div>
-        <div class="dl-note" data-ver="%s · NSIS & MSI · signed · auto-updates after install">v0.7.0 · NSIS &amp; MSI · signed · auto-updates after install</div>
       </div>
     </div>
   </section>
@@ -646,6 +678,8 @@
   var repo = 'SmitSuthar8834/creatio-devhub';
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function set(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
+  function show(id) { var el = document.getElementById(id); if (el) el.hidden = false; }
+  function hide(id) { var el = document.getElementById(id); if (el) el.hidden = true; }
   function countUp(id, target) {
     var el = document.getElementById(id); if (!el) return;
     if (reduce || target <= 0) { el.textContent = target.toLocaleString(); return; }
@@ -660,7 +694,7 @@
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (rel) {
       var dl = 0;
-      rel.forEach(function (x) { (x.assets || []).forEach(function (a) { if (/\.(exe|msi)$/i.test(a.name)) dl += a.download_count; }); });
+      rel.forEach(function (x) { (x.assets || []).forEach(function (a) { if (/\.(exe|msi|dmg)$/i.test(a.name)) dl += a.download_count; }); });
       countUp('dl-count', dl);
       var latest = rel.filter(function (x) { return !x.draft && !x.prerelease; })[0] || rel[0];
       set('dl-releases', String(rel.length));
@@ -671,11 +705,29 @@
       var assets = latest.assets || [];
       var exe = assets.filter(function (a) { return /\.exe$/i.test(a.name); })[0];
       var msi = assets.filter(function (a) { return /\.msi$/i.test(a.name); })[0];
+      var dmg = assets.filter(function (a) { return /\.dmg$/i.test(a.name); })[0];
       Array.prototype.forEach.call(document.querySelectorAll('a[href*="creatio-devhub_"]'), function (a) {
         var href = a.getAttribute('href') || '';
         if (exe && /\.exe$/i.test(href)) a.href = exe.browser_download_url;
         if (msi && /\.msi$/i.test(href)) a.href = msi.browser_download_url;
       });
+      // The macOS block only exists once a .dmg is actually published; until
+      // then the honest "coming soon" note stands in for it.
+      var isMac = /Mac/i.test(navigator.platform || '') || /Macintosh/i.test(navigator.userAgent || '');
+      if (dmg) {
+        var macDl = document.getElementById('mac-dl');
+        if (macDl) macDl.href = dmg.browser_download_url;
+        show('mac-dl-links'); hide('mac-soon'); show('mac-note');
+        // Lead Mac visitors with the mac download in the hero.
+        if (isMac) {
+          var hero = document.getElementById('hero-dl');
+          var label = document.querySelector('.hero-dl-label');
+          var meta = document.getElementById('hero-meta');
+          if (hero) hero.href = dmg.browser_download_url;
+          if (label) label.textContent = 'Download for macOS';
+          if (meta) meta.setAttribute('data-ver', '%s · macOS 12+ (universal)');
+        }
+      }
       Array.prototype.forEach.call(document.querySelectorAll('[data-ver]'), function (el) {
         el.textContent = el.getAttribute('data-ver').replace('%s', latest.tag_name);
       });
