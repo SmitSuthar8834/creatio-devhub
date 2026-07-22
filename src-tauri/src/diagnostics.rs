@@ -73,6 +73,22 @@ const RULES: &[Rule] = &[
         ],
     },
     Rule {
+        // Must precede cliogate-missing: refdata's fallback hint mentions
+        // "cliogate" and "install-gate", which that rule matches on — so when
+        // the log carries a real SQL error, this rule has to win.
+        code: "sql-column-missing",
+        all: &["column", "does not exist"],
+        any: &["42703"],
+        none: &[],
+        summary: "The database rejected a query because a column does not exist.",
+        cause: "A generated SQL statement referenced a column one of the queried tables does not have (PostgreSQL error 42703). Lookup capture reads many tables in a single combined query, so one non-standard table — often a Vw* system view registered as a lookup — fails the whole read.",
+        steps: &[
+            "Update DevHub — current versions skip lookups whose tables lack the standard Name column.",
+            "Retry the capture.",
+            "If it still fails, note the column and table named in the log and report it.",
+        ],
+    },
+    Rule {
         code: "cliogate-missing",
         all: &["cliogate"],
         any: &["install", "not found", "is not installed", "version"],
@@ -350,6 +366,19 @@ mod tests {
     fn recognizes_a_rejected_push() {
         let raw = "! [rejected] main -> main (non-fast-forward)\nUpdates were rejected because the tip of your current branch is behind";
         assert_eq!(code_for(raw).as_deref(), Some("git-push-rejected"));
+    }
+
+    #[test]
+    fn a_sql_column_error_outranks_the_cliogate_guess() {
+        // The live Dev-thoughtworks lookup-capture failure: the job log carries
+        // both the real PostgreSQL error and refdata's fallback hint, whose
+        // "cliogate (clio install-gate)" wording matches the cliogate-missing
+        // rule. The specific SQL diagnosis must win.
+        let raw = "42703: column \"Name\" does not exist\n\
+                   POSITION: 5250\n\
+                   No lookup data was returned. The environment may be missing the cliogate \
+                   helper (clio install-gate), or the query was rejected.";
+        assert_eq!(code_for(raw).as_deref(), Some("sql-column-missing"));
     }
 
     #[test]

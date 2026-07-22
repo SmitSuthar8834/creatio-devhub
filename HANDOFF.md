@@ -177,6 +177,35 @@ against a live target yet.**
   committed but the tag is deliberately NOT pushed** — tagging triggers the release build, and that
   waits until the live write path has been exercised. Tag `v0.8.0` from `main` once it has.
 
+### Live capture failure on Dev-thoughtworks + fix (2026-07-22, post-0.8.0)
+
+The first full live `capture_lookups` run (Dev-thoughtworks, 67 lookups) failed and proved the
+"run it live" rule again — **two latent bugs plus one misleading diagnosis**, all fixed in
+`refdata.rs` / `diagnostics.rs`:
+
+1. **Root cause — enumeration assumed every lookup table has `Name`.** `SysLookup` had a lookup
+   registered on the system view `VwSysSSPEntitySchemaAccessList`, which has no `"Name"` column.
+   One bad table inside the single `UNION ALL` fails the *entire* capture with PostgreSQL
+   `42703: column "Name" does not exist` (found at POSITION 5250 by reconstructing the generated
+   SQL offsets). Fix: `enumeration_sql()` now has a `WHERE EXISTS (information_schema.columns …
+   column_name = 'Name')` filter, mirroring the existing `HasDescription` check — no-Name tables
+   (and registry rows whose table doesn't exist at all) never reach `capture_sql`. v1's
+   Id/Name/Description model couldn't compare or migrate them anyway.
+2. **Duplicate registry rows duplicate captured data.** `LeadType` appears twice in `SysLookup`
+   (two rows, same schema) → its `SELECT` appeared twice in the UNION → every row captured twice.
+   Fix: new pure `dedupe_by_table()` (first entry wins) applied in `enumerate()`.
+3. **The failure was misdiagnosed as "cliogate missing".** refdata's no-CSV fallback message
+   mentions "cliogate … (clio install-gate)", which is exactly what the `cliogate-missing`
+   diagnostics rule matches — so the UI blamed cliogate while the log plainly showed the SQL
+   error. Fix: new `sql-column-missing` rule (`column` + `does not exist` + `42703`) ordered
+   *above* `cliogate-missing`; regression test feeds the real dual-message log text and asserts
+   the SQL rule wins.
+
+Validated: `cargo test` = **72 passed** (3 new: enumeration filter, dedupe, rule precedence).
+**Not yet re-run live** — needs a `dev.cmd` session re-capturing Dev-thoughtworks; expect ~65
+lookups (the Vw* view skipped, LeadType once). The incidental `[WAR] clio 8.1.0.88 available`
+update notice in the log is unrelated.
+
 ## Package lock state (v0.7.0, 2026-07-21)
 
 The Packages table has a **State** column — Locked / Unlocked / `—` — and the Lock and Unlock

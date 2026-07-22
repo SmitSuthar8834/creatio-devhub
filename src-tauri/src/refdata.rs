@@ -103,6 +103,15 @@ pub struct LookupSnapshotInfo {
 /// `SysLookup."SysEntitySchemaUId"` joins to `SysSchema."UId"` (schema
 /// references are by UId, not Id). The `information_schema` existence check is
 /// standard SQL and works through cliogate.
+///
+/// Lookups whose backing table lacks a `Name` column are excluded outright:
+/// a handful of registered lookups point at system views (for example
+/// `VwSysSSPEntitySchemaAccessList`) whose column set does not follow the
+/// Id/Name/Description shape. One such table inside the capture `UNION ALL`
+/// makes PostgreSQL reject the whole statement with SQLSTATE 42703, so they
+/// must never reach the capture query — and v1's Id/Name/Description model
+/// cannot compare or migrate them anyway. The filter also drops registry rows
+/// whose table does not exist in the database at all.
 pub fn enumeration_sql() -> String {
     r#"SELECT l."Name" AS "Name",
        s."Name" AS "Table",
@@ -114,6 +123,10 @@ pub fn enumeration_sql() -> String {
 FROM "SysLookup" l
 JOIN "SysSchema" s ON s."UId" = l."SysEntitySchemaUId"
 LEFT JOIN "SysPackage" p ON p."Id" = s."SysPackageId"
+WHERE EXISTS (
+  SELECT 1 FROM information_schema.columns c
+  WHERE c.table_name = s."Name" AND c.column_name = 'Name'
+)
 ORDER BY l."Name""#
         .to_string()
 }
@@ -405,6 +418,17 @@ fn rows_from_result(columns: &[String], data: Vec<Vec<String>>) -> Vec<LookupRow
         .collect()
 }
 
+/// Drop registry entries whose table was already listed, keeping the first.
+///
+/// Two `SysLookup` rows can point at the same entity schema (seen live:
+/// `LeadType` registered twice). Snapshots key on the table name, so a
+/// duplicate contributes nothing — but inside `capture_sql` it duplicates the
+/// table's `SELECT`, and every row would be captured twice.
+pub fn dedupe_by_table(infos: Vec<LookupInfo>) -> Vec<LookupInfo> {
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    infos.into_iter().filter(|info| seen.insert(info.table.clone())).collect()
+}
+
 /// Read the lookup registry of `env`.
 fn enumerate(env: &str) -> Result<Vec<LookupInfo>, String> {
     let (columns, data) = run_select(env, &enumeration_sql())?;
@@ -415,7 +439,7 @@ fn enumerate(env: &str) -> Result<Vec<LookupInfo>, String> {
     let (Some(name_at), Some(table_at)) = (name_at, table_at) else {
         return Err("The lookup registry query returned an unexpected shape.".to_string());
     };
-    Ok(data
+    let infos: Vec<LookupInfo> = data
         .into_iter()
         .filter_map(|record| {
             let name = record.get(name_at).cloned().unwrap_or_default();
@@ -428,7 +452,8 @@ fn enumerate(env: &str) -> Result<Vec<LookupInfo>, String> {
                 desc_at.and_then(|at| record.get(at)).map(|value| value == "1").unwrap_or(false);
             Some(LookupInfo { name, table, package, has_description })
         })
-        .collect())
+        .collect();
+    Ok(dedupe_by_table(infos))
 }
 
 // ---------------------------------------------------------- snapshot store
@@ -1082,6 +1107,32 @@ mod tests {
         assert!(!is_safe_identifier("Case Priority"));
         assert!(!is_safe_identifier("Case\";DROP"));
         assert!(!is_safe_identifier("Case'--"));
+    }
+
+    #[test]
+    fn enumeration_excludes_tables_without_a_name_column() {
+        // A lookup backed by a Vw* system view (seen live:
+        // VwSysSSPEntitySchemaAccessList) has no "Name" column and poisons the
+        // whole capture UNION with SQLSTATE 42703, so the registry query must
+        // filter such tables out before they ever reach capture_sql.
+        let sql = enumeration_sql();
+        assert!(sql.contains("WHERE EXISTS"));
+        assert!(sql.contains("c.column_name = 'Name'"));
+    }
+
+    #[test]
+    fn dedupe_by_table_keeps_the_first_entry() {
+        // Seen live: LeadType registered twice in SysLookup; without deduping,
+        // its SELECT appears twice in the UNION and every row is captured twice.
+        let infos = vec![
+            LookupInfo { name: "Lead type".into(), table: "LeadType".into(), package: "Base".into(), has_description: true },
+            LookupInfo { name: "Lead type (again)".into(), table: "LeadType".into(), package: "Other".into(), has_description: true },
+            LookupInfo { name: "Flag".into(), table: "UsrFlag".into(), package: "Custom".into(), has_description: false },
+        ];
+        let deduped = dedupe_by_table(infos);
+        assert_eq!(deduped.len(), 2);
+        assert_eq!(deduped[0].name, "Lead type");
+        assert_eq!(deduped[1].table, "UsrFlag");
     }
 
     #[test]
