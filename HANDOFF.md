@@ -169,13 +169,24 @@ against a live target yet.**
 - **Validated:** `cargo test --lib` = **69 passed** (14 in `refdata`), crate compiles clean under
   the Build Tools env; `tsc --noEmit` clean; `npm run build` succeeds. Enumeration + capture SQL run
   live on dev-834.
-- **NOT yet done — the release gate:** no live run of the write path. Before this ships someone must
-  drive it in `dev.cmd`: Compare → Lookups capture of the **dev-thoughtworks ↔ pre-thoughtworks**
-  pair and eyeball the diff, then a real `migrate_lookups` against a **disposable** target (verify
-  the rollback `.sql` in app-data `migrations/` actually restores it). The "run it before shipping"
-  rule applies, doubly so because it writes. The four version files are **bumped to 0.8.0 and
-  committed but the tag is deliberately NOT pushed** — tagging triggers the release build, and that
-  waits until the live write path has been exercised. Tag `v0.8.0` from `main` once it has.
+- **Release gate — write path SQL now verified live; GUI command still not run.** The four version
+  files are **bumped to 0.8.0 and committed but the tag is deliberately NOT pushed** — tagging
+  triggers the release build, and that waits until the write path has been exercised end-to-end.
+  Tag `v0.8.0` from `main` once the final GUI run below is done.
+  - **Done (2026-07-22):** the exact SQL primitives `migrate_lookups` generates were run against
+    live PostgreSQL (`dev-834`) via a throwaway-table round-trip — no real lookup touched. Proven:
+    forward `ON CONFLICT DO UPDATE` (update existing + insert new + leave untouched rows alone);
+    `rollback_sql` (restore-updated + delete-inserted) restores the table **byte-for-byte** to the
+    pre-migration state (diff empty); and a rejected statement surfaces its SQLSTATE (`42703`)
+    **even though clio exits 0**, so `sql::is_failure`/`friendly_error` catch it (the v0.5.1
+    regression class) and no partial write lands. This closes the "does the rollback actually
+    restore?" risk.
+  - **Still NOT done:** a run of the actual `migrate_lookups` **Tauri command through the GUI** on
+    real lookups (Claude can't drive the native window). Someone must, in `dev.cmd`: capture the
+    **dev-thoughtworks ↔ pre-thoughtworks** pair and eyeball the diff, then a real `migrate_lookups`
+    against a **disposable** target, and confirm the on-disk `rollback-<target>-<ts>.sql` in app-data
+    `migrations/` restores it. The Rust orchestration (dual env-lock, rollback-before-write ordering,
+    file writes) is covered by unit tests + review but not yet exercised live.
 
 ### Live capture failure on Dev-thoughtworks + fix (2026-07-22, post-0.8.0)
 
