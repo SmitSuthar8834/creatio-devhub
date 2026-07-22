@@ -202,9 +202,14 @@ The first full live `capture_lookups` run (Dev-thoughtworks, 67 lookups) failed 
    the SQL rule wins.
 
 Validated: `cargo test` = **72 passed** (3 new: enumeration filter, dedupe, rule precedence).
-**Not yet re-run live** — needs a `dev.cmd` session re-capturing Dev-thoughtworks; expect ~65
-lookups (the Vw* view skipped, LeadType once). The incidental `[WAR] clio 8.1.0.88 available`
-update notice in the log is unrelated.
+**Re-verified live (2026-07-22)** — clio ran the fixed queries against Dev-thoughtworks:
+enumeration returns **63** lookups (the 4 Name-less tables — `VwSysSSPEntitySchemaAccessList`,
+`BulkEmailCountLimit`, `SysModuleReport`, `WebServiceURL` — filtered), and the capture `UNION ALL`
+that previously died on `42703` now **succeeds, 1,224 values across 62 tables** (LeadType deduped
+2→1). The full app was then run via `dev.cmd` and a **Compare → Lookups capture of Dev-thoughtworks
+completed and wrote its snapshot through the GUI**. The read/capture path is confirmed end-to-end;
+the **write path (`migrate_lookups`) is still the unexercised release gate**. The incidental
+`[WAR] clio 8.1.0.88 available` update notice in the log is unrelated.
 
 ## Package lock state (v0.7.0, 2026-07-21)
 
