@@ -339,7 +339,7 @@ fn temp_path(ext: &str) -> PathBuf {
 /// SQL screen's grid — a captured lookup must be complete to compare or migrate.
 /// A query that matches nothing writes no file, which is an empty result, not a
 /// failure; a database error is caught by the shared `sql::is_failure`.
-fn run_select(env: &str, sql: &str) -> Result<(Vec<String>, Vec<Vec<String>>), String> {
+pub(crate) fn run_select(env: &str, sql: &str) -> Result<(Vec<String>, Vec<Vec<String>>), String> {
     let env = env.trim();
     if env.is_empty() {
         return Err("Choose an environment.".to_string());

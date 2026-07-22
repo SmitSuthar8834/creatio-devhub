@@ -8,6 +8,7 @@ use reqwest::blocking::{Client, Response};
 use reqwest::header::{ACCEPT, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -50,6 +51,43 @@ pub struct RowFailure {
     pub error: String,
 }
 
+/// A field the migration changed on purpose so the insert could succeed —
+/// surfaced in the report, never silent.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RowAdjustment {
+    pub id: String,
+    pub name: String,
+    pub column: String,
+    /// "remapped" | "cleared" | "auto-included"
+    pub action: String,
+    pub detail: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecordPick {
+    pub id: String,
+    pub name: String,
+    pub exists_in_target: bool,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct FkRule {
+    pub column: String,
+    pub ref_table: String,
+}
+
+pub enum FkDecision {
+    Keep,
+    /// Replace the value (new id, human detail).
+    Remap(String, String),
+    /// Drop the field (human detail).
+    Clear(String),
+    /// Refuse to insert the row (reason).
+    Block(String),
+}
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EntityMigrateResult {
@@ -57,7 +95,9 @@ pub struct EntityMigrateResult {
     pub source_count: usize,
     pub inserted: usize,
     pub skipped: usize,
+    pub not_selected: usize,
     pub failures: Vec<RowFailure>,
+    pub adjustments: Vec<RowAdjustment>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -188,6 +228,32 @@ impl Connection {
         if response.status().is_success() { Ok(()) } else { Err(response_text(response, &format!("OData PATCH {entity}"))) }
     }
 
+    /// Which of `ids` exist in `table` on this environment (lowercased result).
+    /// Ids must be GUID-shaped (callers guard with `is_guid`).
+    fn existing_ids(&self, table: &str, ids: &BTreeSet<String>) -> Result<BTreeSet<String>, String> {
+        let mut found = BTreeSet::new();
+        let list: Vec<&String> = ids.iter().collect();
+        for chunk in list.chunks(20) {
+            let filter = chunk.iter().map(|value| format!("Id eq {value}")).collect::<Vec<_>>().join(" or ");
+            found.extend(self.get_all(table, Some("Id"), Some(&filter))?.iter().map(|row| id(row).to_ascii_lowercase()));
+        }
+        Ok(found)
+    }
+
+    fn name_of(&self, table: &str, row_id: &str) -> Option<String> {
+        self.get_all(table, Some("Id,Name"), Some(&format!("Id eq {row_id}"))).ok()?
+            .first().and_then(|row| row.get("Name")).and_then(Value::as_str)
+            .filter(|value| !value.is_empty()).map(str::to_string)
+    }
+
+    /// Target id of the single row in `table` named `name_value`; ambiguous or
+    /// absent names return None.
+    fn id_by_name(&self, table: &str, name_value: &str) -> Option<String> {
+        let escaped = name_value.replace('\'', "''");
+        let rows = self.get_all(table, Some("Id,Name"), Some(&format!("Name eq '{escaped}'"))).ok()?;
+        if rows.len() == 1 { rows.first().map(id) } else { None }
+    }
+
     fn media(&self, schema_id: &str, property: &str) -> Result<Vec<u8>, String> {
         let response = self.request(reqwest::Method::GET, format!("{}/0/odata/SysSchema({schema_id})/{property}", self.uri))
             .send().map_err(|e| format!("Could not read {property}: {e}"))?;
@@ -232,6 +298,226 @@ fn supervisor_id(conn: &Connection) -> Result<String, String> {
     conn.get_all("Contact", Some("Id"), Some("Name eq 'Supervisor'"))?.first()
         .and_then(|row| row.get("Id")).and_then(Value::as_str).map(str::to_string)
         .ok_or_else(|| "Could not resolve the Supervisor contact.".to_string())
+}
+
+fn is_guid(value: &str) -> bool {
+    value.len() == 36 && value.chars().enumerate().all(|(index, c)| match index {
+        8 | 13 | 18 | 23 => c == '-',
+        _ => c.is_ascii_hexdigit(),
+    })
+}
+
+/// Foreign keys of `tables` read from the target database in one query.
+/// Needs cliogate on the target; callers treat an error as "no FK metadata"
+/// and fall back to plain inserts.
+fn fk_rules_for(target_env: &str, tables: &[String]) -> Result<BTreeMap<String, Vec<FkRule>>, String> {
+    let safe: Vec<&String> = tables.iter().filter(|table| crate::refdata::is_safe_identifier(table)).collect();
+    if safe.is_empty() { return Ok(BTreeMap::new()); }
+    let list = safe.iter().map(|table| format!("'{table}'")).collect::<Vec<_>>().join(",");
+    let sql = format!(
+        "SELECT cl.relname AS \"TableName\", a.attname AS \"ColumnName\", cf.relname AS \"RefTable\" \
+         FROM pg_constraint c \
+         JOIN pg_class cl ON cl.oid = c.conrelid \
+         JOIN pg_class cf ON cf.oid = c.confrelid \
+         JOIN unnest(c.conkey) WITH ORDINALITY AS k(attnum, ord) ON true \
+         JOIN pg_attribute a ON a.attrelid = cl.oid AND a.attnum = k.attnum \
+         WHERE c.contype = 'f' AND cl.relname IN ({list})"
+    );
+    let (columns, rows) = crate::refdata::run_select(target_env, &sql)?;
+    let index = |name: &str| columns.iter().position(|column| column == name);
+    let (Some(at_table), Some(at_column), Some(at_ref)) = (index("TableName"), index("ColumnName"), index("RefTable")) else {
+        return Ok(BTreeMap::new());
+    };
+    let mut map: BTreeMap<String, Vec<FkRule>> = BTreeMap::new();
+    for row in rows {
+        let (Some(table), Some(column), Some(ref_table)) = (row.get(at_table), row.get(at_column), row.get(at_ref)) else { continue; };
+        if !crate::refdata::is_safe_identifier(ref_table) { continue; }
+        map.entry(table.clone()).or_default().push(FkRule { column: column.clone(), ref_table: ref_table.clone() });
+    }
+    Ok(map)
+}
+
+/// Apply `decide` to every FK field of a cleaned row body. Returns the
+/// adjustments made and, if the row must not be inserted, the reason.
+pub fn resolve_row(
+    row_id: &str,
+    row_name: &str,
+    body: &mut Map<String, Value>,
+    rules: &[FkRule],
+    decide: &mut dyn FnMut(&FkRule, &str) -> FkDecision,
+) -> (Vec<RowAdjustment>, Option<String>) {
+    let mut adjustments = Vec::new();
+    for rule in rules {
+        if rule.column == "Id" { continue; }
+        let Some(value) = body.get(&rule.column).and_then(Value::as_str).map(str::to_string) else { continue; };
+        if !is_guid(&value) { continue; }
+        match decide(rule, &value) {
+            FkDecision::Keep => {}
+            FkDecision::Remap(new_id, detail) => {
+                body.insert(rule.column.clone(), Value::String(new_id));
+                adjustments.push(RowAdjustment { id: row_id.to_string(), name: row_name.to_string(), column: rule.column.clone(), action: "remapped".to_string(), detail });
+            }
+            FkDecision::Clear(detail) => {
+                body.remove(&rule.column);
+                adjustments.push(RowAdjustment { id: row_id.to_string(), name: row_name.to_string(), column: rule.column.clone(), action: "cleared".to_string(), detail });
+            }
+            FkDecision::Block(reason) => return (adjustments, Some(reason)),
+        }
+    }
+    (adjustments, None)
+}
+
+/// Order rows of one entity so self-referencing parents insert before their
+/// children (e.g. a campaign pointing at a parent campaign). Cycles fall back
+/// to the original order and surface as ordinary insert failures.
+pub fn order_rows_parents_first(rows: Vec<Value>, self_columns: &[String]) -> Vec<Value> {
+    if self_columns.is_empty() { return rows; }
+    let mut remaining = rows;
+    let mut out: Vec<Value> = Vec::new();
+    loop {
+        let waiting: BTreeSet<String> = remaining.iter().map(|row| id(row).to_ascii_lowercase()).collect();
+        let (ready, rest): (Vec<Value>, Vec<Value>) = remaining.into_iter().partition(|row| {
+            self_columns.iter().all(|column| {
+                match row.get(column).and_then(Value::as_str).map(|value| value.to_ascii_lowercase()) {
+                    Some(parent) => parent == id(row).to_ascii_lowercase() || !waiting.contains(&parent),
+                    None => true,
+                }
+            })
+        });
+        let progressed = !ready.is_empty();
+        out.extend(ready);
+        remaining = rest;
+        if remaining.is_empty() { break; }
+        if !progressed { out.extend(remaining); break; }
+    }
+    out
+}
+
+/// Expand explicit record selections so parents required by selected rows are
+/// copied too (BulkEmail → its Campaign, a campaign → its parent campaign).
+/// Returns what was auto-added per entity (lowercased ids).
+pub fn close_over_parents(
+    order: &[String],
+    rules: &BTreeMap<String, Vec<FkRule>>,
+    source_rows: &BTreeMap<String, Vec<Value>>,
+    target_ids: &BTreeMap<String, BTreeSet<String>>,
+    chosen: &mut BTreeMap<String, Option<BTreeSet<String>>>,
+) -> BTreeMap<String, BTreeSet<String>> {
+    let tables: BTreeSet<&str> = order.iter().map(String::as_str).collect();
+    let mut added: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for _ in 0..10 {
+        let mut changed = false;
+        for entity in order {
+            let entity_rules: Vec<&FkRule> = rules.get(entity).into_iter().flatten()
+                .filter(|rule| tables.contains(rule.ref_table.as_str())).collect();
+            if entity_rules.is_empty() { continue; }
+            let mut wanted: Vec<(String, String)> = Vec::new();
+            for row in source_rows.get(entity).into_iter().flatten() {
+                let row_lower = id(row).to_ascii_lowercase();
+                let migrating = !target_ids.get(entity).is_some_and(|ids| ids.contains(&row_lower))
+                    && chosen.get(entity).and_then(|c| c.as_ref()).map_or(true, |c| c.contains(&row_lower));
+                if !migrating { continue; }
+                for rule in &entity_rules {
+                    let Some(value) = row.get(&rule.column).and_then(Value::as_str) else { continue; };
+                    if !is_guid(value) { continue; }
+                    let lower = value.to_ascii_lowercase();
+                    if rule.ref_table == *entity && lower == row_lower { continue; }
+                    if target_ids.get(&rule.ref_table).is_some_and(|ids| ids.contains(&lower)) { continue; }
+                    let in_source = source_rows.get(&rule.ref_table)
+                        .is_some_and(|rows| rows.iter().any(|r| id(r).eq_ignore_ascii_case(&lower)));
+                    if !in_source { continue; }
+                    let selected = chosen.get(&rule.ref_table).and_then(|c| c.as_ref()).map_or(true, |c| c.contains(&lower));
+                    if !selected { wanted.push((rule.ref_table.clone(), lower)); }
+                }
+            }
+            for (table, lower) in wanted {
+                if let Some(Some(set)) = chosen.get_mut(&table) {
+                    if set.insert(lower.clone()) {
+                        added.entry(table).or_default().insert(lower);
+                        changed = true;
+                    }
+                }
+            }
+        }
+        if !changed { break; }
+    }
+    added
+}
+
+/// Live FK resolution state for one migration run. `exists` is seeded with the
+/// target's ids for content tables and fed on demand for external tables;
+/// tables whose existence cannot be checked keep their values untouched.
+struct Resolver<'a> {
+    source: &'a Connection,
+    target: &'a Connection,
+    rules: BTreeMap<String, Vec<FkRule>>,
+    content_tables: BTreeSet<String>,
+    exists: RefCell<BTreeMap<String, BTreeSet<String>>>,
+    unverifiable: RefCell<BTreeSet<String>>,
+    pending: RefCell<BTreeMap<String, BTreeSet<String>>>,
+    remap_cache: RefCell<BTreeMap<(String, String), Option<(String, String)>>>,
+}
+
+impl Resolver<'_> {
+    fn rules(&self, table: &str) -> &[FkRule] {
+        self.rules.get(table).map(Vec::as_slice).unwrap_or_default()
+    }
+
+    /// Batch-check the target for every external FK value the rows carry, so
+    /// `decide` never blocks on a per-row round trip for existence.
+    fn prime(&self, entity: &str, rows: &[Value]) {
+        for rule in self.rules(entity) {
+            if self.content_tables.contains(&rule.ref_table) || self.unverifiable.borrow().contains(&rule.ref_table) { continue; }
+            let mut wanted: BTreeSet<String> = BTreeSet::new();
+            {
+                let cache = self.exists.borrow();
+                let known = cache.get(&rule.ref_table);
+                for row in rows {
+                    let Some(value) = row.get(&rule.column).and_then(Value::as_str) else { continue; };
+                    if !is_guid(value) || value.eq_ignore_ascii_case(ZERO_GUID) { continue; }
+                    if !known.is_some_and(|ids| ids.contains(&value.to_ascii_lowercase())) { wanted.insert(value.to_string()); }
+                }
+            }
+            if wanted.is_empty() { continue; }
+            match self.target.existing_ids(&rule.ref_table, &wanted) {
+                Ok(found) => { self.exists.borrow_mut().entry(rule.ref_table.clone()).or_default().extend(found); }
+                Err(_) => { self.unverifiable.borrow_mut().insert(rule.ref_table.clone()); }
+            }
+        }
+    }
+
+    fn note_inserted(&self, table: &str, row_id: &str) {
+        self.pending.borrow_mut().entry(table.to_string()).or_default().insert(row_id.to_ascii_lowercase());
+    }
+
+    fn decide(&self, rule: &FkRule, value: &str) -> FkDecision {
+        let lower = value.to_ascii_lowercase();
+        if self.unverifiable.borrow().contains(&rule.ref_table) { return FkDecision::Keep; }
+        if self.exists.borrow().get(&rule.ref_table).is_some_and(|ids| ids.contains(&lower)) { return FkDecision::Keep; }
+        if self.pending.borrow().get(&rule.ref_table).is_some_and(|ids| ids.contains(&lower)) { return FkDecision::Keep; }
+        if self.content_tables.contains(&rule.ref_table) {
+            return FkDecision::Block(format!(
+                "{} references {} {} which is not on the target — include that record in the migration.",
+                rule.column, rule.ref_table, value
+            ));
+        }
+        let key = (rule.ref_table.clone(), lower);
+        if let Some(cached) = self.remap_cache.borrow().get(&key) {
+            return match cached {
+                Some((new_id, detail)) => FkDecision::Remap(new_id.clone(), detail.clone()),
+                None => FkDecision::Clear(format!("No matching {} on the target; the field was left empty.", rule.ref_table)),
+            };
+        }
+        let outcome = self.source.name_of(&rule.ref_table, value).and_then(|source_name| {
+            self.target.id_by_name(&rule.ref_table, &source_name)
+                .map(|new_id| (new_id, format!("Mapped to the target's {} named '{}'.", rule.ref_table, source_name)))
+        });
+        self.remap_cache.borrow_mut().insert(key, outcome.clone());
+        match outcome {
+            Some((new_id, detail)) => FkDecision::Remap(new_id, detail),
+            None => FkDecision::Clear(format!("No matching {} on the target; the field was left empty.", rule.ref_table)),
+        }
+    }
 }
 
 fn local_image_hits(entity: &str, rows: &[Value]) -> Vec<String> {
@@ -360,21 +646,52 @@ fn append_flow_repoint_rollback(path: &Path, campaigns: &[Value], target_campaig
     std::fs::write(path, sql).map_err(|e| format!("Could not extend rollback SQL: {e}"))
 }
 
-fn copy_entity(source: &Connection, target: &Connection, entity: &str, source_supervisor: &str, target_supervisor: &str, extra_drop: &[&str], sql_empty_names: bool) -> Result<(EntityMigrateResult, Vec<Value>), String> {
+struct CopyPlan<'a> {
+    selection: Option<&'a BTreeSet<String>>,
+    resolver: Option<&'a Resolver<'a>>,
+}
+
+const PLAIN_COPY: CopyPlan<'static> = CopyPlan { selection: None, resolver: None };
+
+fn copy_entity(source: &Connection, target: &Connection, entity: &str, source_supervisor: &str, target_supervisor: &str, extra_drop: &[&str], sql_empty_names: bool, plan: CopyPlan<'_>) -> Result<(EntityMigrateResult, Vec<Value>), String> {
     let source_rows = source.get_all(entity, None, None)?;
     let target_rows = target.get_all(entity, Some("Id"), None)?;
     let missing = missing_ids(&source_rows, &target_rows);
-    let todo: Vec<Value> = source_rows.iter().filter(|row| missing.contains(&id(row).to_ascii_lowercase())).cloned().collect();
-    let mut inserted = 0; let mut failures = Vec::new(); let mut sql_rows = Vec::new();
+    let mut todo: Vec<Value> = source_rows.iter().filter(|row| missing.contains(&id(row).to_ascii_lowercase())).cloned().collect();
+    let mut not_selected = 0;
+    if let Some(chosen) = plan.selection {
+        let before = todo.len();
+        todo.retain(|row| chosen.contains(&id(row).to_ascii_lowercase()));
+        not_selected = before - todo.len();
+    }
+    if let Some(resolver) = plan.resolver {
+        let self_columns: Vec<String> = resolver.rules(entity).iter()
+            .filter(|rule| rule.ref_table == entity).map(|rule| rule.column.clone()).collect();
+        todo = order_rows_parents_first(todo, &self_columns);
+        resolver.prime(entity, &todo);
+    }
+    let mut inserted = 0; let mut failures = Vec::new(); let mut sql_rows = Vec::new(); let mut adjustments = Vec::new();
     for row in &todo {
         if sql_empty_names && row.get("Name").and_then(Value::as_str).unwrap_or_default().is_empty() { sql_rows.push(row.clone()); continue; }
         let body = clean_row(row, Some(source_supervisor), Some(target_supervisor), extra_drop);
-        match target.post(entity, &body) {
-            Ok(()) => inserted += 1,
+        let Value::Object(mut map) = body else { continue; };
+        if let Some(resolver) = plan.resolver {
+            let (mut adjusted, blocked) = resolve_row(&id(row), &name(row), &mut map, resolver.rules(entity), &mut |rule, value| resolver.decide(rule, value));
+            adjustments.append(&mut adjusted);
+            if let Some(reason) = blocked {
+                failures.push(RowFailure { id: id(row), name: name(row), status: 0, error: reason });
+                continue;
+            }
+        }
+        match target.post(entity, &Value::Object(map)) {
+            Ok(()) => {
+                inserted += 1;
+                if let Some(resolver) = plan.resolver { resolver.note_inserted(entity, &id(row)); }
+            }
             Err(error) => failures.push(RowFailure { id: id(row), name: name(row), status: error.status, error: error.message }),
         }
     }
-    Ok((EntityMigrateResult { entity: entity.to_string(), source_count: source_rows.len(), inserted, skipped: source_rows.len() - todo.len(), failures }, sql_rows))
+    Ok((EntityMigrateResult { entity: entity.to_string(), source_count: source_rows.len(), inserted, skipped: source_rows.len() - missing.len(), not_selected, failures, adjustments }, sql_rows))
 }
 
 #[tauri::command]
@@ -384,23 +701,93 @@ pub fn content_analyze(source_env: String, target_env: String) -> Result<Content
 pub fn content_verify(source_env: String, target_env: String) -> Result<ContentGapReport, String> { analyze(&source_env, &target_env) }
 
 #[tauri::command]
-pub fn content_migrate(app: AppHandle, source_env: String, target_env: String, entities: Vec<String>) -> Result<ContentMigrateReport, String> {
+pub fn content_list_records(source_env: String, target_env: String, entity: String) -> Result<Vec<RecordPick>, String> {
+    if !BASE_ENTITIES.contains(&entity.as_str()) { return Err(format!("Unsupported marketing content entity: {entity}")); }
+    if source_env.trim().is_empty() || target_env.trim().is_empty() || source_env == target_env { return Err("Choose two different environments.".to_string()); }
+    let source = Connection::connect(&source_env)?;
+    let target = Connection::connect(&target_env)?;
+    let rows = source.get_all(&entity, Some("Id,Name"), None)
+        .or_else(|_| source.get_all(&entity, Some("Id"), None))?;
+    let existing: BTreeSet<String> = target.get_all(&entity, Some("Id"), None)?
+        .iter().map(id).map(|value| value.to_ascii_lowercase()).collect();
+    Ok(rows.iter().map(|row| RecordPick {
+        id: id(row),
+        name: name(row),
+        exists_in_target: existing.contains(&id(row).to_ascii_lowercase()),
+    }).collect())
+}
+
+#[tauri::command]
+pub fn content_migrate(app: AppHandle, source_env: String, target_env: String, entities: Vec<String>, selections: Option<BTreeMap<String, Vec<String>>>) -> Result<ContentMigrateReport, String> {
     if source_env == target_env { return Err("Choose two different environments.".to_string()); }
     let order = dependency_order(&entities)?;
     if order.is_empty() { return Err("Select at least one content entity.".to_string()); }
     let source = Connection::connect(&source_env)?; let target = Connection::connect(&target_env)?;
     let source_supervisor = supervisor_id(&source)?; let target_supervisor = supervisor_id(&target)?;
-    let mut prepared = Vec::new(); let mut rollback_batches = Vec::new();
+
+    // FK metadata needs SQL (cliogate) on the target. Without it the run
+    // degrades to plain inserts — exactly the pre-resolution behavior.
+    let rules = fk_rules_for(&target_env, &order).unwrap_or_default();
+
+    let mut source_rows: BTreeMap<String, Vec<Value>> = BTreeMap::new();
+    let mut target_ids: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for entity in &order {
-        let rows = source.get_all(entity, None, None)?; let target_rows = target.get_all(entity, Some("Id"), None)?; let missing = missing_ids(&rows, &target_rows);
-        rollback_batches.push((entity.clone(), rows.iter().filter(|r| missing.contains(&id(r).to_ascii_lowercase())).map(id).collect()));
-        prepared.push((entity.clone(), rows));
+        source_rows.insert(entity.clone(), source.get_all(entity, None, None)?);
+        target_ids.insert(entity.clone(), target.get_all(entity, Some("Id"), None)?
+            .iter().map(id).map(|value| value.to_ascii_lowercase()).collect());
+    }
+
+    let mut chosen: BTreeMap<String, Option<BTreeSet<String>>> = order.iter().map(|entity| {
+        let selection = selections.as_ref().and_then(|map| map.get(entity))
+            .map(|ids| ids.iter().map(|value| value.to_ascii_lowercase()).collect());
+        (entity.clone(), selection)
+    }).collect();
+    let auto_included = close_over_parents(&order, &rules, &source_rows, &target_ids, &mut chosen);
+
+    let mut rollback_batches = Vec::new();
+    for entity in &order {
+        let ids: Vec<String> = source_rows[entity].iter().filter(|row| {
+            let lower = id(row).to_ascii_lowercase();
+            !target_ids[entity].contains(&lower)
+                && chosen[entity].as_ref().map_or(true, |set| set.contains(&lower))
+        }).map(id).collect();
+        rollback_batches.push((entity.clone(), ids));
     }
     let rollback = rollback_path(&app, &target_env, "rows")?; write_delete_rollback(&rollback, &rollback_batches)?;
+
+    let resolver = (!rules.is_empty()).then(|| {
+        let mut exists: BTreeMap<String, BTreeSet<String>> = target_ids.clone();
+        // Content tables referenced by FKs but excluded from this run still need
+        // their target ids so an existing parent is kept, not blocked.
+        for table in BASE_ENTITIES {
+            if !exists.contains_key(table) && rules.values().flatten().any(|rule| rule.ref_table == table) {
+                if let Ok(rows) = target.get_all(table, Some("Id"), None) {
+                    exists.insert(table.to_string(), rows.iter().map(id).map(|value| value.to_ascii_lowercase()).collect());
+                }
+            }
+        }
+        Resolver {
+            source: &source,
+            target: &target,
+            rules: rules.clone(),
+            content_tables: BASE_ENTITIES.iter().map(|table| table.to_string()).collect(),
+            exists: RefCell::new(exists),
+            unverifiable: RefCell::new(BTreeSet::new()),
+            pending: RefCell::new(BTreeMap::new()),
+            remap_cache: RefCell::new(BTreeMap::new()),
+        }
+    });
+
     let mut results = Vec::new();
-    for (entity, _) in prepared {
+    for entity in &order {
         let drop = if entity == "Campaign" { &["CampaignSchemaUId"][..] } else { &[][..] };
-        results.push(copy_entity(&source, &target, &entity, &source_supervisor, &target_supervisor, drop, false)?.0);
+        let plan = CopyPlan { selection: chosen[entity].as_ref(), resolver: resolver.as_ref() };
+        let (mut result, _) = copy_entity(&source, &target, entity, &source_supervisor, &target_supervisor, drop, false, plan)?;
+        for lower in auto_included.get(entity).into_iter().flatten() {
+            let display = source_rows[entity].iter().find(|row| id(row).eq_ignore_ascii_case(lower)).map(name).unwrap_or_default();
+            result.adjustments.push(RowAdjustment { id: lower.clone(), name: display, column: String::new(), action: "auto-included".to_string(), detail: "Copied because selected records reference it.".to_string() });
+        }
+        results.push(result);
     }
     Ok(ContentMigrateReport { source_env, target_env, rollback_path: rollback.to_string_lossy().to_string(), entities: results })
 }
@@ -448,14 +835,14 @@ pub fn content_migrate_flows(app: AppHandle, source_env: String, target_env: Str
     let mut failures = Vec::new(); let mut repointed = 0;
     for campaign in &campaigns { let campaign_id = id(campaign); let uid = campaign.get("CampaignSchemaUId").and_then(Value::as_str).unwrap_or_default(); match target.patch("Campaign", &campaign_id, &serde_json::json!({"CampaignSchemaUId": uid})) { Ok(()) => repointed += 1, Err(e) => failures.push(RowFailure { id: campaign_id, name: name(campaign), status: e.status, error: e.message }) } }
     let mut results = Vec::new();
-    let (versions, _) = copy_entity(&source, &target, "CampaignVersion", &source_supervisor, &target_supervisor, &[], false)?; results.push(versions);
-    let (mut items, sql_items) = copy_entity(&source, &target, "CampaignItem", &source_supervisor, &target_supervisor, &[], true)?;
+    let (versions, _) = copy_entity(&source, &target, "CampaignVersion", &source_supervisor, &target_supervisor, &[], false, PLAIN_COPY)?; results.push(versions);
+    let (mut items, sql_items) = copy_entity(&source, &target, "CampaignItem", &source_supervisor, &target_supervisor, &[], true, PLAIN_COPY)?;
     if !sql_items.is_empty() { run_sql(&target_env, &format!("BEGIN;\n{}\nCOMMIT;", campaign_item_sql(&sql_items, &target_supervisor)))?; items.inserted += sql_items.len(); }
     results.push(items);
     // Captions are scoped strictly to the migrated flow schema rows.
     let slv_source = flow_localizable_values(&source, &schemas, None)?;
     let slv_target = flow_localizable_values(&target, &schemas, Some("Id"))?;
-    let slv_missing = missing_ids(&slv_source, &slv_target); let mut slv_result = EntityMigrateResult { entity: "SysLocalizableValue".to_string(), source_count: slv_source.len(), inserted: 0, skipped: slv_source.len() - slv_missing.len(), failures: Vec::new() };
+    let slv_missing = missing_ids(&slv_source, &slv_target); let mut slv_result = EntityMigrateResult { entity: "SysLocalizableValue".to_string(), source_count: slv_source.len(), inserted: 0, skipped: slv_source.len() - slv_missing.len(), not_selected: 0, failures: Vec::new(), adjustments: Vec::new() };
     for row in slv_source.iter().filter(|r| slv_missing.contains(&id(r).to_ascii_lowercase())) { let body = clean_row(row, Some(&source_supervisor), Some(&target_supervisor), &[]); match target.post("SysLocalizableValue", &body) { Ok(()) => slv_result.inserted += 1, Err(e) => slv_result.failures.push(RowFailure { id: id(row), name: name(row), status: e.status, error: e.message }) } }
     results.push(slv_result);
     Ok(FlowMigrateReport { source_env, target_env, schemas_inserted: missing_schemas.len(), schemas_skipped: schemas.len()-missing_schemas.len(), campaigns_repointed: repointed, metadata_bytes, rollback_path: rollback.to_string_lossy().to_string(), entities: results, failures })
@@ -481,4 +868,108 @@ mod tests {
     #[test] fn flow_sql_escapes_quotes_unicode_and_hex() { let s=serde_json::json!({"Id":"i","UId":"u","Name":"O'Brien — flow","Caption":"It's — live","SysPackageId":"p","Description":"d's","Checksum":"c","IsNetStandard":true}); let sql=flow_insert_sql(&s,b"{}",&[0xff],"sup"); assert!(sql.contains("O''Brien — flow")); assert!(sql.contains("It''s — live")); assert!(sql.contains("decode('7b7d','hex')")); assert!(sql.contains("decode('ff','hex')")); }
     #[test] fn local_image_scan_finds_known_patterns() { let rows=vec![serde_json::json!({"Id":"1","Body":"/0/rest/ImageService/GetFile"})]; assert_eq!(local_image_hits("BulkEmail",&rows),["BulkEmail: 1"]); }
     #[test] fn campaign_item_sql_preserves_empty_name_and_escapes() { let rows=vec![serde_json::json!({"Id":"i","Name":"","CampaignElementType":"it's","IsDeleted":false})]; let sql=campaign_item_sql(&rows,"sup"); assert!(sql.contains("'it''s'")); assert!(sql.contains("VALUES ('i',NULL,''")); assert!(sql.contains("ON CONFLICT")); }
+
+    const G_OWNER: &str = "11111111-2222-3333-4444-555555555555";
+    const G_KNOWN: &str = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+    const G_NEW: &str = "99999999-8888-7777-6666-555555555555";
+
+    #[test]
+    fn guid_shapes_are_detected() {
+        assert!(is_guid(G_OWNER));
+        assert!(is_guid(ZERO_GUID));
+        assert!(!is_guid("not-a-guid"));
+        assert!(!is_guid("11111111-2222-3333-4444-55555555555")); // 35 chars
+        assert!(!is_guid("11111111x2222-3333-4444-555555555555"));
+    }
+
+    #[test]
+    fn resolve_row_remaps_clears_and_keeps() {
+        let rules = vec![
+            FkRule { column: "OwnerId".into(), ref_table: "Contact".into() },
+            FkRule { column: "TypeId".into(), ref_table: "CampaignType".into() },
+            FkRule { column: "StatusId".into(), ref_table: "CampaignStatus".into() },
+        ];
+        let mut body = serde_json::json!({"Id":"x","OwnerId":G_OWNER,"TypeId":G_KNOWN,"StatusId":G_KNOWN,"Name":"c"}).as_object().unwrap().clone();
+        let (adjustments, blocked) = resolve_row("x", "c", &mut body, &rules, &mut |rule, _value| match rule.column.as_str() {
+            "OwnerId" => FkDecision::Remap(G_NEW.into(), "by name".into()),
+            "TypeId" => FkDecision::Clear("missing".into()),
+            _ => FkDecision::Keep,
+        });
+        assert!(blocked.is_none());
+        assert_eq!(body.get("OwnerId").and_then(Value::as_str), Some(G_NEW));
+        assert!(body.get("TypeId").is_none());
+        assert_eq!(body.get("StatusId").and_then(Value::as_str), Some(G_KNOWN));
+        assert_eq!(adjustments.len(), 2);
+        assert_eq!(adjustments[0].action, "remapped");
+        assert_eq!(adjustments[1].action, "cleared");
+    }
+
+    #[test]
+    fn resolve_row_blocks_on_missing_content_parent() {
+        let rules = vec![FkRule { column: "CampaignId".into(), ref_table: "Campaign".into() }];
+        let mut body = serde_json::json!({"Id":"x","CampaignId":G_OWNER}).as_object().unwrap().clone();
+        let (_, blocked) = resolve_row("x", "b", &mut body, &rules, &mut |_, _| FkDecision::Block("parent missing".into()));
+        assert_eq!(blocked.as_deref(), Some("parent missing"));
+    }
+
+    #[test]
+    fn resolve_row_ignores_non_guid_and_absent_fields() {
+        let rules = vec![FkRule { column: "OwnerId".into(), ref_table: "Contact".into() }, FkRule { column: "Gone".into(), ref_table: "X".into() }];
+        let mut body = serde_json::json!({"Id":"x","OwnerId":"free text"}).as_object().unwrap().clone();
+        let (adjustments, blocked) = resolve_row("x", "n", &mut body, &rules, &mut |_, _| FkDecision::Clear("should not run".into()));
+        assert!(adjustments.is_empty() && blocked.is_none());
+        assert_eq!(body.get("OwnerId").and_then(Value::as_str), Some("free text"));
+    }
+
+    #[test]
+    fn parent_campaigns_insert_before_children() {
+        let parent = serde_json::json!({"Id":"aaaaaaaa-0000-0000-0000-000000000001","Name":"parent"});
+        let child = serde_json::json!({"Id":"aaaaaaaa-0000-0000-0000-000000000002","TwkParentCampaignId":"AAAAAAAA-0000-0000-0000-000000000001","Name":"child"});
+        let ordered = order_rows_parents_first(vec![child.clone(), parent.clone()], &["TwkParentCampaignId".to_string()]);
+        assert_eq!(name(&ordered[0]), "parent");
+        assert_eq!(name(&ordered[1]), "child");
+        // A cycle falls back to the original order instead of hanging.
+        let a = serde_json::json!({"Id":"aaaaaaaa-0000-0000-0000-000000000003","TwkParentCampaignId":"aaaaaaaa-0000-0000-0000-000000000004"});
+        let b = serde_json::json!({"Id":"aaaaaaaa-0000-0000-0000-000000000004","TwkParentCampaignId":"aaaaaaaa-0000-0000-0000-000000000003"});
+        assert_eq!(order_rows_parents_first(vec![a.clone(), b.clone()], &["TwkParentCampaignId".to_string()]).len(), 2);
+    }
+
+    #[test]
+    fn selection_closure_pulls_in_required_parents() {
+        let campaign_id = "aaaaaaaa-0000-0000-0000-00000000000a";
+        let email_id = "aaaaaaaa-0000-0000-0000-00000000000b";
+        let order = vec!["Campaign".to_string(), "BulkEmail".to_string()];
+        let rules = BTreeMap::from([(
+            "BulkEmail".to_string(),
+            vec![FkRule { column: "CampaignId".into(), ref_table: "Campaign".into() }],
+        )]);
+        let source_rows = BTreeMap::from([
+            ("Campaign".to_string(), vec![serde_json::json!({"Id":campaign_id,"Name":"c"})]),
+            ("BulkEmail".to_string(), vec![serde_json::json!({"Id":email_id,"CampaignId":campaign_id,"Name":"e"})]),
+        ]);
+        let target_ids = BTreeMap::from([
+            ("Campaign".to_string(), BTreeSet::new()),
+            ("BulkEmail".to_string(), BTreeSet::new()),
+        ]);
+        // The user picked one bulk email and no campaigns.
+        let mut chosen = BTreeMap::from([
+            ("Campaign".to_string(), Some(BTreeSet::new())),
+            ("BulkEmail".to_string(), Some(BTreeSet::from([email_id.to_string()]))),
+        ]);
+        let added = close_over_parents(&order, &rules, &source_rows, &target_ids, &mut chosen);
+        assert!(chosen["Campaign"].as_ref().unwrap().contains(campaign_id));
+        assert!(added["Campaign"].contains(campaign_id));
+        // A parent already on the target is not re-added.
+        let target_ids = BTreeMap::from([
+            ("Campaign".to_string(), BTreeSet::from([campaign_id.to_string()])),
+            ("BulkEmail".to_string(), BTreeSet::new()),
+        ]);
+        let mut chosen = BTreeMap::from([
+            ("Campaign".to_string(), Some(BTreeSet::new())),
+            ("BulkEmail".to_string(), Some(BTreeSet::from([email_id.to_string()]))),
+        ]);
+        let added = close_over_parents(&order, &rules, &source_rows, &target_ids, &mut chosen);
+        assert!(added.is_empty());
+        assert!(chosen["Campaign"].as_ref().unwrap().is_empty());
+    }
 }

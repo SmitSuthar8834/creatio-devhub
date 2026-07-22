@@ -44,6 +44,7 @@ pub fn run() {
             clio::clio_status,
             clio::install_or_update_clio,
             content::content_analyze,
+            content::content_list_records,
             content::content_migrate,
             content::content_migrate_flows,
             content::content_finalize,

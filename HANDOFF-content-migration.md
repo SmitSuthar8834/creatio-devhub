@@ -201,3 +201,39 @@ implemented. `cargo test --lib` passes 83 tests and the TypeScript/production Vi
 builds pass. The required live analyze/no-op migration and post-restart designer
 check have not been performed in this implementation session; do not treat this
 as release-ready until those acceptance checks are completed.
+
+## FK auto-resolution + per-record selection (2026-07-22, second pass)
+
+The first real GUI run (Dev-thoughtworks → pre-thoughtworks, Campaign only)
+failed for 4 of 15 campaigns with Postgres `23503` on
+`FK0dIuly2u9hURhe40fYhfTeLzE` — resolved live to **`Campaign.OwnerId` →
+`Contact`**. The Supervisor remap (rule 4 above) only covers the Supervisor
+contact; any other owner GUID is per-environment and broke the insert. Fixes,
+all in `content.rs`:
+
+- **FK auto-resolution.** `fk_rules_for()` reads the target's FK constraints
+  (`pg_constraint`, one query for all content tables, via
+  `refdata::run_select` — needs cliogate; on failure the run degrades to plain
+  inserts). Before each insert every FK GUID is verified against the target
+  (batched OData existence checks, `Resolver::prime`). A missing reference is
+  **remapped to the target row with the same `Name`** (exactly-one match
+  required — verified live: 'Philippa Massyn' remaps, 'Smit Suthar' is absent
+  and clears), otherwise the field is **cleared**; both are reported per row as
+  `adjustments` in the result (`action: remapped | cleared | auto-included`),
+  never silent. References to *content-set* tables (Campaign etc.) are never
+  cleared — the row is blocked with a "include that record" failure instead,
+  after `close_over_parents` has already auto-included any parent available in
+  the source. Self-FKs (`TwkParentCampaignId`) insert parents-first via
+  `order_rows_parents_first`.
+- **Per-record selection.** New `content_list_records(source, target, entity)`
+  → `{id, name, existsInTarget}`; `content_migrate` takes optional
+  `selections: {entity: [ids]}`. The UI (ContentMigration.tsx) shows a
+  "Choose … records" picker for **Campaign and BulkEmail**; unselected missing
+  rows count as `notSelected` in the result. Selecting a BulkEmail whose
+  Campaign is neither on the target nor selected auto-includes that Campaign
+  (reported as an adjustment on the Campaign entity).
+
+89 Rust tests green (6 new), tsc + vite build clean. **Live GUI re-run of the
+failed Campaign migration is still pending** — the SQL introspection query and
+the name-remap data were verified live against pre-thoughtworks, but nobody has
+pressed Migrate in the app since the fix.

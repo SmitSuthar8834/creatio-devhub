@@ -128,6 +128,18 @@ validation is green (83 Rust tests, TypeScript and Vite production build). The r
 analyze/no-op migration and designer-after-restart verification are still pending, so this is not
 yet a release gate.
 
+**Second pass (2026-07-22): FK auto-resolution + per-record selection.** The first GUI run
+(Dev-thoughtworks → pre-thoughtworks, Campaign only) failed 4/15 rows with `23503` on
+`Campaign.OwnerId → Contact` — only the Supervisor contact was remapped, any other owner GUID is
+per-environment. `content_migrate` now introspects the target's FK constraints (`pg_constraint`
+via `refdata::run_select`; without cliogate it degrades to plain inserts), batch-verifies every FK
+GUID on the target, remaps missing references to the same-named target row or clears the field,
+and reports every change as a per-row `adjustment` — content-set parents are never cleared, they
+are auto-included (`close_over_parents`) or the row is blocked with guidance. Self-FK parents
+insert first. New `content_list_records` + `selections` on `content_migrate` back a Campaign /
+BulkEmail record picker in the UI. 89 Rust tests, tsc + vite clean; details and live-verified
+remap data in `HANDOFF-content-migration.md`. The GUI re-run after the fix is still pending.
+
 ## Lookup / reference-data migration (backend, WIP — unreleased, 2026-07-22)
 
 Answers "move my package dev → pre *with its data*". Package config already deploys

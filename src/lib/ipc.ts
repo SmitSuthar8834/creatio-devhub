@@ -401,12 +401,28 @@ export interface ContentRowFailure {
   error: string;
 }
 
+export interface ContentRowAdjustment {
+  id: string;
+  name: string;
+  column: string;
+  action: "remapped" | "cleared" | "auto-included";
+  detail: string;
+}
+
+export interface ContentRecordPick {
+  id: string;
+  name: string;
+  existsInTarget: boolean;
+}
+
 export interface ContentEntityResult {
   entity: string;
   sourceCount: number;
   inserted: number;
   skipped: number;
+  notSelected: number;
   failures: ContentRowFailure[];
+  adjustments: ContentRowAdjustment[];
 }
 
 export interface ContentMigrateReport {
@@ -432,8 +448,13 @@ export const analyzeContent = (sourceEnv: string, targetEnv: string) =>
   invoke<ContentGapReport>("content_analyze", { sourceEnv, targetEnv });
 export const verifyContent = (sourceEnv: string, targetEnv: string) =>
   invoke<ContentGapReport>("content_verify", { sourceEnv, targetEnv });
-export const migrateContent = (sourceEnv: string, targetEnv: string, entities: string[]) =>
-  invoke<ContentMigrateReport>("content_migrate", { sourceEnv, targetEnv, entities });
+export const listContentRecords = (sourceEnv: string, targetEnv: string, entity: string) =>
+  invoke<ContentRecordPick[]>("content_list_records", { sourceEnv, targetEnv, entity });
+export const migrateContent = (
+  sourceEnv: string, targetEnv: string, entities: string[],
+  selections?: Record<string, string[]>,
+) =>
+  invoke<ContentMigrateReport>("content_migrate", { sourceEnv, targetEnv, entities, selections: selections ?? null });
 export const migrateContentFlows = (sourceEnv: string, targetEnv: string) =>
   invoke<FlowMigrateReport>("content_migrate_flows", { sourceEnv, targetEnv });
 export const finalizeContent = (targetEnv: string) =>
