@@ -419,6 +419,7 @@ export interface ContentEntityResult {
   entity: string;
   sourceCount: number;
   inserted: number;
+  updated: number;
   skipped: number;
   notSelected: number;
   failures: ContentRowFailure[];
@@ -429,6 +430,7 @@ export interface ContentMigrateReport {
   sourceEnv: string;
   targetEnv: string;
   rollbackPath: string;
+  overwriteBackupPath: string | null;
   entities: ContentEntityResult[];
 }
 
@@ -452,11 +454,15 @@ export const listContentRecords = (sourceEnv: string, targetEnv: string, entity:
   invoke<ContentRecordPick[]>("content_list_records", { sourceEnv, targetEnv, entity });
 export const migrateContent = (
   sourceEnv: string, targetEnv: string, entities: string[],
-  selections?: Record<string, string[]>,
+  selections?: Record<string, string[]>, overwrite?: string[],
 ) =>
-  invoke<ContentMigrateReport>("content_migrate", { sourceEnv, targetEnv, entities, selections: selections ?? null });
-export const migrateContentFlows = (sourceEnv: string, targetEnv: string) =>
-  invoke<FlowMigrateReport>("content_migrate_flows", { sourceEnv, targetEnv });
+  invoke<ContentMigrateReport>("content_migrate", {
+    sourceEnv, targetEnv, entities,
+    selections: selections ?? null,
+    overwrite: overwrite && overwrite.length ? overwrite : null,
+  });
+export const migrateContentFlows = (sourceEnv: string, targetEnv: string, bypassFk: boolean) =>
+  invoke<FlowMigrateReport>("content_migrate_flows", { sourceEnv, targetEnv, bypassFk });
 export const finalizeContent = (targetEnv: string) =>
   invoke<void>("content_finalize", { targetEnv });
 

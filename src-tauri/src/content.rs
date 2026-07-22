@@ -94,6 +94,8 @@ pub struct EntityMigrateResult {
     pub entity: String,
     pub source_count: usize,
     pub inserted: usize,
+    /// Rows that already existed on the target and were overwritten in place.
+    pub updated: usize,
     pub skipped: usize,
     pub not_selected: usize,
     pub failures: Vec<RowFailure>,
@@ -106,7 +108,37 @@ pub struct ContentMigrateReport {
     pub source_env: String,
     pub target_env: String,
     pub rollback_path: String,
+    /// JSON snapshot of the rows overwritten in place, when overwrite was used.
+    pub overwrite_backup_path: Option<String>,
     pub entities: Vec<EntityMigrateResult>,
+}
+
+/// What a copy should do with one source row.
+#[derive(Debug, PartialEq)]
+pub enum RowPlan {
+    /// Process the row. `update` is true when it already exists on the target.
+    Process { update: bool },
+    /// Leave the target row untouched.
+    Skip,
+    /// A missing row the user chose not to include.
+    NotSelected,
+}
+
+/// Decide the fate of one row. `selected` is `None` when the run has no explicit
+/// selection (the default is "every row missing on the target"), or `Some(bool)`
+/// for membership in an explicit selection. Existing rows are only processed —
+/// as an update — when `overwrite` is on.
+pub fn plan_row(exists: bool, selected: Option<bool>, overwrite: bool) -> RowPlan {
+    let wanted = selected.unwrap_or(!exists);
+    if wanted {
+        if exists && !overwrite { RowPlan::Skip } else { RowPlan::Process { update: exists } }
+    } else if exists {
+        RowPlan::Skip
+    } else if selected.is_some() {
+        RowPlan::NotSelected
+    } else {
+        RowPlan::Skip
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -649,20 +681,29 @@ fn append_flow_repoint_rollback(path: &Path, campaigns: &[Value], target_campaig
 struct CopyPlan<'a> {
     selection: Option<&'a BTreeSet<String>>,
     resolver: Option<&'a Resolver<'a>>,
+    /// Overwrite (via PATCH) selected rows that already exist on the target.
+    overwrite: bool,
 }
 
-const PLAIN_COPY: CopyPlan<'static> = CopyPlan { selection: None, resolver: None };
+const PLAIN_COPY: CopyPlan<'static> = CopyPlan { selection: None, resolver: None, overwrite: false };
 
 fn copy_entity(source: &Connection, target: &Connection, entity: &str, source_supervisor: &str, target_supervisor: &str, extra_drop: &[&str], sql_empty_names: bool, plan: CopyPlan<'_>) -> Result<(EntityMigrateResult, Vec<Value>), String> {
     let source_rows = source.get_all(entity, None, None)?;
     let target_rows = target.get_all(entity, Some("Id"), None)?;
-    let missing = missing_ids(&source_rows, &target_rows);
-    let mut todo: Vec<Value> = source_rows.iter().filter(|row| missing.contains(&id(row).to_ascii_lowercase())).cloned().collect();
+    let target_ids: BTreeSet<String> = target_rows.iter().map(id).map(|value| value.to_ascii_lowercase()).collect();
+
+    let mut todo: Vec<Value> = Vec::new();
     let mut not_selected = 0;
-    if let Some(chosen) = plan.selection {
-        let before = todo.len();
-        todo.retain(|row| chosen.contains(&id(row).to_ascii_lowercase()));
-        not_selected = before - todo.len();
+    let mut skipped = 0;
+    for row in &source_rows {
+        let lower = id(row).to_ascii_lowercase();
+        let exists = target_ids.contains(&lower);
+        let selected = plan.selection.map(|set| set.contains(&lower));
+        match plan_row(exists, selected, plan.overwrite) {
+            RowPlan::Process { .. } => todo.push(row.clone()),
+            RowPlan::Skip => skipped += 1,
+            RowPlan::NotSelected => not_selected += 1,
+        }
     }
     if let Some(resolver) = plan.resolver {
         let self_columns: Vec<String> = resolver.rules(entity).iter()
@@ -670,7 +711,7 @@ fn copy_entity(source: &Connection, target: &Connection, entity: &str, source_su
         todo = order_rows_parents_first(todo, &self_columns);
         resolver.prime(entity, &todo);
     }
-    let mut inserted = 0; let mut failures = Vec::new(); let mut sql_rows = Vec::new(); let mut adjustments = Vec::new();
+    let mut inserted = 0; let mut updated = 0; let mut failures = Vec::new(); let mut sql_rows = Vec::new(); let mut adjustments = Vec::new();
     for row in &todo {
         if sql_empty_names && row.get("Name").and_then(Value::as_str).unwrap_or_default().is_empty() { sql_rows.push(row.clone()); continue; }
         let body = clean_row(row, Some(source_supervisor), Some(target_supervisor), extra_drop);
@@ -683,15 +724,24 @@ fn copy_entity(source: &Connection, target: &Connection, entity: &str, source_su
                 continue;
             }
         }
-        match target.post(entity, &Value::Object(map)) {
+        let exists = target_ids.contains(&id(row).to_ascii_lowercase());
+        let outcome = if exists {
+            // OData PATCH keys on the URL id, so the primary key must not also
+            // ride in the body.
+            map.remove("Id");
+            target.patch(entity, &id(row), &Value::Object(map))
+        } else {
+            target.post(entity, &Value::Object(map))
+        };
+        match outcome {
             Ok(()) => {
-                inserted += 1;
+                if exists { updated += 1; } else { inserted += 1; }
                 if let Some(resolver) = plan.resolver { resolver.note_inserted(entity, &id(row)); }
             }
             Err(error) => failures.push(RowFailure { id: id(row), name: name(row), status: error.status, error: error.message }),
         }
     }
-    Ok((EntityMigrateResult { entity: entity.to_string(), source_count: source_rows.len(), inserted, skipped: source_rows.len() - missing.len(), not_selected, failures, adjustments }, sql_rows))
+    Ok((EntityMigrateResult { entity: entity.to_string(), source_count: source_rows.len(), inserted, updated, skipped, not_selected, failures, adjustments }, sql_rows))
 }
 
 #[tauri::command]
@@ -718,10 +768,11 @@ pub fn content_list_records(source_env: String, target_env: String, entity: Stri
 }
 
 #[tauri::command]
-pub fn content_migrate(app: AppHandle, source_env: String, target_env: String, entities: Vec<String>, selections: Option<BTreeMap<String, Vec<String>>>) -> Result<ContentMigrateReport, String> {
+pub fn content_migrate(app: AppHandle, source_env: String, target_env: String, entities: Vec<String>, selections: Option<BTreeMap<String, Vec<String>>>, overwrite: Option<Vec<String>>) -> Result<ContentMigrateReport, String> {
     if source_env == target_env { return Err("Choose two different environments.".to_string()); }
     let order = dependency_order(&entities)?;
     if order.is_empty() { return Err("Select at least one content entity.".to_string()); }
+    let overwrite_set: BTreeSet<String> = overwrite.unwrap_or_default().into_iter().collect();
     let source = Connection::connect(&source_env)?; let target = Connection::connect(&target_env)?;
     let source_supervisor = supervisor_id(&source)?; let target_supervisor = supervisor_id(&target)?;
 
@@ -755,6 +806,10 @@ pub fn content_migrate(app: AppHandle, source_env: String, target_env: String, e
     }
     let rollback = rollback_path(&app, &target_env, "rows")?; write_delete_rollback(&rollback, &rollback_batches)?;
 
+    // Rows we are about to overwrite in place cannot be undone by the DELETE
+    // rollback (that would drop pre-existing data), so snapshot them first.
+    let overwrite_backup_path = write_overwrite_backup(&app, &target, &target_env, &order, &overwrite_set, &chosen, &target_ids)?;
+
     let resolver = (!rules.is_empty()).then(|| {
         let mut exists: BTreeMap<String, BTreeSet<String>> = target_ids.clone();
         // Content tables referenced by FKs but excluded from this run still need
@@ -781,7 +836,7 @@ pub fn content_migrate(app: AppHandle, source_env: String, target_env: String, e
     let mut results = Vec::new();
     for entity in &order {
         let drop = if entity == "Campaign" { &["CampaignSchemaUId"][..] } else { &[][..] };
-        let plan = CopyPlan { selection: chosen[entity].as_ref(), resolver: resolver.as_ref() };
+        let plan = CopyPlan { selection: chosen[entity].as_ref(), resolver: resolver.as_ref(), overwrite: overwrite_set.contains(entity) };
         let (mut result, _) = copy_entity(&source, &target, entity, &source_supervisor, &target_supervisor, drop, false, plan)?;
         for lower in auto_included.get(entity).into_iter().flatten() {
             let display = source_rows[entity].iter().find(|row| id(row).eq_ignore_ascii_case(lower)).map(name).unwrap_or_default();
@@ -789,7 +844,40 @@ pub fn content_migrate(app: AppHandle, source_env: String, target_env: String, e
         }
         results.push(result);
     }
-    Ok(ContentMigrateReport { source_env, target_env, rollback_path: rollback.to_string_lossy().to_string(), entities: results })
+    Ok(ContentMigrateReport { source_env, target_env, rollback_path: rollback.to_string_lossy().to_string(), overwrite_backup_path, entities: results })
+}
+
+/// Snapshot every target row about to be overwritten to a JSON file, so an
+/// unwanted overwrite can be reviewed and restored by hand. Returns the file
+/// path, or `None` when nothing is being overwritten.
+fn write_overwrite_backup(
+    app: &AppHandle,
+    target: &Connection,
+    target_env: &str,
+    order: &[String],
+    overwrite_set: &BTreeSet<String>,
+    chosen: &BTreeMap<String, Option<BTreeSet<String>>>,
+    target_ids: &BTreeMap<String, BTreeSet<String>>,
+) -> Result<Option<String>, String> {
+    let mut backup = Map::new();
+    for entity in order {
+        if !overwrite_set.contains(entity) { continue; }
+        // Only rows explicitly selected AND already present on the target are
+        // overwritten; the all-missing default never touches existing rows.
+        let Some(chosen_ids) = chosen.get(entity).and_then(|value| value.as_ref()) else { continue; };
+        let empty = BTreeSet::new();
+        let present = target_ids.get(entity).unwrap_or(&empty);
+        let ids: BTreeSet<String> = chosen_ids.iter().filter(|id| present.contains(*id)).cloned().collect();
+        if ids.is_empty() { continue; }
+        let saved: Vec<Value> = target.get_all(entity, None, None)?
+            .into_iter().filter(|row| ids.contains(&id(row).to_ascii_lowercase())).collect();
+        if !saved.is_empty() { backup.insert(entity.clone(), Value::Array(saved)); }
+    }
+    if backup.is_empty() { return Ok(None); }
+    let path = migration_dir(app)?.join(format!("overwrite-backup-{}-{}.json", safe_env(target_env), timestamp()));
+    let json = serde_json::to_string_pretty(&Value::Object(backup)).unwrap_or_else(|_| "{}".to_string());
+    std::fs::write(&path, json).map_err(|e| format!("Could not write overwrite backup: {e}"))?;
+    Ok(Some(path.to_string_lossy().to_string()))
 }
 
 fn campaign_item_sql(rows: &[Value], supervisor: &str) -> String {
@@ -798,7 +886,8 @@ fn campaign_item_sql(rows: &[Value], supervisor: &str) -> String {
 }
 
 #[tauri::command]
-pub fn content_migrate_flows(app: AppHandle, source_env: String, target_env: String) -> Result<FlowMigrateReport, String> {
+pub fn content_migrate_flows(app: AppHandle, source_env: String, target_env: String, bypass_fk: Option<bool>) -> Result<FlowMigrateReport, String> {
+    let bypass_fk = bypass_fk.unwrap_or(true);
     if source_env == target_env { return Err("Choose two different environments.".to_string()); }
     let source = Connection::connect(&source_env)?; let target = Connection::connect(&target_env)?;
     let source_supervisor = supervisor_id(&source)?; let target_supervisor = supervisor_id(&target)?;
@@ -825,7 +914,14 @@ pub fn content_migrate_flows(app: AppHandle, source_env: String, target_env: Str
     write_delete_rollback(&rollback, &batches)?;
     append_flow_repoint_rollback(&rollback, &campaigns, &target_campaigns)?;
     let mut sql = String::from("BEGIN;\n"); let mut metadata_bytes = 0;
+    // A campaign flow's SysSchema references package/owner rows that differ per
+    // environment, so its foreign keys can reject an otherwise-valid diagram.
+    // Suspending SysSchema's constraint triggers for the insert lets the flow
+    // land; the whole statement is one transaction, so a failure rolls the
+    // suspension back with it and the triggers are restored either way.
+    if bypass_fk && !missing_schemas.is_empty() { sql.push_str("ALTER TABLE \"SysSchema\" DISABLE TRIGGER ALL;\n"); }
     for schema in &missing_schemas { let metadata = source.media(&id(schema), "MetaData")?; let descriptor = source.media(&id(schema), "Descriptor")?; metadata_bytes += metadata.len(); sql.push_str(&flow_insert_sql(schema, &metadata, &descriptor, &target_supervisor)); sql.push('\n'); }
+    if bypass_fk && !missing_schemas.is_empty() { sql.push_str("ALTER TABLE \"SysSchema\" ENABLE TRIGGER ALL;\n"); }
     sql.push_str("COMMIT;\n"); if !missing_schemas.is_empty() { run_sql(&target_env, &sql)?; }
     for schema in &missing_schemas {
         let source_len = source.media(&id(schema), "MetaData")?.len();
@@ -842,7 +938,7 @@ pub fn content_migrate_flows(app: AppHandle, source_env: String, target_env: Str
     // Captions are scoped strictly to the migrated flow schema rows.
     let slv_source = flow_localizable_values(&source, &schemas, None)?;
     let slv_target = flow_localizable_values(&target, &schemas, Some("Id"))?;
-    let slv_missing = missing_ids(&slv_source, &slv_target); let mut slv_result = EntityMigrateResult { entity: "SysLocalizableValue".to_string(), source_count: slv_source.len(), inserted: 0, skipped: slv_source.len() - slv_missing.len(), not_selected: 0, failures: Vec::new(), adjustments: Vec::new() };
+    let slv_missing = missing_ids(&slv_source, &slv_target); let mut slv_result = EntityMigrateResult { entity: "SysLocalizableValue".to_string(), source_count: slv_source.len(), inserted: 0, updated: 0, skipped: slv_source.len() - slv_missing.len(), not_selected: 0, failures: Vec::new(), adjustments: Vec::new() };
     for row in slv_source.iter().filter(|r| slv_missing.contains(&id(r).to_ascii_lowercase())) { let body = clean_row(row, Some(&source_supervisor), Some(&target_supervisor), &[]); match target.post("SysLocalizableValue", &body) { Ok(()) => slv_result.inserted += 1, Err(e) => slv_result.failures.push(RowFailure { id: id(row), name: name(row), status: e.status, error: e.message }) } }
     results.push(slv_result);
     Ok(FlowMigrateReport { source_env, target_env, schemas_inserted: missing_schemas.len(), schemas_skipped: schemas.len()-missing_schemas.len(), campaigns_repointed: repointed, metadata_bytes, rollback_path: rollback.to_string_lossy().to_string(), entities: results, failures })
@@ -867,6 +963,30 @@ mod tests {
     #[test] fn hex_is_exact() { assert_eq!(hex(&[0, 1, 15, 16, 255]), "00010f10ff"); }
     #[test] fn flow_sql_escapes_quotes_unicode_and_hex() { let s=serde_json::json!({"Id":"i","UId":"u","Name":"O'Brien — flow","Caption":"It's — live","SysPackageId":"p","Description":"d's","Checksum":"c","IsNetStandard":true}); let sql=flow_insert_sql(&s,b"{}",&[0xff],"sup"); assert!(sql.contains("O''Brien — flow")); assert!(sql.contains("It''s — live")); assert!(sql.contains("decode('7b7d','hex')")); assert!(sql.contains("decode('ff','hex')")); }
     #[test] fn local_image_scan_finds_known_patterns() { let rows=vec![serde_json::json!({"Id":"1","Body":"/0/rest/ImageService/GetFile"})]; assert_eq!(local_image_hits("BulkEmail",&rows),["BulkEmail: 1"]); }
+    #[test]
+    fn plan_row_default_migrates_only_missing() {
+        // No explicit selection: missing rows are inserted, existing ones skipped.
+        assert_eq!(plan_row(false, None, false), RowPlan::Process { update: false });
+        assert_eq!(plan_row(true, None, false), RowPlan::Skip);
+        // Overwrite without a selection still never touches existing rows.
+        assert_eq!(plan_row(true, None, true), RowPlan::Skip);
+    }
+
+    #[test]
+    fn plan_row_selection_gates_inserts() {
+        assert_eq!(plan_row(false, Some(true), false), RowPlan::Process { update: false });
+        assert_eq!(plan_row(false, Some(false), false), RowPlan::NotSelected);
+    }
+
+    #[test]
+    fn plan_row_overwrite_updates_selected_existing() {
+        // Selected + existing + overwrite → update; without overwrite → skip.
+        assert_eq!(plan_row(true, Some(true), true), RowPlan::Process { update: true });
+        assert_eq!(plan_row(true, Some(true), false), RowPlan::Skip);
+        // An existing row left unselected is skipped regardless of overwrite.
+        assert_eq!(plan_row(true, Some(false), true), RowPlan::Skip);
+    }
+
     #[test] fn campaign_item_sql_preserves_empty_name_and_escapes() { let rows=vec![serde_json::json!({"Id":"i","Name":"","CampaignElementType":"it's","IsDeleted":false})]; let sql=campaign_item_sql(&rows,"sup"); assert!(sql.contains("'it''s'")); assert!(sql.contains("VALUES ('i',NULL,''")); assert!(sql.contains("ON CONFLICT")); }
 
     const G_OWNER: &str = "11111111-2222-3333-4444-555555555555";

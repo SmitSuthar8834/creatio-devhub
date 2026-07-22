@@ -89,6 +89,22 @@ const RULES: &[Rule] = &[
         ],
     },
     Rule {
+        // Must precede creatio-unreachable: a PostgreSQL foreign-key SQLSTATE is
+        // "23503", whose "503" would otherwise be read as an HTTP 503 and
+        // misreported as an unreachable environment.
+        code: "sql-fk-violation",
+        all: &[],
+        any: &["23503", "foreign key constraint"],
+        none: &[],
+        summary: "The database rejected a row because it points at a record that is not on the target.",
+        cause: "An inserted row references another row by id (a foreign key) that does not exist on the target environment (PostgreSQL error 23503). Content migration remaps or clears most such references, but a protected system row — a campaign flow's SysSchema — is written by direct SQL and can still trip a package or owner reference the target lacks.",
+        steps: &[
+            "For campaign flow diagrams, keep \"Bypass foreign key checks\" enabled on the Flow diagrams step and retry.",
+            "For ordinary records, include the referenced record in the same migration, or let DevHub remap it by name.",
+            "Open the technical detail below to see which constraint and table were involved.",
+        ],
+    },
+    Rule {
         code: "cliogate-missing",
         all: &["cliogate"],
         any: &["install", "not found", "is not installed", "version"],
@@ -214,10 +230,16 @@ const RULES: &[Rule] = &[
             "timed out",
             "unable to connect",
             "name or service not known",
-            "503",
-            "502",
+            "(503)",
+            "(502)",
+            "http 503",
+            "http 502",
+            "503 service unavailable",
+            "502 bad gateway",
         ],
-        none: &[],
+        // A PostgreSQL SQLSTATE such as 23503/23502 contains "503"/"502"; the
+        // specific needles above plus this guard keep SQL errors out of here.
+        none: &["23503", "23502", "foreign key constraint"],
         summary: "The Creatio environment could not be reached.",
         cause: "The URL, the site, or the network path to it is unavailable — a stopped local IIS site and a VPN that is not connected both look like this.",
         steps: &[
@@ -384,6 +406,21 @@ mod tests {
     #[test]
     fn recognizes_an_unreachable_environment() {
         let raw = "No connection could be made because the target machine actively refused it 127.0.0.1:8080";
+        assert_eq!(code_for(raw).as_deref(), Some("creatio-unreachable"));
+    }
+
+    #[test]
+    fn a_foreign_key_sqlstate_is_not_mistaken_for_an_unreachable_env() {
+        // The live pre-thoughtworks flow failure. "23503" contains "503", which
+        // used to steer this into the unreachable rule.
+        let raw = "23503: insert or update on table \"SysSchema\" violates foreign key \
+                   constraint \"FKgO5gatbOMAZSRIOqQWBTR8WgPGo\"";
+        assert_eq!(code_for(raw).as_deref(), Some("sql-fk-violation"));
+    }
+
+    #[test]
+    fn a_real_http_503_still_reads_as_unreachable() {
+        let raw = "[ERR] - Response status code does not indicate success: 503 Service Unavailable.";
         assert_eq!(code_for(raw).as_deref(), Some("creatio-unreachable"));
     }
 

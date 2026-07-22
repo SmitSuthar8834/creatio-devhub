@@ -238,3 +238,42 @@ the user re-ran the Campaign migration through the GUI (Dev-thoughtworks →
 pre-thoughtworks) after the fix and it succeeded** — the 4 previously failing
 `23503 OwnerId` campaigns now migrate. The content write path has had its first
 successful real run.
+
+## Overwrite existing records + flow FK bypass + loading UI (2026-07-22, third pass)
+
+Three user-requested changes on top of the second pass. **Not yet live-verified —
+the native window can't be driven here; gates met so far are 94 Rust tests green
+(5 new) + tsc + vite build clean. A `dev.cmd` run is still required.**
+
+- **Overwrite existing records (Campaign / BulkEmail).** `content_migrate` gained
+  an `overwrite: Option<Vec<String>>` arg (entity names). `copy_entity` now routes
+  each source row through the pure `plan_row(exists, selected, overwrite)` →
+  `RowPlan::{Process{update}, Skip, NotSelected}`; a selected row already on the
+  target is PATCHed (Id dropped from the body) instead of skipped, counted as a new
+  `updated` field on `EntityMigrateResult`. Safety: the all-missing default never
+  overwrites (needs an explicit selection); the DELETE rollback already excludes
+  existing ids, and a JSON snapshot of every overwritten target row is written to
+  `overwrite-backup-<env>-<ts>.json` (`ContentMigrateReport.overwrite_backup_path`)
+  before the run. UI: a per-entity "Overwrite records already on the target" Switch
+  in the Campaign/BulkEmail picker un-disables on-target rows so they can be chosen.
+
+- **Flow FK bypass.** `content_migrate_flows` gained `bypass_fk: Option<bool>`
+  (default true). When on, the SysSchema insert transaction is wrapped with
+  `ALTER TABLE "SysSchema" DISABLE TRIGGER ALL; … ENABLE TRIGGER ALL;` so a flow
+  whose package/owner FK differs on the target still lands. It's one transaction,
+  so any failure rolls the DISABLE back too. Fixes the live pre-thoughtworks
+  `23503 SysSchema` failure. UI: a "Bypass foreign key checks" Switch (default on)
+  in the Flow diagrams step. Needs table-owner rights on the target DB user; the
+  toggle lets a user turn it off if their account can't alter triggers.
+
+- **Diagnostics bug fixed.** `23503` (and `23502`) contain `503`/`502`, so the FK
+  error was being misdiagnosed as "environment could not be reached". Added a
+  `sql-fk-violation` rule ahead of `creatio-unreachable`, made that rule's HTTP
+  needles specific (`(503)`, `http 503`, `503 service unavailable`, …) and guarded
+  its `none` with `23503`/`23502`/`foreign key constraint`. Real HTTP 503 still
+  reads as unreachable (test added).
+
+- **Loading UI.** New `src/components/ui/spinner.tsx` (`Spinner`, `LoadingOverlay`).
+  ContentMigration shows a full-panel `LoadingOverlay` during initial env load and
+  every busy action, inline `Spinner`s in the primary buttons, and a spinner on the
+  record-picker "Loading records…" line.
