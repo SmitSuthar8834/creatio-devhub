@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { save } from "@tauri-apps/plugin-dialog";
-import { CircleCheck, Download, Play } from "lucide-react";
+import { CircleCheck, Download, Info, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,9 +87,11 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
     try {
       const res = await runSql(runEnv, runQuery);
       setResult(res);
-      // Three outcomes, and the wording has to match: a statement that did its
-      // work, a query that matched nothing, and a query with rows to show.
-      if (res.statement) setNotice("Statement ran successfully.");
+      // Outcomes, and the wording has to match: a run with an explanatory note
+      // (shown in its own panel), a statement that did its work, a query that
+      // matched nothing, and a query with rows to show.
+      if (res.messages.length > 0) setNotice("");
+      else if (res.statement) setNotice("Statement ran successfully.");
       else if (res.rowCount === 0) setNotice("Query ran — 0 rows returned.");
     } catch (e) {
       setResult(null);
@@ -307,6 +309,17 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
           : <p className="text-sm text-muted-foreground">{notice}</p>
       )}
       {error && <ErrorNote error={error} />}
+
+      {result && result.messages.length > 0 && (
+        <div className="grid gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2.5">
+          {result.messages.map((message, i) => (
+            <p key={i} className="flex items-start gap-2 text-sm text-foreground">
+              <Info className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
+              <span>{message}</span>
+            </p>
+          ))}
+        </div>
+      )}
 
       {savedQueries.length > 0 && (
         <section className="grid gap-3">

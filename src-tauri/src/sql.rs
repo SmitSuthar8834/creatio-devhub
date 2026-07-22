@@ -25,6 +25,10 @@ pub struct SqlResult {
     /// The SQL was a statement (UPDATE/INSERT/DDL) rather than a query, so
     /// having no rows is the expected outcome and not an empty answer.
     pub statement: bool,
+    /// Human-readable notes to show alongside (or instead of) the grid — used
+    /// when a run produced no rows but there is something the user should know,
+    /// e.g. that PL/pgSQL `RAISE NOTICE` output is not returned by clio.
+    pub messages: Vec<String>,
 }
 
 fn temp_path(ext: &str) -> PathBuf {
@@ -109,6 +113,29 @@ fn returns_rows(query: &str) -> bool {
         .to_lowercase();
     matches!(first.as_str(), "select" | "with" | "show" | "explain" | "values" | "table")
 }
+
+/// Whether the SQL's only output would be PL/pgSQL messages — an anonymous
+/// `DO` block, or a `RAISE NOTICE`. clio's SQL executor returns result sets,
+/// not the connection's notice stream, so these run but produce nothing to
+/// show. Detecting it lets the UI explain the empty result instead of a bare
+/// "ran successfully". Only consulted when the run produced no rows, so a
+/// function that both RAISEs and returns a table is unaffected.
+fn emits_only_notices(query: &str) -> bool {
+    let head = query.trim_start();
+    let starts_do = head
+        .get(..2)
+        .map(|s| s.eq_ignore_ascii_case("do"))
+        .unwrap_or(false)
+        && head[2..].starts_with(|c: char| c.is_whitespace() || c == '$');
+    starts_do || query.to_uppercase().contains("RAISE NOTICE")
+}
+
+/// The note shown when a run's only output would have been PL/pgSQL messages.
+const NOTICE_ONLY_HINT: &str = "This block ran, but produced no result set. clio's SQL executor \
+    does not return PL/pgSQL messages (RAISE NOTICE / anonymous DO-block output), so the notices \
+    are lost before they reach DevHub. To see results in the grid, return them as rows instead — \
+    e.g. move the logic into a function that RETURNS TABLE(...) and finish the script with a \
+    SELECT from it.";
 
 /// Pull a readable error out of clio's output. Recognizes the cliogate hint and
 /// [ERR] lines; otherwise returns the trimmed output with clio's own chatter
@@ -250,6 +277,24 @@ mod tests {
     }
 
     #[test]
+    fn notice_only_blocks_are_recognized() {
+        // Anonymous DO blocks and RAISE NOTICE: clio returns no rows for these.
+        assert!(emits_only_notices("DO $$ BEGIN RAISE NOTICE 'x'; END $$;"));
+        assert!(emits_only_notices("do\n$$ begin raise notice 'x'; end $$;"));
+        assert!(emits_only_notices("DO$$BEGIN END$$;"));
+        // RAISE NOTICE anywhere in the script counts.
+        assert!(emits_only_notices("SELECT 1;\nRAISE NOTICE 'hi';"));
+    }
+
+    #[test]
+    fn ordinary_sql_is_not_notice_only() {
+        assert!(!emits_only_notices("SELECT * FROM \"Contact\""));
+        assert!(!emits_only_notices("UPDATE \"Contact\" SET \"Name\" = 'x'"));
+        // Starts with "DO" but is not a DO block.
+        assert!(!emits_only_notices("DOMAIN something"));
+    }
+
+    #[test]
     fn clio_chatter_is_stripped_from_the_fallback_message() {
         let out = "[WAR] - clio 8.1.0.87 is available. Run 'dotnet tool update clio -g' to update.\n\
                    [INF] - connecting\n\
@@ -326,12 +371,18 @@ pub fn query_env(env: &str, query: &str) -> Result<SqlResult, String> {
     // already ruled out above, so this is a success either way; `statement` only
     // decides how the UI words it.
     if !Path::new(&csv_path).exists() {
+        let messages = if emits_only_notices(&query) {
+            vec![NOTICE_ONLY_HINT.to_string()]
+        } else {
+            Vec::new()
+        };
         return Ok(SqlResult {
             columns: Vec::new(),
             rows: Vec::new(),
             row_count: 0,
             truncated: false,
             statement: !returns_rows(&query),
+            messages,
         });
     }
 
@@ -371,6 +422,7 @@ fn parse_csv(path: &Path) -> Result<SqlResult, String> {
         row_count,
         rows,
         statement: false,
+        messages: Vec::new(),
     })
 }
 

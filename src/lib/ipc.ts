@@ -385,6 +385,8 @@ export interface SqlResult {
   truncated: boolean;
   /** True for UPDATE/INSERT/DDL, where returning no rows is the expected result. */
   statement: boolean;
+  /** Notes to show alongside/instead of the grid — e.g. that RAISE NOTICE output isn't returned. */
+  messages: string[];
 }
 
 export const runSql = (env: string, query: string) =>
