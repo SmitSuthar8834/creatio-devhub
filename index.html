@@ -247,7 +247,7 @@
       <a href="#specs">Requirements</a>
       <a href="#feedback">Feedback</a>
       <a href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">GitHub</a>
-      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.0/creatio-devhub_0.8.0_x64-setup.exe">
+      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.4/creatio-devhub_0.8.4_x64-setup.exe">
         <svg class="ic"><use href="#i-dl"/></svg> Download
       </a>
     </nav>
@@ -262,7 +262,7 @@
         <h1>Ship Creatio work without living in the <em>terminal</em>.</h1>
         <p class="lede">A native desktop workbench for Creatio developers: environments, source-controlled workspaces, package &amp; app deployment, SQL, and GitHub — all driven from one app.</p>
         <div class="cta-row">
-          <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.0/creatio-devhub_0.8.0_x64-setup.exe">
+          <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.4/creatio-devhub_0.8.4_x64-setup.exe">
             <svg class="ic"><use href="#i-dl"/></svg> Download for Windows
           </a>
           <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">
@@ -270,7 +270,7 @@
           </a>
         </div>
         <div class="meta">
-          <span data-ver="%s · Windows 10/11 (x64)">v0.8.0 · Windows 10/11 (x64)</span>
+          <span data-ver="%s · Windows 10/11 (x64)">v0.8.4 · Windows 10/11 (x64)</span>
           <span class="ok"><svg class="ic"><use href="#i-check"/></svg> signed installer &amp; auto-updates</span>
         </div>
       </div>
@@ -314,7 +314,7 @@
     <div class="wrap">
       <div class="stats">
         <div class="stat stat-live"><div class="stat-num" id="dl-count">—</div><div class="stat-cap">installer downloads</div></div>
-        <div class="stat"><div class="stat-num" id="dl-version">v0.8.0</div><div class="stat-cap">latest version</div></div>
+        <div class="stat"><div class="stat-num" id="dl-version">v0.8.4</div><div class="stat-cap">latest version</div></div>
         <div class="stat"><div class="stat-num" id="dl-releases">14</div><div class="stat-cap">releases shipped</div></div>
       </div>
       <div class="stats-note" id="stats-note">Counts update live from <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases" target="_blank" rel="noopener">GitHub Releases</a>.</div>
@@ -394,7 +394,23 @@
       </div>
       <div class="changelog">
         <div class="rel">
-          <div class="rel-tag">v0.8.0<span class="badge">latest</span></div>
+          <div class="rel-tag">v0.8.4<span class="badge">latest</span></div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Move campaigns and emails between environments</h4>
+            <p>The Migration screen now copies <strong>marketing content</strong> &mdash; campaigns, bulk emails, email designer templates, dynamic content, and campaign <strong>flow diagrams</strong> &mdash; from one environment to another with their original IDs, so everything that references them keeps working. Pick individual campaigns and bulk emails or move everything missing; parents a selected record needs come along automatically. References the target cannot satisfy are resolved for you: a missing contact or lookup is matched to the target's row of the same name where one exists, otherwise the field is cleared &mdash; and every such change is listed in the result. A rollback script is written before anything is inserted. If you installed v0.8.3, update: it shipped this feature without the reference resolution and fails on records owned by environment-specific contacts.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.8.1 &ndash; v0.8.2</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Lookup capture fixed, sharper edges filed down</h4>
+            <p>Capturing lookups no longer fails on environments where a lookup points at a table without a <strong>Name</strong> column, and values registered twice are no longer captured twice. The SQL screen now explains why <strong>RAISE NOTICE</strong> output comes back empty and how to get results into a grid, the Jobs screen keeps wide logs inside the page and can collapse the job list, and long filenames in the Workspaces change list stay readable.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.8.0</div>
           <div>
             <div class="rel-date">July 2026</div>
             <h4>Move reference data between environments</h4>
@@ -598,10 +614,10 @@
         <h2>Get DevHub for Windows</h2>
         <p>One installer. It reuses the clio, Git and GitHub tools you already have.</p>
         <div class="dl-links">
-          <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.0/creatio-devhub_0.8.0_x64-setup.exe">
+          <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.4/creatio-devhub_0.8.4_x64-setup.exe">
             <svg class="ic"><use href="#i-dl"/></svg> Download installer (.exe)
           </a>
-          <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.0/creatio-devhub_0.8.0_x64_en-US.msi">Get the .msi</a>
+          <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.4/creatio-devhub_0.8.4_x64_en-US.msi">Get the .msi</a>
           <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest" target="_blank" rel="noopener">All releases</a>
         </div>
         <div class="dl-note" data-ver="%s · NSIS & MSI · signed · auto-updates after install">v0.7.0 · NSIS &amp; MSI · signed · auto-updates after install</div>
