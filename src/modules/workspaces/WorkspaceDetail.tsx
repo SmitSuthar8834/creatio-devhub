@@ -435,23 +435,32 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
               Working tree is clean. Pull from Cloud to fetch the latest package changes.
             </p>
           ) : (
-            <div className="grid gap-3 md:grid-cols-[minmax(0,20rem)_1fr]">
-              <div className="grid content-start gap-1 rounded-lg border p-1">
-                {changes.map((c) => (
-                  <button
-                    key={c.path}
-                    className={cn(
-                      "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent/10",
-                      selectedFile === c.path && "bg-accent/15",
-                    )}
-                    onClick={() => showDiff(c.path)}
-                  >
-                    <span className="font-mono text-xs font-semibold text-muted-foreground uppercase">
-                      {c.status}
-                    </span>
-                    <span className="truncate" title={c.path}>{c.path}</span>
-                  </button>
-                ))}
+            <div className="grid gap-3 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
+              <div className="grid max-h-[60vh] content-start gap-1 overflow-y-auto rounded-lg border p-1">
+                {changes.map((c) => {
+                  const slash = c.path.lastIndexOf("/");
+                  const dir = slash >= 0 ? c.path.slice(0, slash + 1) : "";
+                  const base = slash >= 0 ? c.path.slice(slash + 1) : c.path;
+                  return (
+                    <button
+                      key={c.path}
+                      className={cn(
+                        "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent/10",
+                        selectedFile === c.path && "bg-accent/15",
+                      )}
+                      onClick={() => showDiff(c.path)}
+                    >
+                      <span className="shrink-0 font-mono text-xs font-semibold text-muted-foreground uppercase">
+                        {c.status}
+                      </span>
+                      {/* Middle ellipsis: the folder truncates but the filename always stays visible. */}
+                      <span className="flex min-w-0 flex-1 items-center" title={c.path}>
+                        <span className="truncate text-muted-foreground">{dir}</span>
+                        <span className="shrink-0">{base}</span>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
               <pre className="max-h-[60vh] overflow-auto rounded-lg border bg-card p-3 font-mono text-xs">
                 {selectedFile

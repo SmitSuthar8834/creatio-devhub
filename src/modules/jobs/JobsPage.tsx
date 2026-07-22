@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -73,6 +73,7 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<JobInfo[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [log, setLog] = useState<string[]>([]);
+  const [showList, setShowList] = useState(true);
   const logRef = useRef<HTMLPreElement>(null);
   const selectedRef = useRef<string | null>(null);
   selectedRef.current = selected;
@@ -126,7 +127,20 @@ export default function JobsPage() {
   return (
     <div className="flex h-full flex-col p-6">
       <div className="mb-5 flex items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold tracking-tight">Jobs</h1>
+        <div className="flex items-center gap-1.5">
+          {jobs.length > 0 && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setShowList((v) => !v)}
+              title={showList ? "Hide the job list" : "Show the job list"}
+              aria-label={showList ? "Hide the job list" : "Show the job list"}
+            >
+              {showList ? <PanelLeftClose aria-hidden="true" /> : <PanelLeftOpen aria-hidden="true" />}
+            </Button>
+          )}
+          <h1 className="text-xl font-semibold tracking-tight">Jobs</h1>
+        </div>
         {jobs.some((j) => ["succeeded", "failed", "cancelled"].includes(j.status)) && (
           <Button
             variant="outline"
@@ -152,8 +166,13 @@ export default function JobsPage() {
           Nothing has run yet. Actions from other screens appear here with live output.
         </p>
       ) : (
-        <div className="grid min-h-0 flex-1 grid-cols-[280px_1fr] gap-4">
-          <div className="flex min-h-0 flex-col gap-1.5 overflow-y-auto pr-1">
+        <div
+          className={cn(
+            "grid min-h-0 flex-1 gap-4",
+            showList ? "grid-cols-[280px_minmax(0,1fr)]" : "grid-cols-1",
+          )}
+        >
+          <div className={cn("flex min-h-0 flex-col gap-1.5 overflow-y-auto pr-1", !showList && "hidden")}>
             {jobs.map((j) => (
               <button
                 key={j.id}
@@ -173,7 +192,7 @@ export default function JobsPage() {
             ))}
           </div>
 
-          <div className="flex min-h-0 flex-col gap-3">
+          <div className="flex min-h-0 min-w-0 flex-col gap-3">
             {selected && (
               <>
                 <div className="flex items-start justify-between gap-3 rounded-lg border bg-card px-4 py-3">
