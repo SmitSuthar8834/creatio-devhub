@@ -2,7 +2,7 @@
 
 Last verified: **2026-07-22**
 
-Current version: **0.8.3** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
+Current version: **0.8.5** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
 table below was last written; see per-release commit messages for their scope. v0.4.0 is the
 shadcn/ui design-system release described below; v0.5.0 adds the automatic update notice and
 stops trusting clio's exit code over its own output; v0.5.1 stops reporting a successful SQL
@@ -10,11 +10,14 @@ statement as an error, v0.5.2 fixes the regression that came with it; v0.6.0 add
 application descriptor details; v0.7.0 Compare environments + package lock state; v0.8.0–v0.8.2
 lookup migration, the capture crash fix, and UI/UX fixes; **v0.8.3** marketing content migration
 as first shipped — it still fails on per-environment FK references such as `Campaign.OwnerId`;
-**v0.8.4** adds FK auto-resolution and the Campaign/BulkEmail record picker, live-verified.)
+**v0.8.4** adds FK auto-resolution and the Campaign/BulkEmail record picker, live-verified;
+**v0.8.5** adds overwrite-existing for Campaign/BulkEmail, a flow-migration foreign-key bypass
+(fixes the 23503 SysSchema failure, also un-misdiagnosed from "unreachable"), and loading
+overlays — **released on tests+build only, not yet live-verified in the GUI.**)
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.8.4>
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.8.5>
 
 Website: <https://smitsuthar8834.github.io/creatio-devhub/> (branch `gh-pages`)
 
