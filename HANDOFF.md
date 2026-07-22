@@ -189,6 +189,22 @@ against a live target yet.**
     `migrations/` restores it. The Rust orchestration (dual env-lock, rollback-before-write ordering,
     file writes) is covered by unit tests + review but not yet exercised live.
 
+### UI/UX fixes — shipped as v0.8.2 (2026-07-22)
+
+Three fixes on top of v0.8.1, all frontend/`sql.rs` (74 Rust tests, `tsc` + `vite build` clean):
+- **SQL runner explains empty NOTICE output.** clio's SQL executor returns result sets, not the
+  DB connection's notice stream, so an anonymous `DO` block / `RAISE NOTICE` runs but returns
+  nothing — it used to show a bare "Statement ran successfully". `run_sql` now detects this
+  (`emits_only_notices`) and returns a `SqlResult.messages` note explaining notices aren't
+  returned and to use a function that `RETURNS TABLE(...)` + trailing `SELECT`; the SQL page shows
+  it in an info panel. (Verified live: clio drops RAISE NOTICE entirely; a temp-function + SELECT
+  does come back as a grid.)
+- **Jobs screen overflow + collapsible list.** The `1fr` grid track (min-width:auto) let the wide
+  log scroll the whole page; now `minmax(0,1fr)` + `min-w-0` keeps it in-box, plus a toggle to
+  collapse the job list for a full-width log.
+- **Workspaces change list** uses a middle ellipsis so the filename stays visible (folder
+  truncates), diff column `minmax(0,1fr)`, and the list scrolls for long change sets.
+
 ### Capture crash fix — shipped as v0.8.1 (2026-07-22, post-0.8.0)
 
 The first full live `capture_lookups` run (Dev-thoughtworks, 67 lookups) failed and proved the
