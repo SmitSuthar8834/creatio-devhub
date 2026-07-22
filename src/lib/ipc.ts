@@ -376,6 +376,69 @@ export const migrateLookups = (opts: {
   skipBackup: boolean;
 }) => invoke<string>("migrate_lookups", opts);
 
+// ---------- marketing content migration ----------
+
+export interface ContentGap {
+  entity: string;
+  sourceCount: number;
+  targetCount: number;
+  missingCount: number;
+  notes: string[];
+}
+
+export interface ContentGapReport {
+  sourceEnv: string;
+  targetEnv: string;
+  entities: ContentGap[];
+  brokenFlows: string[];
+  localImageReferences: string[];
+}
+
+export interface ContentRowFailure {
+  id: string;
+  name: string;
+  status: number;
+  error: string;
+}
+
+export interface ContentEntityResult {
+  entity: string;
+  sourceCount: number;
+  inserted: number;
+  skipped: number;
+  failures: ContentRowFailure[];
+}
+
+export interface ContentMigrateReport {
+  sourceEnv: string;
+  targetEnv: string;
+  rollbackPath: string;
+  entities: ContentEntityResult[];
+}
+
+export interface FlowMigrateReport {
+  sourceEnv: string;
+  targetEnv: string;
+  schemasInserted: number;
+  schemasSkipped: number;
+  campaignsRepointed: number;
+  metadataBytes: number;
+  rollbackPath: string;
+  entities: ContentEntityResult[];
+  failures: ContentRowFailure[];
+}
+
+export const analyzeContent = (sourceEnv: string, targetEnv: string) =>
+  invoke<ContentGapReport>("content_analyze", { sourceEnv, targetEnv });
+export const verifyContent = (sourceEnv: string, targetEnv: string) =>
+  invoke<ContentGapReport>("content_verify", { sourceEnv, targetEnv });
+export const migrateContent = (sourceEnv: string, targetEnv: string, entities: string[]) =>
+  invoke<ContentMigrateReport>("content_migrate", { sourceEnv, targetEnv, entities });
+export const migrateContentFlows = (sourceEnv: string, targetEnv: string) =>
+  invoke<FlowMigrateReport>("content_migrate_flows", { sourceEnv, targetEnv });
+export const finalizeContent = (targetEnv: string) =>
+  invoke<void>("content_finalize", { targetEnv });
+
 // ---------- sql ----------
 
 export interface SqlResult {

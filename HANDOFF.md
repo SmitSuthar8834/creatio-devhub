@@ -112,6 +112,22 @@ appears in the DOM before reveal. The **capture job itself has not been run in t
 app** — its clio invocation is the one verified by hand, but nobody has watched it complete
 from the UI.
 
+## Marketing content migration (implemented locally; live verification pending, 2026-07-22)
+
+Second migration type next to lookups: Campaigns / Bulk Emails / email templates /
+dynamic content / campaign flow diagrams, copied source→target GUID-preserving and idempotent.
+The full spec, verified domain gotchas (SysSchema 403 → SQL path, zero-GUID stripping,
+Supervisor remap, media-link MetaData reads, redis+restart requirement), proposed command
+surface, and acceptance criteria are in **`HANDOFF-content-migration.md`** (repo root). The
+proven reference implementation is `C:\Users\Lenovo\creatio-content-migrate\` — it performed
+the real bundle→dev-834 migration on 2026-07-22 (102 content rows + 7 flow schemas + 92
+CampaignItem + 135 SysLocalizableValue, all verified). The port adds the app's first direct HTTP
+path (`reqwest` with Creatio forms auth), pure transformation/SQL tests, rollback scripts before
+writes, and a staged Migration tab (analyze → content → flows → finalize → verify). Automated
+validation is green (83 Rust tests, TypeScript and Vite production build). The required live
+analyze/no-op migration and designer-after-restart verification are still pending, so this is not
+yet a release gate.
+
 ## Lookup / reference-data migration (backend, WIP — unreleased, 2026-07-22)
 
 Answers "move my package dev → pre *with its data*". Package config already deploys
