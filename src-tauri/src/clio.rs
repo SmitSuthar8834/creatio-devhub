@@ -6,7 +6,18 @@ use tauri::{AppHandle, Emitter, State};
 /// clio's own settings file — the single source of truth for environments.
 /// We read it only to LIST environments; secrets are never exposed to the UI.
 pub fn settings_path() -> Result<PathBuf, String> {
-    let base = std::env::var("LOCALAPPDATA").map_err(|_| "LOCALAPPDATA not set".to_string())?;
+    // clio is a .NET tool and writes appsettings.json under
+    // SpecialFolder.LocalApplicationData: `%LOCALAPPDATA%` on Windows, and
+    // `$XDG_DATA_HOME` (falling back to `~/.local/share`) on macOS/Linux.
+    let base = if cfg!(windows) {
+        std::env::var("LOCALAPPDATA").map_err(|_| "LOCALAPPDATA not set".to_string())?
+    } else {
+        std::env::var("XDG_DATA_HOME")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .or_else(|| std::env::var("HOME").ok().map(|h| format!("{h}/.local/share")))
+            .ok_or_else(|| "HOME not set".to_string())?
+    };
     Ok(PathBuf::from(base).join("creatio").join("clio").join("appsettings.json"))
 }
 
@@ -384,7 +395,10 @@ CampaignElements.UI 7.8.0        Creatio
     /// Runs against the machine's real clio settings file when present.
     #[test]
     fn parses_local_clio_settings() {
-        let path = settings_path().expect("LOCALAPPDATA should be set");
+        let Ok(path) = settings_path() else {
+            eprintln!("no clio settings path on this platform — skipping");
+            return;
+        };
         if !path.exists() {
             eprintln!("clio settings not found — skipping");
             return;

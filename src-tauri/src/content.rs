@@ -182,9 +182,9 @@ struct HttpFailure {
 }
 
 fn clio_settings_path() -> Result<PathBuf, String> {
-    let base = std::env::var_os("LOCALAPPDATA")
-        .ok_or_else(|| "Windows local application data is unavailable.".to_string())?;
-    Ok(PathBuf::from(base).join("creatio").join("clio").join("appsettings.json"))
+    // Same location clio uses on every platform — resolved cross-platform in one
+    // place so the content HTTP path finds environments on macOS/Linux too.
+    crate::clio::settings_path()
 }
 
 fn load_environment(name: &str) -> Result<RawEnvironment, String> {
