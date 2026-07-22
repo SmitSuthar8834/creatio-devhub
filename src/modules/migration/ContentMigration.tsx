@@ -17,8 +17,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import ErrorNote from "../../lib/ErrorNote";
 import {
   analyzeContent, ContentEntityResult, ContentGapReport, ContentMigrateReport,
-  ContentRecordPick, EnvSummary, finalizeContent, FlowMigrateReport, listContentRecords,
-  listEnvironments, migrateContent, migrateContentFlows, verifyContent,
+  ContentRecordPick, EnvSummary, finalizeContent, FlowMigrateReport, listContentColumns,
+  listContentRecords, listEnvironments, migrateContent, migrateContentFlows, verifyContent,
 } from "../../lib/ipc";
 
 const BASE = ["BfEmailTemplate", "DCTemplate", "DCReplica", "Campaign", "BulkEmail"];
@@ -69,11 +69,17 @@ export default function ContentMigration() {
   const [chosen, setChosen] = useState<Record<string, Set<string> | undefined>>({});
   /** Entities whose records already on the target should be overwritten in place. */
   const [overwrite, setOverwrite] = useState<Set<string>>(new Set());
-  const [bypassFk, setBypassFk] = useState(true);
+  /** Writable column names per entity, loaded on demand for the column picker. */
+  const [cols, setCols] = useState<Record<string, string[]>>({});
+  const [colErrors, setColErrors] = useState<Record<string, string>>({});
+  /** Per entity: undefined = write every column; a Set = only these columns. */
+  const [chosenCols, setChosenCols] = useState<Record<string, Set<string> | undefined>>({});
+  /** Write through direct SQL (bypasses Creatio's mandatory-field validation). */
+  const [sqlWrite, setSqlWrite] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [busy, setBusy] = useState(""); const [error, setError] = useState(""); const [finalizeOpen, setFinalizeOpen] = useState(false); const same = !source || !target || source === target;
   useEffect(() => { listEnvironments().then((list) => { setEnvs(list); setSource(list.find((e) => e.isActive)?.name ?? list[0]?.name ?? ""); setTarget(list.find((e) => !e.isActive)?.name ?? ""); }).catch((e) => setError(String(e))).finally(() => setInitializing(false)); }, []);
-  useEffect(() => { setPicks({}); setChosen({}); setPickErrors({}); setOverwrite(new Set()); }, [source, target]);
+  useEffect(() => { setPicks({}); setChosen({}); setPickErrors({}); setOverwrite(new Set()); setCols({}); setChosenCols({}); setColErrors({}); }, [source, target]);
   const run = async <T,>(label: string, action: () => Promise<T>, done: (value: T) => void) => { setBusy(label); setError(""); try { done(await action()); } catch (e) { setError(String(e)); } finally { setBusy(""); } };
   const toggle = (entity: string) => { const next = new Set(selected); next.has(entity) ? next.delete(entity) : next.add(entity); setSelected(next); };
   const loadPicks = (entity: string) => {
@@ -111,11 +117,41 @@ export default function ContentMigration() {
     }
     return next;
   });
+  const loadCols = (entity: string) => {
+    if (cols[entity] || !source) return;
+    listContentColumns(source, entity)
+      .then((names) => { setCols((prev) => ({ ...prev, [entity]: names })); setColErrors((prev) => ({ ...prev, [entity]: "" })); })
+      .catch((e) => setColErrors((prev) => ({ ...prev, [entity]: String(e) })));
+  };
+  const isColChosen = (entity: string, col: string) => chosenCols[entity]?.has(col) ?? true;
+  const colCount = (entity: string) => chosenCols[entity]?.size ?? (cols[entity]?.length ?? 0);
+  const toggleCol = (entity: string, col: string) => setChosenCols((prev) => {
+    const current = new Set(prev[entity] ?? cols[entity] ?? []);
+    current.has(col) ? current.delete(col) : current.add(col);
+    return { ...prev, [entity]: current };
+  });
+  const chooseAllCols = (entity: string, all: boolean) => setChosenCols((prev) => ({
+    ...prev,
+    [entity]: all ? undefined : new Set<string>(),
+  }));
   const migrate = () => {
     const selections: Record<string, string[]> = {};
-    for (const entity of PICKABLE) { const set = chosen[entity]; if (set && selected.has(entity)) selections[entity] = [...set]; }
+    const columns: Record<string, string[]> = {};
+    for (const entity of PICKABLE) {
+      if (!selected.has(entity)) continue;
+      const set = chosen[entity]; if (set) selections[entity] = [...set];
+      // Send a column list only when the user narrowed it to a strict subset.
+      const colSet = chosenCols[entity];
+      if (colSet && cols[entity] && colSet.size < cols[entity].length) columns[entity] = [...colSet];
+    }
     const overwriteList = [...overwrite].filter((entity) => selected.has(entity));
-    return migrateContent(source, target, [...selected], Object.keys(selections).length ? selections : undefined, overwriteList);
+    return migrateContent(
+      source, target, [...selected],
+      Object.keys(selections).length ? selections : undefined,
+      overwriteList,
+      Object.keys(columns).length ? columns : undefined,
+      sqlWrite,
+    );
   };
   return (
     <div className="relative grid gap-4 pt-2">
@@ -135,7 +171,8 @@ export default function ContentMigration() {
           const isOverwrite = overwrite.has(entity);
           const selectable = selectableOf(entity);
           return (
-            <Collapsible key={entity} className="rounded-lg border" onOpenChange={(open) => open && loadPicks(entity)}>
+            <div key={entity} className="grid gap-2">
+            <Collapsible className="rounded-lg border" onOpenChange={(open) => open && loadPicks(entity)}>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-between font-normal">
                   <span>Choose {entity} records…</span>
@@ -162,15 +199,41 @@ export default function ContentMigration() {
                 </>}
               </CollapsibleContent>
             </Collapsible>
+            <Collapsible className="rounded-lg border" onOpenChange={(open) => open && loadCols(entity)}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="w-full justify-between font-normal">
+                  <span>Choose {entity} columns…</span>
+                  <span className="flex items-center gap-2 text-xs text-muted-foreground">{cols[entity] ? `${colCount(entity)} of ${cols[entity].length} columns` : "all columns"}<ChevronDown /></span>
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="grid gap-1 border-t p-3">
+                {colErrors[entity] && <ErrorNote error={colErrors[entity]} />}
+                {!cols[entity] && !colErrors[entity] && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner />Loading columns…</p>}
+                {cols[entity] && <>
+                  <p className="mb-1 text-xs text-muted-foreground">Unchecked columns are left untouched — on an update the target keeps its own value; on a new record the field takes its default. <code className="text-xs">Id</code> is always written.</p>
+                  <div className="mb-1 flex gap-2"><Button size="sm" variant="outline" onClick={() => chooseAllCols(entity, true)}>All</Button><Button size="sm" variant="outline" onClick={() => chooseAllCols(entity, false)}>None</Button></div>
+                  {cols[entity].length === 0 && <p className="text-sm text-muted-foreground">No writable columns found.</p>}
+                  <div className="grid gap-1 sm:grid-cols-2">
+                    {cols[entity].map((col) => (
+                      <Label key={col} className="flex items-center gap-2 py-0.5 font-normal">
+                        <Checkbox checked={isColChosen(entity, col)} onCheckedChange={() => toggleCol(entity, col)} />
+                        <span className="min-w-0 truncate font-mono text-xs">{col}</span>
+                      </Label>
+                    ))}
+                  </div>
+                </>}
+              </CollapsibleContent>
+            </Collapsible>
+            </div>
           );
         })}
-        <Button className="w-fit" disabled={same || !selected.size || !!busy} onClick={() => run("Migrating content…", migrate, setResult)}>{busy === "Migrating content…" ? <><Spinner data-icon="inline-start" />{busy}</> : "Migrate selected content"}</Button>{result && <><p className="text-xs text-muted-foreground">Rollback: {result.rollbackPath}</p>{result.overwriteBackupPath && <p className="text-xs text-muted-foreground">Overwritten records backed up to: {result.overwriteBackupPath}</p>}<Results rows={result.entities} /></>}</div>
-      <div className="grid gap-3 rounded-lg border p-4"><div><h2 className="font-medium">Flow diagrams</h2><p className="text-sm text-muted-foreground">Writes protected SysSchema rows through SQL, then copies versions, items, and localized captions.</p></div>
         <Label className="flex items-start gap-2 font-normal">
-          <Switch checked={bypassFk} onCheckedChange={(value) => setBypassFk(value)} />
-          <span className="text-sm">Bypass foreign key checks while inserting <span className="text-muted-foreground">— suspends SysSchema constraint triggers for the insert only. Fixes <code className="text-xs">23503</code> errors when a flow's package or owner reference differs on the target. Leave on unless the target account can't alter table triggers.</span></span>
+          <Switch checked={sqlWrite} onCheckedChange={(value) => setSqlWrite(value)} />
+          <span className="text-sm">Write through SQL <span className="text-muted-foreground">— inserts and updates run as direct database statements instead of OData, bypassing Creatio's mandatory-field validation (e.g. <em>“Owner field must be filled in”</em>). Needs cliogate on the target. Foreign keys are still enforced.</span></span>
         </Label>
-        <Button variant="destructive" className="w-fit" disabled={same || !!busy} onClick={() => run("Migrating flows…", () => migrateContentFlows(source, target, bypassFk), setFlowResult)}>{busy === "Migrating flows…" ? <><Spinner data-icon="inline-start" />{busy}</> : "Migrate flow diagrams (uses SQL)"}</Button>{flowResult && <><p className="text-sm">{flowResult.schemasInserted} schemas inserted · {flowResult.schemasSkipped} already present · {flowResult.campaignsRepointed} campaigns linked</p><p className="text-xs text-muted-foreground">Rollback: {flowResult.rollbackPath}</p><Results rows={flowResult.entities} /></>}</div>
+        <Button className="w-fit" disabled={same || !selected.size || !!busy} onClick={() => run("Migrating content…", migrate, setResult)}>{busy === "Migrating content…" ? <><Spinner data-icon="inline-start" />{busy}</> : "Migrate selected content"}</Button>{result && <><p className="text-xs text-muted-foreground">Rollback: {result.rollbackPath}</p>{result.overwriteBackupPath && <p className="text-xs text-muted-foreground">Overwritten records backed up to: {result.overwriteBackupPath}</p>}<Results rows={result.entities} /></>}</div>
+      <div className="grid gap-3 rounded-lg border p-4"><div><h2 className="font-medium">Flow diagrams</h2><p className="text-sm text-muted-foreground">Writes protected SysSchema rows through SQL, then copies versions, items, and localized captions. Each flow's package reference is remapped to the target's package of the same name, so it lands without a foreign-key error.</p></div>
+        <Button variant="destructive" className="w-fit" disabled={same || !!busy} onClick={() => run("Migrating flows…", () => migrateContentFlows(source, target), setFlowResult)}>{busy === "Migrating flows…" ? <><Spinner data-icon="inline-start" />{busy}</> : "Migrate flow diagrams (uses SQL)"}</Button>{flowResult && <><p className="text-sm">{flowResult.schemasInserted} schemas inserted · {flowResult.schemasSkipped} already present · {flowResult.campaignsRepointed} campaigns linked</p><p className="text-xs text-muted-foreground">Rollback: {flowResult.rollbackPath}</p><Results rows={flowResult.entities} /></>}</div>
       <div className="flex items-center justify-between gap-3 rounded-lg border p-4"><div><h2 className="font-medium">Finalize target</h2><p className="text-sm text-muted-foreground">Clear Redis and restart the web app so Creatio sees the new flows. This signs users out; a local IIS cold start can take several minutes.</p></div><Button variant="destructive" disabled={same || !!busy} onClick={() => setFinalizeOpen(true)}>Finalize…</Button></div>
       <AlertDialog open={finalizeOpen} onOpenChange={setFinalizeOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Restart {target}?</AlertDialogTitle><AlertDialogDescription>This clears its Redis database and restarts the application. Active users will be disconnected and the cold start can take several minutes.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { setFinalizeOpen(false); run("Finalizing…", () => finalizeContent(target), () => undefined); }}>Clear cache and restart</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </div>

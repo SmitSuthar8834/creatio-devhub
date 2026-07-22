@@ -239,6 +239,41 @@ pre-thoughtworks) after the fix and it succeeded** — the 4 previously failing
 `23503 OwnerId` campaigns now migrate. The content write path has had its first
 successful real run.
 
+## SQL write path + column selection + real FK fix (2026-07-22, fourth pass)
+
+Live v0.8.5 run exposed two failures; this pass fixes both. **Not yet re-run live —
+96 Rust tests + tsc + vite build clean only; needs a dev.cmd run.**
+
+- **The v0.8.5 flow "bypass" was wrong.** `ALTER TABLE "SysSchema" DISABLE TRIGGER ALL`
+  needs superuser; the Creatio DB account is only table owner, so PostgreSQL
+  refused it with `42501: … is a system trigger`. Removed the toggle and the
+  DISABLE/ENABLE entirely. The real cause of the original `23503` is
+  `SysSchema.SysPackageId` differing per environment: `resolve_flow_packages()`
+  now maps each source package id to the target package of the same **Name**
+  (read over OData `SysPackage`) and `flow_insert_sql` takes that resolved
+  `package_id`. Best-effort — an unmatched name keeps the source id. **Needs live
+  confirmation that OData exposes SysPackage and that SysPackageId was indeed the
+  failing FK.**
+- **Campaign overwrite failed on OData PATCH with 500 "Owner field must be filled
+  in".** The FK resolver had cleared `OwnerId` (no matching target Contact), and
+  Creatio re-validates Owner as mandatory on every save of those (owner-less)
+  rows, so OData simply can't update them. Fix: an opt-in **SQL write path**.
+  `content_migrate` takes `sql_write: bool`; when on, each row is emitted as
+  `INSERT … ON CONFLICT ("Id") DO UPDATE/NOTHING` (`upsert_sql`, `json_to_sql`)
+  and run as one transaction through cliogate — bypassing app-level field
+  validation. DO UPDATE for overwrite entities, DO NOTHING otherwise. FK
+  constraints still apply at the DB, so the resolver still runs (remap/clear/
+  block). Per-row failure attribution is lost in SQL mode (one transaction → one
+  error line). Column names guarded by `is_safe_identifier`.
+- **Column selection.** `content_list_columns(source, entity)` returns writable
+  columns (post-`clean_row`); `content_migrate` takes `columns: {entity:[cols]}`.
+  `copy_entity` does `map.retain(Id or chosen)`. Unchecked ⇒ on update the target
+  keeps its value, on insert the DB default applies. UI: a "Choose … columns"
+  collapsible per Campaign/BulkEmail (default all) + a global "Write through SQL"
+  switch, both in the Content records card.
+- `copy_entity` gained a `target_env` param (for the SQL path); `CopyPlan` gained
+  `columns` + `sql`. `flow_insert_sql` signature gained `package_id`.
+
 ## Overwrite existing records + flow FK bypass + loading UI (2026-07-22, third pass)
 
 Three user-requested changes on top of the second pass. **Not yet live-verified —

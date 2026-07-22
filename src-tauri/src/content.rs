@@ -634,12 +634,65 @@ fn sql_guid(value: Option<&str>) -> String { value.filter(|v| !v.is_empty() && !
 fn bool_sql(value: Option<&Value>) -> &'static str { if value.and_then(Value::as_bool).unwrap_or(false) { "true" } else { "false" } }
 fn hex(bytes: &[u8]) -> String { const DIGITS: &[u8; 16] = b"0123456789abcdef"; let mut out = String::with_capacity(bytes.len()*2); for b in bytes { out.push(DIGITS[(b>>4) as usize] as char); out.push(DIGITS[(b&15) as usize] as char); } out }
 
-pub fn flow_insert_sql(schema: &Value, metadata: &[u8], descriptor: &[u8], supervisor: &str) -> String {
+/// Render a JSON scalar as a PostgreSQL literal. Objects and arrays never reach
+/// here (`clean_row` drops them); anything unexpected becomes NULL. A GUID rides
+/// as a quoted string — PostgreSQL casts the unknown-typed literal to uuid.
+fn json_to_sql(value: &Value) -> String {
+    match value {
+        Value::Null => "NULL".to_string(),
+        Value::Bool(true) => "true".to_string(),
+        Value::Bool(false) => "false".to_string(),
+        Value::Number(number) => number.to_string(),
+        Value::String(text) => format!("'{}'", sql_escape(text)),
+        _ => "NULL".to_string(),
+    }
+}
+
+/// One `INSERT … ON CONFLICT ("Id")` statement for a cleaned row. `update`
+/// overwrites the conflicting row's non-Id columns from the incoming values;
+/// otherwise an existing row is left untouched. Writing through SQL bypasses
+/// Creatio's app-level field validation (e.g. "Owner field must be filled in"),
+/// which is the whole reason this path exists. Column names are guarded so only
+/// safe identifiers are emitted.
+pub fn upsert_sql(table: &str, row: &Map<String, Value>, update: bool) -> String {
+    let cols: Vec<&String> = row.keys().filter(|col| crate::refdata::is_safe_identifier(col)).collect();
+    let names = cols.iter().map(|col| format!("\"{col}\"")).collect::<Vec<_>>().join(",");
+    let values = cols.iter().map(|col| json_to_sql(&row[*col])).collect::<Vec<_>>().join(",");
+    let action = if update {
+        let sets = cols.iter().filter(|col| col.as_str() != "Id")
+            .map(|col| format!("\"{col}\"=EXCLUDED.\"{col}\"")).collect::<Vec<_>>().join(",");
+        if sets.is_empty() { "DO NOTHING".to_string() } else { format!("DO UPDATE SET {sets}") }
+    } else {
+        "DO NOTHING".to_string()
+    };
+    format!("INSERT INTO \"{table}\" ({names}) VALUES ({values}) ON CONFLICT (\"Id\") {action};")
+}
+
+pub fn flow_insert_sql(schema: &Value, metadata: &[u8], descriptor: &[u8], supervisor: &str, package_id: &str) -> String {
     let get = |key: &str| schema.get(key).and_then(Value::as_str).unwrap_or_default();
     let caption: String = get("Caption").chars().take(250).collect();
     format!("INSERT INTO \"SysSchema\" (\"Id\",\"UId\",\"Name\",\"Caption\",\"ManagerName\",\"SysPackageId\",\"IsLocked\",\"IsChanged\",\"ExtendParent\",\"Description\",\"Checksum\",\"IsNetStandard\",\"CreatedById\",\"ModifiedById\",\"MetaData\",\"Descriptor\",\"MetaDataModifiedOn\",\"StructureModifiedOn\") VALUES ('{}','{}','{}','{}','CampaignSchemaManager','{}',false,true,false,'{}','{}',{},'{}','{}',decode('{}','hex'),decode('{}','hex'),timezone('utc'::text,CURRENT_TIMESTAMP),timezone('utc'::text,CURRENT_TIMESTAMP)) ON CONFLICT (\"Id\") DO NOTHING;",
-        sql_escape(get("Id")), sql_escape(get("UId")), sql_escape(get("Name")), sql_escape(&caption), sql_escape(get("SysPackageId")), sql_escape(get("Description")), sql_escape(get("Checksum")),
+        sql_escape(get("Id")), sql_escape(get("UId")), sql_escape(get("Name")), sql_escape(&caption), sql_escape(package_id), sql_escape(get("Description")), sql_escape(get("Checksum")),
         schema.get("IsNetStandard").and_then(Value::as_bool).unwrap_or(true), supervisor, supervisor, hex(metadata), hex(descriptor))
+}
+
+/// Map each distinct source `SysPackageId` on `schemas` to the target package
+/// with the same Name, so a flow lands in the target's own package row instead
+/// of tripping the SysSchema→SysPackage foreign key. Packages read over OData
+/// (SysPackage is exposed); an id with no name match keeps its source value.
+fn resolve_flow_packages(source: &Connection, target: &Connection, schemas: &[Value]) -> BTreeMap<String, String> {
+    let mut map = BTreeMap::new();
+    let source_ids: BTreeSet<String> = schemas.iter()
+        .filter_map(|schema| schema.get("SysPackageId").and_then(Value::as_str))
+        .filter(|value| !value.is_empty() && !value.eq_ignore_ascii_case(ZERO_GUID))
+        .map(str::to_string).collect();
+    for source_id in source_ids {
+        let resolved = source.name_of("SysPackage", &source_id)
+            .and_then(|name| target.id_by_name("SysPackage", &name))
+            .unwrap_or_else(|| source_id.clone());
+        map.insert(source_id, resolved);
+    }
+    map
 }
 
 fn run_sql(target: &str, sql_text: &str) -> Result<(), String> {
@@ -681,13 +734,18 @@ fn append_flow_repoint_rollback(path: &Path, campaigns: &[Value], target_campaig
 struct CopyPlan<'a> {
     selection: Option<&'a BTreeSet<String>>,
     resolver: Option<&'a Resolver<'a>>,
-    /// Overwrite (via PATCH) selected rows that already exist on the target.
+    /// Overwrite selected rows that already exist on the target.
     overwrite: bool,
+    /// When set, only these columns are written (Id is always kept).
+    columns: Option<&'a BTreeSet<String>>,
+    /// Write through direct SQL upsert instead of OData — bypasses app-level
+    /// field validation. Requires cliogate on the target.
+    sql: bool,
 }
 
-const PLAIN_COPY: CopyPlan<'static> = CopyPlan { selection: None, resolver: None, overwrite: false };
+const PLAIN_COPY: CopyPlan<'static> = CopyPlan { selection: None, resolver: None, overwrite: false, columns: None, sql: false };
 
-fn copy_entity(source: &Connection, target: &Connection, entity: &str, source_supervisor: &str, target_supervisor: &str, extra_drop: &[&str], sql_empty_names: bool, plan: CopyPlan<'_>) -> Result<(EntityMigrateResult, Vec<Value>), String> {
+fn copy_entity(source: &Connection, target: &Connection, entity: &str, target_env: &str, source_supervisor: &str, target_supervisor: &str, extra_drop: &[&str], sql_empty_names: bool, plan: CopyPlan<'_>) -> Result<(EntityMigrateResult, Vec<Value>), String> {
     let source_rows = source.get_all(entity, None, None)?;
     let target_rows = target.get_all(entity, Some("Id"), None)?;
     let target_ids: BTreeSet<String> = target_rows.iter().map(id).map(|value| value.to_ascii_lowercase()).collect();
@@ -712,6 +770,10 @@ fn copy_entity(source: &Connection, target: &Connection, entity: &str, source_su
         resolver.prime(entity, &todo);
     }
     let mut inserted = 0; let mut updated = 0; let mut failures = Vec::new(); let mut sql_rows = Vec::new(); let mut adjustments = Vec::new();
+    // SQL mode collects one upsert per row and runs them in a single transaction
+    // after the loop; OData mode writes each row as it goes.
+    let mut sql_batch: Vec<String> = Vec::new();
+    let mut sql_pending: Vec<(String, bool)> = Vec::new();
     for row in &todo {
         if sql_empty_names && row.get("Name").and_then(Value::as_str).unwrap_or_default().is_empty() { sql_rows.push(row.clone()); continue; }
         let body = clean_row(row, Some(source_supervisor), Some(target_supervisor), extra_drop);
@@ -724,7 +786,14 @@ fn copy_entity(source: &Connection, target: &Connection, entity: &str, source_su
                 continue;
             }
         }
+        // Restrict to the chosen columns; Id is always kept so the row can be keyed.
+        if let Some(columns) = plan.columns { map.retain(|key, _| key == "Id" || columns.contains(key)); }
         let exists = target_ids.contains(&id(row).to_ascii_lowercase());
+        if plan.sql {
+            sql_batch.push(upsert_sql(entity, &map, exists));
+            sql_pending.push((id(row), exists));
+            continue;
+        }
         let outcome = if exists {
             // OData PATCH keys on the URL id, so the primary key must not also
             // ride in the body.
@@ -739,6 +808,18 @@ fn copy_entity(source: &Connection, target: &Connection, entity: &str, source_su
                 if let Some(resolver) = plan.resolver { resolver.note_inserted(entity, &id(row)); }
             }
             Err(error) => failures.push(RowFailure { id: id(row), name: name(row), status: error.status, error: error.message }),
+        }
+    }
+    if plan.sql && !sql_batch.is_empty() {
+        let statement = format!("BEGIN;\n{}\nCOMMIT;", sql_batch.join("\n"));
+        match run_sql(target_env, &statement) {
+            Ok(()) => for (row_id, exists) in &sql_pending {
+                if *exists { updated += 1; } else { inserted += 1; }
+                if let Some(resolver) = plan.resolver { resolver.note_inserted(entity, row_id); }
+            },
+            // The whole transaction rolled back, so no row landed; report the
+            // engine's message once rather than repeating it per row.
+            Err(error) => failures.push(RowFailure { id: String::new(), name: format!("{} rows via SQL", sql_pending.len()), status: 0, error }),
         }
     }
     Ok((EntityMigrateResult { entity: entity.to_string(), source_count: source_rows.len(), inserted, updated, skipped, not_selected, failures, adjustments }, sql_rows))
@@ -767,12 +848,32 @@ pub fn content_list_records(source_env: String, target_env: String, entity: Stri
     }).collect())
 }
 
+/// The writable columns of an entity, drawn from the source rows: every scalar
+/// key that survives `clean_row`'s filter (no audit, OData or nested fields).
+/// Feeds the column picker so a user can leave a column — e.g. `OwnerId` — out.
 #[tauri::command]
-pub fn content_migrate(app: AppHandle, source_env: String, target_env: String, entities: Vec<String>, selections: Option<BTreeMap<String, Vec<String>>>, overwrite: Option<Vec<String>>) -> Result<ContentMigrateReport, String> {
+pub fn content_list_columns(source_env: String, entity: String) -> Result<Vec<String>, String> {
+    if !BASE_ENTITIES.contains(&entity.as_str()) { return Err(format!("Unsupported marketing content entity: {entity}")); }
+    if source_env.trim().is_empty() { return Err("Choose a source environment.".to_string()); }
+    let source = Connection::connect(&source_env)?;
+    let rows = source.get_all(&entity, None, None)?;
+    let mut columns: BTreeSet<String> = BTreeSet::new();
+    for row in &rows {
+        let Value::Object(map) = clean_row(row, None, None, &[]) else { continue; };
+        for key in map.keys() { if key != "Id" { columns.insert(key.clone()); } }
+    }
+    Ok(columns.into_iter().collect())
+}
+
+#[tauri::command]
+pub fn content_migrate(app: AppHandle, source_env: String, target_env: String, entities: Vec<String>, selections: Option<BTreeMap<String, Vec<String>>>, overwrite: Option<Vec<String>>, columns: Option<BTreeMap<String, Vec<String>>>, sql_write: Option<bool>) -> Result<ContentMigrateReport, String> {
     if source_env == target_env { return Err("Choose two different environments.".to_string()); }
     let order = dependency_order(&entities)?;
     if order.is_empty() { return Err("Select at least one content entity.".to_string()); }
     let overwrite_set: BTreeSet<String> = overwrite.unwrap_or_default().into_iter().collect();
+    let sql_write = sql_write.unwrap_or(false);
+    let column_sets: BTreeMap<String, BTreeSet<String>> = columns.unwrap_or_default().into_iter()
+        .map(|(entity, list)| (entity, list.into_iter().collect())).collect();
     let source = Connection::connect(&source_env)?; let target = Connection::connect(&target_env)?;
     let source_supervisor = supervisor_id(&source)?; let target_supervisor = supervisor_id(&target)?;
 
@@ -836,8 +937,14 @@ pub fn content_migrate(app: AppHandle, source_env: String, target_env: String, e
     let mut results = Vec::new();
     for entity in &order {
         let drop = if entity == "Campaign" { &["CampaignSchemaUId"][..] } else { &[][..] };
-        let plan = CopyPlan { selection: chosen[entity].as_ref(), resolver: resolver.as_ref(), overwrite: overwrite_set.contains(entity) };
-        let (mut result, _) = copy_entity(&source, &target, entity, &source_supervisor, &target_supervisor, drop, false, plan)?;
+        let plan = CopyPlan {
+            selection: chosen[entity].as_ref(),
+            resolver: resolver.as_ref(),
+            overwrite: overwrite_set.contains(entity),
+            columns: column_sets.get(entity),
+            sql: sql_write,
+        };
+        let (mut result, _) = copy_entity(&source, &target, entity, &target_env, &source_supervisor, &target_supervisor, drop, false, plan)?;
         for lower in auto_included.get(entity).into_iter().flatten() {
             let display = source_rows[entity].iter().find(|row| id(row).eq_ignore_ascii_case(lower)).map(name).unwrap_or_default();
             result.adjustments.push(RowAdjustment { id: lower.clone(), name: display, column: String::new(), action: "auto-included".to_string(), detail: "Copied because selected records reference it.".to_string() });
@@ -886,8 +993,7 @@ fn campaign_item_sql(rows: &[Value], supervisor: &str) -> String {
 }
 
 #[tauri::command]
-pub fn content_migrate_flows(app: AppHandle, source_env: String, target_env: String, bypass_fk: Option<bool>) -> Result<FlowMigrateReport, String> {
-    let bypass_fk = bypass_fk.unwrap_or(true);
+pub fn content_migrate_flows(app: AppHandle, source_env: String, target_env: String) -> Result<FlowMigrateReport, String> {
     if source_env == target_env { return Err("Choose two different environments.".to_string()); }
     let source = Connection::connect(&source_env)?; let target = Connection::connect(&target_env)?;
     let source_supervisor = supervisor_id(&source)?; let target_supervisor = supervisor_id(&target)?;
@@ -913,15 +1019,20 @@ pub fn content_migrate_flows(app: AppHandle, source_env: String, target_env: Str
     batches.push(("SysLocalizableValue".to_string(), rollback_slv));
     write_delete_rollback(&rollback, &batches)?;
     append_flow_repoint_rollback(&rollback, &campaigns, &target_campaigns)?;
+    // A flow's SysSchema points at its package (SysPackageId), whose id differs
+    // per environment — the real cause of the 23503 foreign-key failure. Map it
+    // to the target's package of the same name rather than disabling the FK's
+    // system trigger, which needs superuser and is refused (42501) for the
+    // ordinary Creatio database account.
+    let packages = resolve_flow_packages(&source, &target, &schemas);
     let mut sql = String::from("BEGIN;\n"); let mut metadata_bytes = 0;
-    // A campaign flow's SysSchema references package/owner rows that differ per
-    // environment, so its foreign keys can reject an otherwise-valid diagram.
-    // Suspending SysSchema's constraint triggers for the insert lets the flow
-    // land; the whole statement is one transaction, so a failure rolls the
-    // suspension back with it and the triggers are restored either way.
-    if bypass_fk && !missing_schemas.is_empty() { sql.push_str("ALTER TABLE \"SysSchema\" DISABLE TRIGGER ALL;\n"); }
-    for schema in &missing_schemas { let metadata = source.media(&id(schema), "MetaData")?; let descriptor = source.media(&id(schema), "Descriptor")?; metadata_bytes += metadata.len(); sql.push_str(&flow_insert_sql(schema, &metadata, &descriptor, &target_supervisor)); sql.push('\n'); }
-    if bypass_fk && !missing_schemas.is_empty() { sql.push_str("ALTER TABLE \"SysSchema\" ENABLE TRIGGER ALL;\n"); }
+    for schema in &missing_schemas {
+        let metadata = source.media(&id(schema), "MetaData")?; let descriptor = source.media(&id(schema), "Descriptor")?;
+        metadata_bytes += metadata.len();
+        let source_pkg = schema.get("SysPackageId").and_then(Value::as_str).unwrap_or_default();
+        let package_id = packages.get(source_pkg).map(String::as_str).unwrap_or(source_pkg);
+        sql.push_str(&flow_insert_sql(schema, &metadata, &descriptor, &target_supervisor, package_id)); sql.push('\n');
+    }
     sql.push_str("COMMIT;\n"); if !missing_schemas.is_empty() { run_sql(&target_env, &sql)?; }
     for schema in &missing_schemas {
         let source_len = source.media(&id(schema), "MetaData")?.len();
@@ -931,8 +1042,8 @@ pub fn content_migrate_flows(app: AppHandle, source_env: String, target_env: Str
     let mut failures = Vec::new(); let mut repointed = 0;
     for campaign in &campaigns { let campaign_id = id(campaign); let uid = campaign.get("CampaignSchemaUId").and_then(Value::as_str).unwrap_or_default(); match target.patch("Campaign", &campaign_id, &serde_json::json!({"CampaignSchemaUId": uid})) { Ok(()) => repointed += 1, Err(e) => failures.push(RowFailure { id: campaign_id, name: name(campaign), status: e.status, error: e.message }) } }
     let mut results = Vec::new();
-    let (versions, _) = copy_entity(&source, &target, "CampaignVersion", &source_supervisor, &target_supervisor, &[], false, PLAIN_COPY)?; results.push(versions);
-    let (mut items, sql_items) = copy_entity(&source, &target, "CampaignItem", &source_supervisor, &target_supervisor, &[], true, PLAIN_COPY)?;
+    let (versions, _) = copy_entity(&source, &target, "CampaignVersion", &target_env, &source_supervisor, &target_supervisor, &[], false, PLAIN_COPY)?; results.push(versions);
+    let (mut items, sql_items) = copy_entity(&source, &target, "CampaignItem", &target_env, &source_supervisor, &target_supervisor, &[], true, PLAIN_COPY)?;
     if !sql_items.is_empty() { run_sql(&target_env, &format!("BEGIN;\n{}\nCOMMIT;", campaign_item_sql(&sql_items, &target_supervisor)))?; items.inserted += sql_items.len(); }
     results.push(items);
     // Captions are scoped strictly to the migrated flow schema rows.
@@ -961,7 +1072,33 @@ mod tests {
     #[test] fn dependency_order_rejects_unknown() { assert!(dependency_order(&["SysSchema".into()]).is_err()); }
     #[test] fn gap_diff_is_case_insensitive() { let a=vec![serde_json::json!({"Id":"ABC"}),serde_json::json!({"Id":"DEF"})]; let b=vec![serde_json::json!({"Id":"abc"})]; assert_eq!(missing_ids(&a,&b), BTreeSet::from(["def".to_string()])); }
     #[test] fn hex_is_exact() { assert_eq!(hex(&[0, 1, 15, 16, 255]), "00010f10ff"); }
-    #[test] fn flow_sql_escapes_quotes_unicode_and_hex() { let s=serde_json::json!({"Id":"i","UId":"u","Name":"O'Brien — flow","Caption":"It's — live","SysPackageId":"p","Description":"d's","Checksum":"c","IsNetStandard":true}); let sql=flow_insert_sql(&s,b"{}",&[0xff],"sup"); assert!(sql.contains("O''Brien — flow")); assert!(sql.contains("It''s — live")); assert!(sql.contains("decode('7b7d','hex')")); assert!(sql.contains("decode('ff','hex')")); }
+    #[test] fn flow_sql_escapes_quotes_unicode_and_hex() { let s=serde_json::json!({"Id":"i","UId":"u","Name":"O'Brien — flow","Caption":"It's — live","SysPackageId":"p","Description":"d's","Checksum":"c","IsNetStandard":true}); let sql=flow_insert_sql(&s,b"{}",&[0xff],"sup","target-pkg"); assert!(sql.contains("O''Brien — flow")); assert!(sql.contains("It''s — live")); assert!(sql.contains("'target-pkg'")); assert!(!sql.contains(",'p',")); assert!(sql.contains("decode('7b7d','hex')")); assert!(sql.contains("decode('ff','hex')")); }
+    #[test]
+    fn json_to_sql_renders_scalars_and_quotes_strings() {
+        assert_eq!(json_to_sql(&Value::Null), "NULL");
+        assert_eq!(json_to_sql(&serde_json::json!(true)), "true");
+        assert_eq!(json_to_sql(&serde_json::json!(42)), "42");
+        assert_eq!(json_to_sql(&serde_json::json!("it's")), "'it''s'");
+        // Objects never reach here, but if one did it is neutralized, not injected.
+        assert_eq!(json_to_sql(&serde_json::json!({"x":1})), "NULL");
+    }
+    #[test]
+    fn upsert_sql_updates_or_leaves_and_guards_columns() {
+        let mut row = Map::new();
+        row.insert("Id".into(), serde_json::json!("g"));
+        row.insert("Name".into(), serde_json::json!("N"));
+        row.insert("OwnerId".into(), Value::Null);
+        row.insert("bad; drop".into(), serde_json::json!("x")); // unsafe identifier dropped
+        let update = upsert_sql("Campaign", &row, true);
+        assert!(update.contains("INSERT INTO \"Campaign\""));
+        assert!(update.contains("ON CONFLICT (\"Id\") DO UPDATE SET"));
+        assert!(update.contains("\"Name\"=EXCLUDED.\"Name\""));
+        assert!(update.contains("\"OwnerId\"=EXCLUDED.\"OwnerId\""));
+        assert!(!update.contains("\"Id\"=EXCLUDED")); // never reassigns the key
+        assert!(!update.contains("bad; drop")); // injection guard
+        // Insert-only leaves an existing row untouched.
+        assert!(upsert_sql("Campaign", &row, false).contains("ON CONFLICT (\"Id\") DO NOTHING"));
+    }
     #[test] fn local_image_scan_finds_known_patterns() { let rows=vec![serde_json::json!({"Id":"1","Body":"/0/rest/ImageService/GetFile"})]; assert_eq!(local_image_hits("BulkEmail",&rows),["BulkEmail: 1"]); }
     #[test]
     fn plan_row_default_migrates_only_missing() {

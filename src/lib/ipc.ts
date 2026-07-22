@@ -452,17 +452,22 @@ export const verifyContent = (sourceEnv: string, targetEnv: string) =>
   invoke<ContentGapReport>("content_verify", { sourceEnv, targetEnv });
 export const listContentRecords = (sourceEnv: string, targetEnv: string, entity: string) =>
   invoke<ContentRecordPick[]>("content_list_records", { sourceEnv, targetEnv, entity });
+export const listContentColumns = (sourceEnv: string, entity: string) =>
+  invoke<string[]>("content_list_columns", { sourceEnv, entity });
 export const migrateContent = (
   sourceEnv: string, targetEnv: string, entities: string[],
   selections?: Record<string, string[]>, overwrite?: string[],
+  columns?: Record<string, string[]>, sqlWrite?: boolean,
 ) =>
   invoke<ContentMigrateReport>("content_migrate", {
     sourceEnv, targetEnv, entities,
     selections: selections ?? null,
     overwrite: overwrite && overwrite.length ? overwrite : null,
+    columns: columns && Object.keys(columns).length ? columns : null,
+    sqlWrite: sqlWrite ?? false,
   });
-export const migrateContentFlows = (sourceEnv: string, targetEnv: string, bypassFk: boolean) =>
-  invoke<FlowMigrateReport>("content_migrate_flows", { sourceEnv, targetEnv, bypassFk });
+export const migrateContentFlows = (sourceEnv: string, targetEnv: string) =>
+  invoke<FlowMigrateReport>("content_migrate_flows", { sourceEnv, targetEnv });
 export const finalizeContent = (targetEnv: string) =>
   invoke<void>("content_finalize", { targetEnv });
 
