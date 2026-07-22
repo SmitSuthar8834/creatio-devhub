@@ -71,6 +71,37 @@ Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/lates
   `clio deploy-application`.
 - Lock both environments during transfer to prevent overlapping mutations.
 
+### Compare environments
+
+- Capture an environment's configuration state (`clio save-state`) — features, system settings,
+  web services, and every package with per-package and per-schema hashes — into a local snapshot,
+  then compare any two snapshots instantly without re-reading the environments.
+- Expand a differing package to see exactly which schemas differ (the duplicate-element collision
+  warning before a deployment).
+- Compare **lookup / reference data** the same way: capture every lookup's values and diff them
+  per value, keyed on Id.
+- Setting values are masked per row until explicitly revealed; markdown exports omit them
+  entirely. Snapshots can contain API keys, so treat the snapshot folder as sensitive.
+
+### Migration
+
+- **Lookup values**: copy unbound reference data (lookup rows added directly in an environment)
+  between environments, keyed on Id so foreign keys stay valid. Preview the exact SQL first; a
+  runnable rollback script is written before anything is changed.
+- **Marketing content**: copy Campaigns, Bulk Emails, email designer templates, and dynamic
+  content source→target with their original IDs, idempotently (existing IDs are skipped).
+  Campaign **flow diagrams** are copied through SQL (they live in protected system tables) and
+  campaigns are relinked to them; a finalize step clears Redis and restarts the target so the
+  designer sees the flows.
+- Pick individual **Campaign and Bulk Email records** to move, or move everything missing.
+  Parents required by a selected record are included automatically.
+- References the target cannot satisfy are resolved automatically: a missing lookup or contact
+  reference is remapped to the target's same-named row when one exists, otherwise the field is
+  cleared — and every such change is listed in the result, per record.
+- Analyze before migrating: a gap table shows source/target/missing counts per entity, flags
+  campaigns whose flow diagram is absent on the target, and warns about emails referencing
+  images that only exist on the source.
+
 ### SQL runner
 
 - Run raw SQL against a selected Creatio environment through clio and cliogate.
