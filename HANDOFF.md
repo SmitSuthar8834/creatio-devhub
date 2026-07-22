@@ -138,7 +138,9 @@ and reports every change as a per-row `adjustment` — content-set parents are n
 are auto-included (`close_over_parents`) or the row is blocked with guidance. Self-FK parents
 insert first. New `content_list_records` + `selections` on `content_migrate` back a Campaign /
 BulkEmail record picker in the UI. 89 Rust tests, tsc + vite clean; details and live-verified
-remap data in `HANDOFF-content-migration.md`. The GUI re-run after the fix is still pending.
+remap data in `HANDOFF-content-migration.md`. **Live-verified 2026-07-22: the user re-ran the
+Campaign migration in the GUI after the fix and it succeeded** — first successful real run of the
+content write path. Flows migration + finalize + designer check remain unexercised in the GUI.
 
 ## Lookup / reference-data migration (backend, WIP — unreleased, 2026-07-22)
 

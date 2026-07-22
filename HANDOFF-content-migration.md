@@ -233,7 +233,8 @@ all in `content.rs`:
   Campaign is neither on the target nor selected auto-includes that Campaign
   (reported as an adjustment on the Campaign entity).
 
-89 Rust tests green (6 new), tsc + vite build clean. **Live GUI re-run of the
-failed Campaign migration is still pending** — the SQL introspection query and
-the name-remap data were verified live against pre-thoughtworks, but nobody has
-pressed Migrate in the app since the fix.
+89 Rust tests green (6 new), tsc + vite build clean. **Live-verified 2026-07-22:
+the user re-ran the Campaign migration through the GUI (Dev-thoughtworks →
+pre-thoughtworks) after the fix and it succeeded** — the 4 previously failing
+`23503 OwnerId` campaigns now migrate. The content write path has had its first
+successful real run.
