@@ -169,10 +169,11 @@ against a live target yet.**
 - **Validated:** `cargo test --lib` = **69 passed** (14 in `refdata`), crate compiles clean under
   the Build Tools env; `tsc --noEmit` clean; `npm run build` succeeds. Enumeration + capture SQL run
   live on dev-834.
-- **Release gate — write path SQL now verified live; GUI command still not run.** The four version
-  files are **bumped to 0.8.0 and committed but the tag is deliberately NOT pushed** — tagging
-  triggers the release build, and that waits until the write path has been exercised end-to-end.
-  Tag `v0.8.0` from `main` once the final GUI run below is done.
+- **Release status.** `v0.8.0` **was published** (2026-07-22, signed installers + `latest.json`) —
+  it shipped the migration feature before the write path had a live run. The capture crash below was
+  found and fixed *after* that release, so it ships as **`v0.8.1`** (patch). Write-path *SQL* is now
+  verified live; the GUI-driven `migrate_lookups` command on real lookups is still not run (see
+  below), but that path already shipped in v0.8.0 — v0.8.1 is fundamentally the capture bug fix.
   - **Done (2026-07-22):** the exact SQL primitives `migrate_lookups` generates were run against
     live PostgreSQL (`dev-834`) via a throwaway-table round-trip — no real lookup touched. Proven:
     forward `ON CONFLICT DO UPDATE` (update existing + insert new + leave untouched rows alone);
@@ -188,7 +189,7 @@ against a live target yet.**
     `migrations/` restores it. The Rust orchestration (dual env-lock, rollback-before-write ordering,
     file writes) is covered by unit tests + review but not yet exercised live.
 
-### Live capture failure on Dev-thoughtworks + fix (2026-07-22, post-0.8.0)
+### Capture crash fix — shipped as v0.8.1 (2026-07-22, post-0.8.0)
 
 The first full live `capture_lookups` run (Dev-thoughtworks, 67 lookups) failed and proved the
 "run it live" rule again — **two latent bugs plus one misleading diagnosis**, all fixed in
