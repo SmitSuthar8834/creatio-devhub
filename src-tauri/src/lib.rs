@@ -8,6 +8,7 @@ mod git;
 mod github;
 mod jobs;
 mod packages;
+mod refdata;
 mod sql;
 mod tools;
 mod workspaces;
@@ -62,6 +63,13 @@ pub fn run() {
             packages::package_lock_states,
             packages::run_package_action,
             packages::deploy_package_between_environments,
+            refdata::list_lookups,
+            refdata::list_lookup_snapshots,
+            refdata::delete_lookup_snapshot,
+            refdata::capture_lookups,
+            refdata::diff_lookups,
+            refdata::build_lookup_migration,
+            refdata::migrate_lookups,
             sql::run_sql,
             sql::export_sql,
             tools::tool_paths,

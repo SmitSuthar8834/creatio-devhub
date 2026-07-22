@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ErrorNote from "../../lib/ErrorNote";
+import LookupCompare from "./LookupCompare";
 import {
   captureEnvState, deleteSnapshot, DiffReport, DiffRow, diffEnvironments, EnvSummary,
   exportDiffReport, listEnvironments, listSnapshots, onJobUpdate, SnapshotInfo,
@@ -67,6 +68,8 @@ export default function ComparePage({ onShowJobs }: { onShowJobs: () => void }) 
   const [source, setSource] = useState("");
   const [target, setTarget] = useState("");
   const [report, setReport] = useState<DiffReport | null>(null);
+  /** Top-level surface: configuration (save-state) vs lookup reference data. */
+  const [mode, setMode] = useState<"config" | "lookups">("config");
   const [category, setCategory] = useState<string>("package");
   const [differencesOnly, setDifferencesOnly] = useState(true);
   const [error, setError] = useState("");
@@ -193,6 +196,17 @@ export default function ComparePage({ onShowJobs }: { onShowJobs: () => void }) 
         <Button variant="ghost" onClick={onShowJobs}>Jobs</Button>
       </div>
 
+      <Tabs value={mode} onValueChange={(value) => setMode(value as "config" | "lookups")}>
+        <TabsList>
+          <TabsTrigger value="config">Configuration</TabsTrigger>
+          <TabsTrigger value="lookups">Lookups</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {mode === "lookups" && <LookupCompare onShowJobs={onShowJobs} />}
+
+      {mode === "config" && (
+        <>
       <p className="text-sm text-muted-foreground">
         Comparison runs against saved snapshots, not live environments — capture each side
         first. Nothing here writes to any environment.
@@ -375,6 +389,8 @@ export default function ComparePage({ onShowJobs }: { onShowJobs: () => void }) 
               </Table>
             </div>
           )}
+        </>
+      )}
         </>
       )}
     </div>

@@ -112,6 +112,71 @@ appears in the DOM before reveal. The **capture job itself has not been run in t
 app** — its clio invocation is the one verified by hand, but nobody has watched it complete
 from the UI.
 
+## Lookup / reference-data migration (backend, WIP — unreleased, 2026-07-22)
+
+Answers "move my package dev → pre *with its data*". Package config already deploys
+(`pull-pkg`/`push-pkg`, which also carries package-**bound** data). The gap is **unbound
+reference data** — values in lookup tables added directly in one environment. This addon reads,
+compares, and migrates that. **Backend only so far — no UI, not wired into a release. Never run
+against a live target yet.**
+
+- **`src-tauri/src/refdata.rs`** (new). Six commands registered in `lib.rs`:
+  - `list_lookups(env)` — enumerate lookups (name, table, package, has-Description). One
+    `SysLookup ⋈ SysSchema` join; `information_schema` gives the Description flag. **Verified live
+    on dev-834** (returns e.g. `SocialAccount`→has-Description `0`, exercising the NULL branch).
+  - `capture_lookups(env)` — job; one `UNION ALL` reads every lookup's rows into app-data
+    `snapshots/<env>.lookups.json` (separate from the `envstate` `.yaml` snapshots). **CSV shape
+    verified live**: `__lk;Id;Name;Description`, Guid as text, empty tables absent (snapshot is
+    seeded from the enumeration so an empty lookup still records as 0 rows).
+  - `list_lookup_snapshots` / `delete_lookup_snapshot`.
+  - `diff_lookups(source, target)` — local diff of two snapshots, emitted as the **same
+    `envstate::DiffReport`/`DiffRow`** the Compare table renders (category `lookup`, with per-value
+    `lookupValue` detail rows). Keyed on `Id`.
+  - `build_lookup_migration(source, tables)` — read-only dry-run; returns the forward SQL.
+  - `migrate_lookups(source, target, tables, skip_backup)` — the **mutating** job. Dual env-lock
+    in sorted order, non-cancellable once writing (same discipline as
+    `deploy_package_between_environments`). Unless `skip_backup`, it reads the target's current
+    state first and writes a **runnable rollback `.sql`** to app-data `migrations/`
+    (`rollback-<target>-<ts>.sql` + `applied-<...>.sql`) — upserts to restore updated rows, deletes
+    to remove newly-inserted ones — and logs its path. The write goes through **`clio_capture`, not
+    `stream_process`**, on purpose: `execute-sql-script` exits 0 even when the DB rejects the SQL,
+    so the output must be read (`sql::is_failure`/`sql::friendly_error`, now `pub(crate)`).
+
+- **Design invariants (do not weaken):**
+  - **Keyed on `Id` (Guid), never `Name`** — other tables FK to lookup values by Id, so migrating
+    must preserve the Guid. Migration is `INSERT … ON CONFLICT ("Id") DO UPDATE` (idempotent).
+  - **`is_safe_identifier` guards every table name** spliced into SQL (alnum/underscore only); an
+    unsafe name is dropped from capture and rejected by migration. Values are `''`-escaped.
+  - Forward script wrapped `BEGIN;…COMMIT;` — one implicit transaction on PostgreSQL.
+
+- **v1 scope limits (noted for the v2 backlog):** compares/migrates only the `BaseLookup` columns
+  (`Id, Name, Description`); extra custom lookup columns need per-table `information_schema`
+  introspection. Upsert SQL is **PostgreSQL** (`ON CONFLICT`) — MSSQL would need `MERGE`.
+  `capture_lookups` is not cancellable (single clio invocation parsed after it returns).
+
+- **Frontend:** `src/lib/ipc.ts` has all seven command wrappers + `LookupInfo` /
+  `LookupSnapshotInfo` (and `DiffRow.category` now includes `lookup`/`lookupValue`).
+  - **Compare → Lookups** (read-only): top-level **Configuration | Lookups** switch in
+    `ComparePage.tsx`; the tab is `src/modules/compare/LookupCompare.tsx` — a self-contained
+    capture / compare / delete surface on its own `.lookups.json` snapshots, with expandable
+    per-value (`Id`-keyed) detail rows. Reuses the `DiffReport`/`DiffRow` renderer; no masking
+    (lookups are display data, not secrets).
+  - **Migration** (write-side): its own sidebar section (`ArrowRightLeft` icon, after Compare),
+    `src/modules/migration/MigrationPage.tsx`. Pick source/target → filterable, checkable list from
+    `list_lookups` → **Preview SQL** (`build_lookup_migration` dry-run, shown read-only) → **Migrate**
+    behind a typed-target confirmation dialog with a "write a rollback script first (recommended)"
+    toggle → `migrate_lookups`. Same typed-confirmation + backup pattern as the package-deploy dialog.
+- **Validated:** `cargo test --lib` = **69 passed** (14 in `refdata`), crate compiles clean under
+  the Build Tools env; `tsc --noEmit` clean; `npm run build` succeeds. Enumeration + capture SQL run
+  live on dev-834.
+- **NOT yet done — the release gate:** no live run of the write path. Before this ships someone must
+  drive it in `dev.cmd`: Compare → Lookups capture of the **dev-thoughtworks ↔ pre-thoughtworks**
+  pair and eyeball the diff, then a real `migrate_lookups` against a **disposable** target (verify
+  the rollback `.sql` in app-data `migrations/` actually restores it). The "run it before shipping"
+  rule applies, doubly so because it writes. The four version files are **bumped to 0.8.0 and
+  committed but the tag is deliberately NOT pushed** — tagging triggers the release build, and that
+  waits until the live write path has been exercised. Tag `v0.8.0` from `main` once it has.
+
 ## Package lock state (v0.7.0, 2026-07-21)
 
 The Packages table has a **State** column — Locked / Unlocked / `—` — and the Lock and Unlock

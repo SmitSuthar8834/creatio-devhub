@@ -45,7 +45,7 @@ fn temp_path(ext: &str) -> PathBuf {
 /// A *missing result file* is deliberately not a failure signal: statements
 /// without a result set never produce one, and neither does a query that
 /// matched nothing.
-fn is_failure(code: i32, out: &str) -> bool {
+pub(crate) fn is_failure(code: i32, out: &str) -> bool {
     code != 0 || out.contains("[ERR]") || database_error(out).is_some()
 }
 
@@ -115,7 +115,7 @@ fn returns_rows(query: &str) -> bool {
 /// removed — the version-update warning it prepends to every command is never
 /// the reason a query failed, and leading it makes the real message look like
 /// an aside.
-fn friendly_error(out: &str) -> String {
+pub(crate) fn friendly_error(out: &str) -> String {
     if out.contains("cliogate") && out.to_lowercase().contains("install") {
         return "This environment needs the cliogate helper to run SQL. Install it first (clio install-gate), then try again.".to_string();
     }

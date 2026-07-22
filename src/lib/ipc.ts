@@ -259,7 +259,7 @@ export const packageLockStates = (env: string) =>
 export type DiffStatus = "same" | "different" | "missingTarget" | "missingSource";
 
 export interface DiffRow {
-  category: "package" | "setting" | "feature" | "webservice" | "schema";
+  category: "package" | "setting" | "feature" | "webservice" | "schema" | "lookup" | "lookupValue";
   key: string;
   /** null means absent on that side — not the same as an empty value. */
   source: string | null;
@@ -329,6 +329,52 @@ export const deployPackageBetweenEnvironments = (opts: {
   package: string;
   skipBackup: boolean;
 }) => invoke<string>("deploy_package_between_environments", opts);
+
+// ---------- lookups / reference data ----------
+
+export interface LookupInfo {
+  name: string;
+  table: string;
+  package: string;
+  hasDescription: boolean;
+}
+
+export interface LookupSnapshotInfo {
+  env: string;
+  capturedAt: number;
+  sizeBytes: number;
+  lookupCount: number;
+}
+
+/** Enumerate every lookup registered in an environment. Needs cliogate. */
+export const listLookups = (env: string) => invoke<LookupInfo[]>("list_lookups", { env });
+
+export const listLookupSnapshots = () =>
+  invoke<LookupSnapshotInfo[]>("list_lookup_snapshots");
+
+export const deleteLookupSnapshot = (env: string) =>
+  invoke<void>("delete_lookup_snapshot", { env });
+
+/** Read every lookup's values into a local snapshot. Read-only. Returns a job id. */
+export const captureLookups = (env: string) =>
+  invoke<string>("capture_lookups", { env });
+
+/** Compare two captured lookup snapshots. Top rows are category "lookup"; each
+ *  carries its differing values as "lookupValue" detail rows. */
+export const diffLookups = (sourceEnv: string, targetEnv: string) =>
+  invoke<DiffReport>("diff_lookups", { sourceEnv, targetEnv });
+
+/** Dry-run: the idempotent upsert SQL that would migrate the given tables. */
+export const buildLookupMigration = (sourceEnv: string, tables: string[]) =>
+  invoke<string>("build_lookup_migration", { sourceEnv, tables });
+
+/** Apply the selected lookups' source rows onto the target. Mutating. Returns a job id. */
+export const migrateLookups = (opts: {
+  sourceEnv: string;
+  targetEnv: string;
+  tables: string[];
+  skipBackup: boolean;
+}) => invoke<string>("migrate_lookups", opts);
 
 // ---------- sql ----------
 

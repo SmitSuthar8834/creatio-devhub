@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  ArrowRightLeft,
   Blocks,
   Database,
   GitCompare,
@@ -34,6 +35,7 @@ import ComparePage from "./modules/compare/ComparePage";
 import EnvironmentsPage from "./modules/environments/EnvironmentsPage";
 import JobsPage from "./modules/jobs/JobsPage";
 import JobToaster from "./modules/jobs/JobToaster";
+import MigrationPage from "./modules/migration/MigrationPage";
 import PackagesPage from "./modules/packages/PackagesPage";
 import SettingsPage from "./modules/settings/SettingsPage";
 import SqlPage from "./modules/sql/SqlPage";
@@ -41,7 +43,7 @@ import UpdateBanner from "./modules/updates/UpdateBanner";
 import WorkspacesPage from "./modules/workspaces/WorkspacesPage";
 import logoMark from "./assets/icons/logo-mark.png";
 
-type Page = "environments" | "workspaces" | "packages" | "applications" | "compare" | "sql" | "jobs" | "settings";
+type Page = "environments" | "workspaces" | "packages" | "applications" | "compare" | "migration" | "sql" | "jobs" | "settings";
 
 const NAV: { id: Page; label: string; icon: typeof Server }[] = [
   { id: "environments", label: "Environments", icon: Server },
@@ -49,6 +51,7 @@ const NAV: { id: Page; label: string; icon: typeof Server }[] = [
   { id: "packages", label: "Packages", icon: Package },
   { id: "applications", label: "Applications", icon: Blocks },
   { id: "compare", label: "Compare", icon: GitCompare },
+  { id: "migration", label: "Migration", icon: ArrowRightLeft },
   { id: "sql", label: "SQL", icon: Database },
   { id: "jobs", label: "Jobs", icon: ListChecks },
   { id: "settings", label: "Settings", icon: Settings },
@@ -158,6 +161,7 @@ export default function App() {
           />}
           {page === "applications" && <ApplicationsPage onShowJobs={() => setPage("jobs")} />}
           {page === "compare" && <ComparePage onShowJobs={() => setPage("jobs")} />}
+          {page === "migration" && <MigrationPage onShowJobs={() => setPage("jobs")} />}
           {page === "sql" && <SqlPage onShowJobs={() => setPage("jobs")} />}
           {page === "settings" && <SettingsPage />}
         </div>
