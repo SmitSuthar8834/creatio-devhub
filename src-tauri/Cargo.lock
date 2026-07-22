@@ -608,7 +608,7 @@ dependencies = [
 
 [[package]]
 name = "creatio-devhub"
-version = "0.8.5"
+version = "0.8.6"
 dependencies = [
  "csv",
  "reqwest 0.12.28",
