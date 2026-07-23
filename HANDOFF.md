@@ -15,25 +15,21 @@ as first shipped — it still fails on per-environment FK references such as `Ca
 (fixes the 23503 SysSchema failure, also un-misdiagnosed from "unreachable"), and loading
 overlays; **v0.8.6** replaces the v0.8.5 flow bypass (which needed superuser and hit 42501) with a
 SysPackageId remap, adds an opt-in SQL write path that bypasses OData's mandatory-field
-validation, and a per-entity column picker — **released on tests+build only, not yet
-live-verified in the GUI.**)
+validation, and a per-entity column picker. **The whole marketing-content migration
+(Campaigns / Bulk Emails / flow diagrams) was REMOVED on 2026-07-23** — it fought the
+platform too hard for anything but demo/dev seeding (dense per-environment FKs, and it
+needed raw SQL to bypass app validation). The method is preserved in
+`docs/campaign-flow-migration-method.md`; the standalone Node reference remains at
+`C:\Users\Lenovo\creatio-content-migrate\`.)
 
-> **START HERE (next session) — v0.8.6 live verification is owed.** v0.8.6 was
-> tagged, pushed, and **published green on 2026-07-22** (CI *Release v0.8.6*
-> success; release DevHub v0.8.6 non-draft with signed `*-setup.exe`, `*.msi`,
-> their `.sig`s, and `latest.json`). What's still owed is the live GUI check that
-> was NOT possible from the coding session (the native window can't be driven
-> there — see [[verify-before-shipping-ui]]).
-> Run `./dev.cmd`, Migration → Marketing content, Dev-thoughtworks → pre-thoughtworks:
-> 1. **SQL overwrite:** enable *Write through SQL*, overwrite the failing Campaigns
->    → the OData `500 "Owner field must be filled in"` should be gone.
-> 2. **Flow package remap:** run *Migrate flow diagrams* → the `23503` / `42501`
->    should be gone. This assumes `SysSchema.SysPackageId` was the failing FK and
->    that OData exposes `SysPackage`; if it still errors, capture the exact message
->    and either switch the package lookup to cliogate SQL or introspect the real
->    constraint via `pg_constraint`. Full detail: `HANDOFF-content-migration.md`
->    ("fourth pass"). Still also unexercised end-to-end: finalize (redis+restart)
->    and the post-restart designer check.
+> **Marketing-content migration removed (2026-07-23).** The Migration screen is
+> now Lookups only. Campaigns/Bulk Emails are operational records wired to
+> per-environment data, and getting them across needed raw SQL that bypassed
+> Creatio's own validation — fine for demo/dev seeding, wrong for a real target.
+> The full method (OData copy, GUID preservation, SysSchema flow diagram via SQL,
+> package remap, the `(UId,SysPackageId)` unique key, redis+restart) is kept in
+> `docs/campaign-flow-migration-method.md`. Live verification of the lookup
+> migration write path is still the standing open item (see below).
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 

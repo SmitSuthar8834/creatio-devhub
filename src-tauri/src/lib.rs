@@ -2,7 +2,6 @@ mod applications;
 mod cache;
 mod catalog;
 mod clio;
-mod content;
 mod diagnostics;
 mod envstate;
 mod git;
@@ -43,13 +42,6 @@ pub fn run() {
             clio::set_default_environment,
             clio::clio_status,
             clio::install_or_update_clio,
-            content::content_analyze,
-            content::content_list_columns,
-            content::content_list_records,
-            content::content_migrate,
-            content::content_migrate_flows,
-            content::content_finalize,
-            content::content_verify,
             catalog::prefetch_env_catalog,
             diagnostics::diagnose_error,
             envstate::capture_env_state,

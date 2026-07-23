@@ -96,12 +96,12 @@ const RULES: &[Rule] = &[
         all: &[],
         any: &["23503", "foreign key constraint"],
         none: &[],
-        summary: "The database rejected a row because it points at a record that is not on the target.",
-        cause: "An inserted row references another row by id (a foreign key) that does not exist on the target environment (PostgreSQL error 23503). Content migration remaps or clears most such references, but a protected system row — a campaign flow's SysSchema — is written by direct SQL and can still trip a package or owner reference the target lacks.",
+        summary: "The database rejected a row because it points at a record that is not present.",
+        cause: "An inserted or updated row references another row by id (a foreign key) that does not exist (PostgreSQL error 23503). The referenced record has to be created first, or the reference corrected.",
         steps: &[
-            "For campaign flow diagrams, keep \"Bypass foreign key checks\" enabled on the Flow diagrams step and retry.",
-            "For ordinary records, include the referenced record in the same migration, or let DevHub remap it by name.",
             "Open the technical detail below to see which constraint and table were involved.",
+            "Create or import the referenced record before the row that points at it.",
+            "If the reference is stale, correct or clear it and retry.",
         ],
     },
     Rule {
