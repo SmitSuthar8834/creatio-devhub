@@ -575,7 +575,7 @@
         <h3>Requirements</h3>
         <ul>
           <li><svg class="ic"><use href="#i-check"/></svg><span><b>Windows 10 or 11</b> (x64) — a small, signed native installer.</span></li>
-          <li><svg class="ic"><use href="#i-check"/></svg><span><b>macOS 12 or newer</b> — a universal build for Apple Silicon and Intel <em>(coming soon)</em>.</span></li>
+          <li><svg class="ic"><use href="#i-check"/></svg><span><b>macOS 12 or newer</b> — a universal build for Apple Silicon and Intel. First launch: right-click → Open (not yet notarized).</span></li>
           <li><svg class="ic"><use href="#i-check"/></svg><span>The <b>clio</b> CLI, <b>Git</b> and the <b>GitHub CLI</b> installed — DevHub drives them.</span></li>
           <li><svg class="ic"><use href="#i-check"/></svg><span>A registered Creatio environment, cloud or on-site, to connect to.</span></li>
         </ul>
@@ -640,13 +640,13 @@
 
         <div class="dl-platform">
           <h3 class="dl-os"><svg class="ic"><use href="#i-check"/></svg> macOS <span class="dl-arch">Apple Silicon &amp; Intel</span></h3>
-          <!-- Revealed by the release script the moment a .dmg ships; until then the "coming soon" note shows. -->
+          <!-- Revealed by the release script from the latest release's .dmg; the #mac-soon note is the no-JS fallback. -->
           <div class="dl-links" id="mac-dl-links" hidden>
             <a class="btn btn-primary btn-lg" id="mac-dl" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest">
               <svg class="ic"><use href="#i-dl"/></svg> Download for macOS (.dmg)
             </a>
           </div>
-          <div class="dl-note" id="mac-soon">Coming soon — the macOS build is verified in CI and ships after a final test pass. <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest" target="_blank" rel="noopener">Watch the releases</a>.</div>
+          <div class="dl-note" id="mac-soon">Universal <code>.dmg</code> on the <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest" target="_blank" rel="noopener">latest release</a>. First launch: right-click → Open.</div>
           <div class="dl-note dl-gatekeeper" id="mac-note" hidden>Not yet notarized: on first launch, right-click (or Control-click) the app in Finder and choose <b>Open</b>. After that it opens normally.</div>
         </div>
 
