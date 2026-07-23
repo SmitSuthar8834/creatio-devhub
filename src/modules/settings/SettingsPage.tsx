@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-dialog";
-import { ArrowUpFromLine, Monitor, Moon, RefreshCw, Sun } from "lucide-react";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { ArrowUpFromLine, Copy, KeyRound, Monitor, Moon, RefreshCw, Sun } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,9 +31,13 @@ import ErrorNote from "../../lib/ErrorNote";
 import { logError } from "../../lib/errorLog";
 import { setThemeMode, ThemeMode, useTheme } from "../../lib/theme";
 import {
-  EnvSummary, getGithubStatus, getToolPaths, GithubStatus, listEnvironments, onJobUpdate,
-  setDefaultEnvironment, setGitIdentity, setToolPath, startGithubLogin, ToolPath,
+  EnvSummary, getGithubStatus, getToolPaths, githubLoginWithToken, GithubStatus,
+  listEnvironments, onJobLog, onJobUpdate, setDefaultEnvironment, setGitIdentity, setToolPath,
+  startGithubLogin, ToolPath,
 } from "../../lib/ipc";
+
+/** GitHub's device-authorization page — where the one-time code is entered. */
+const GH_DEVICE_URL = "https://github.com/login/device";
 
 const THEMES: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
   { value: "system", label: "System", icon: Monitor },
@@ -58,6 +63,13 @@ export default function SettingsPage() {
   const [githubJob, setGithubJob] = useState<string | null>(null);
   const [githubNotice, setGithubNotice] = useState("");
   const [githubError, setGithubError] = useState("");
+  // The one-time code gh prints during the browser flow, surfaced here so the
+  // user doesn't have to hunt for it in the Jobs log.
+  const [deviceCode, setDeviceCode] = useState("");
+  const [deviceUrl, setDeviceUrl] = useState(GH_DEVICE_URL);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [token, setToken] = useState("");
+  const [tokenBusy, setTokenBusy] = useState(false);
   const [tools, setTools] = useState<ToolPath[]>([]);
   const [toolError, setToolError] = useState("");
   const [appVersion, setAppVersion] = useState("");
@@ -125,6 +137,7 @@ export default function SettingsPage() {
     const unlisten = onJobUpdate((job) => {
       if (job.id === githubJob && ["succeeded", "failed", "cancelled"].includes(job.status)) {
         setGithubJob(null);
+        setDeviceCode("");
         if (job.status === "succeeded") {
           setGithubNotice("GitHub sign-in completed.");
           refreshGithub();
@@ -134,6 +147,23 @@ export default function SettingsPage() {
           setGithubError("GitHub sign-in failed. Open Jobs to review the output.");
         }
       }
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [githubJob]);
+
+  // gh streams the one-time code (and the device URL) to the job log; pull them
+  // out and show them in place so signing in is one glance, not a trip to Jobs.
+  useEffect(() => {
+    if (!githubJob) return;
+    const unlisten = onJobLog(({ id, line }) => {
+      if (id !== githubJob) return;
+      const code = line.match(/\b([0-9A-Z]{4}-[0-9A-Z]{4})\b/);
+      if (code) {
+        setDeviceCode(code[1]);
+        setCodeCopied(false);
+      }
+      const url = line.match(/https:\/\/github\.com\/login\/device\S*/);
+      if (url) setDeviceUrl(url[0]);
     });
     return () => { unlisten.then((fn) => fn()); };
   }, [githubJob]);
@@ -198,11 +228,46 @@ export default function SettingsPage() {
   const loginGithub = async () => {
     setGithubError("");
     setGithubNotice("");
+    setDeviceCode("");
+    setDeviceUrl(GH_DEVICE_URL);
     try {
       setGithubJob(await startGithubLogin());
-      setGithubNotice("GitHub opened a browser sign-in flow. Complete it there; progress is also shown in Jobs.");
+      setGithubNotice("DevHub is opening a browser sign-in. When the one-time code appears below, enter it in your browser.");
     } catch (e) {
       setGithubError(String(e));
+    }
+  };
+
+  const copyDeviceCode = async () => {
+    try {
+      await navigator.clipboard.writeText(deviceCode);
+      setCodeCopied(true);
+      window.setTimeout(() => setCodeCopied(false), 1500);
+    } catch {
+      // Clipboard can be unavailable; the code is still shown to type manually.
+    }
+  };
+
+  // Sign in with a personal access token the user pastes. The token goes
+  // straight to gh via the backend and is cleared from state right after.
+  const loginWithToken = async () => {
+    const value = token.trim();
+    if (!value) {
+      setGithubError("Paste a GitHub personal access token.");
+      return;
+    }
+    setGithubError("");
+    setGithubNotice("");
+    setTokenBusy(true);
+    try {
+      await githubLoginWithToken(value);
+      setToken("");
+      setGithubNotice("Signed in to GitHub with a token.");
+      await refreshGithub();
+    } catch (e) {
+      setGithubError(String(e));
+    } finally {
+      setTokenBusy(false);
     }
   };
 
@@ -381,6 +446,76 @@ export default function SettingsPage() {
               <RefreshCw aria-hidden="true" />
               Refresh status
             </Button>
+          </div>
+
+          {githubJob && deviceCode && (
+            <div className="grid gap-2 rounded-lg border border-primary/40 bg-primary/5 p-3">
+              <p className="text-sm">
+                Enter this one-time code at{" "}
+                <button
+                  type="button"
+                  className="font-medium underline underline-offset-2"
+                  onClick={() => openUrl(deviceUrl)}
+                >
+                  github.com/login/device
+                </button>
+                :
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <code className="rounded bg-muted px-3 py-1.5 font-mono text-lg tracking-[0.3em]">
+                  {deviceCode}
+                </code>
+                <Button variant="outline" size="sm" onClick={copyDeviceCode}>
+                  <Copy aria-hidden="true" />
+                  {codeCopied ? "Copied" : "Copy code"}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => openUrl(deviceUrl)}>
+                  Open GitHub
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                DevHub tried to open your browser automatically — if it didn't, use the link above.
+                You can sign in there with your usual GitHub credentials.
+              </p>
+            </div>
+          )}
+
+          <div className="grid gap-2 rounded-lg border border-dashed p-3">
+            <Label htmlFor="gh-token" className="flex items-center gap-1.5 text-sm font-medium">
+              <KeyRound className="size-3.5" aria-hidden="true" />
+              Or sign in with a token
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Paste a GitHub personal access token with the{" "}
+              <code className="rounded bg-muted px-1 py-0.5 font-mono">repo</code> scope. It goes
+              straight to the GitHub CLI — DevHub never stores or logs it.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Input
+                id="gh-token"
+                type="password"
+                autoComplete="off"
+                spellCheck={false}
+                className="min-w-64 flex-1 font-mono"
+                placeholder="ghp_… or github_pat_…"
+                value={token}
+                onChange={(event) => setToken(event.target.value)}
+                onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); loginWithToken(); } }}
+              />
+              <Button
+                variant="outline"
+                onClick={loginWithToken}
+                disabled={!github?.ghInstalled || tokenBusy || !token.trim()}
+              >
+                {tokenBusy ? "Signing in…" : "Sign in with token"}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => openUrl("https://github.com/settings/tokens/new?scopes=repo&description=Creatio%20DevHub")}
+              >
+                Create a token…
+              </Button>
+            </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">

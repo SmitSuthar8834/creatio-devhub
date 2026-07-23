@@ -53,6 +53,7 @@ pub fn run() {
             github::github_status,
             github::set_git_identity,
             github::start_github_login,
+            github::github_login_with_token,
             github::list_github_repos,
             github::list_repo_branches,
             jobs::run_clio_job,

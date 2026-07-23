@@ -93,6 +93,10 @@ export const getToolPaths = () => invoke<ToolPath[]>("tool_paths");
 export const setToolPath = (program: string, path: string) =>
   invoke<ToolPath>("set_tool_path", { program, path });
 export const startGithubLogin = () => invoke<string>("start_github_login");
+/** Sign in with a personal access token instead of the browser flow. The token
+ * is sent to gh over stdin and never logged. */
+export const githubLoginWithToken = (token: string) =>
+  invoke<void>("github_login_with_token", { token });
 export const setGitIdentity = (name: string, email: string) =>
   invoke<void>("set_git_identity", { name, email });
 

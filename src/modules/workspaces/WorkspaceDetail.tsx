@@ -20,6 +20,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import ErrorNote from "../../lib/ErrorNote";
@@ -29,6 +36,8 @@ import {
   Commit,
   createGithubRepo,
   FileChange,
+  GithubRepo,
+  listGithubRepos,
   listPackages,
   onJobUpdate,
   PackageInfo,
@@ -80,6 +89,10 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
   const [showCreateRepo, setShowCreateRepo] = useState(false);
   const [repoName, setRepoName] = useState(w.name);
   const [repoPrivate, setRepoPrivate] = useState(true);
+  // The signed-in account's repos, for the "pick a repo" dropdown. Empty when
+  // not signed in — the manual URL box below still works.
+  const [repos, setRepos] = useState<GithubRepo[]>([]);
+  const [settingRemote, setSettingRemote] = useState(false);
 
   const refresh = useCallback(() => {
     wsStatus(w.id).then(setChanges).catch((e) => reportError(e));
@@ -99,6 +112,34 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
       );
     }).catch((e) => setRemoteError(String(e)));
   }, [w.id, w.remote]);
+
+  // Load the account's repos once so the History tab can offer them as a
+  // picker. A failure (not signed in) is fine — the manual URL box remains.
+  useEffect(() => {
+    listGithubRepos().then(setRepos).catch(() => setRepos([]));
+  }, []);
+
+  // Point the workspace at an existing repo chosen from the dropdown. Sets it as
+  // the git remote (origin) and refreshes; the manual URL box is the fallback.
+  const chooseRepo = async (nameWithOwner: string) => {
+    const picked = repos.find((r) => r.nameWithOwner === nameWithOwner);
+    if (!picked) return;
+    setError("");
+    setNotice("");
+    setSettingRemote(true);
+    try {
+      await wsSetRemote(w.id, picked.url);
+      setRemoteInput(picked.url);
+      setNotice(
+        (w.remote ? "Repository changed to " : "Repository set to ") + picked.nameWithOwner + ".",
+      );
+      onChanged();
+    } catch (e) {
+      reportError(e);
+    } finally {
+      setSettingRemote(false);
+    }
+  };
 
   useEffect(() => {
     refresh();
@@ -225,6 +266,13 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
 
   const hasPackages = changes.length > 0 || (w.lastPull != null);
   const hasRepo = !!w.remote;
+  // Which listed repo, if any, the workspace's current remote points at — so the
+  // dropdown can show it selected rather than blank.
+  const linkedRepoValue =
+    repos.find((r) => {
+      const remote = (w.remote ?? "").replace(/\.git$/, "");
+      return remote === r.url.replace(/\.git$/, "") || remote.endsWith(`/${r.nameWithOwner}`);
+    })?.nameWithOwner ?? "";
   const isPushed = !!remoteStatus?.hasRemote && remoteStatus.ahead === 0;
   const showGuidance = !hasPackages || !hasRepo;
 
@@ -529,6 +577,29 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
               <div>
                 <Button variant="outline" size="sm" onClick={checkRemote}>Check again</Button>
               </div>
+            </div>
+          )}
+          {repos.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={linkedRepoValue} onValueChange={chooseRepo} disabled={settingRemote}>
+                <SelectTrigger className="min-w-64 flex-1">
+                  <SelectValue placeholder={hasRepo ? "Change repository…" : "Pick a repository…"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {repos.map((r) => (
+                    <SelectItem key={r.nameWithOwner} value={r.nameWithOwner}>
+                      {r.nameWithOwner} {r.isPrivate ? "(private)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-xs text-muted-foreground">
+                {settingRemote
+                  ? "Setting remote…"
+                  : hasRepo
+                    ? "changes origin; or paste a URL below"
+                    : "from your GitHub account, or paste a URL below"}
+              </span>
             </div>
           )}
           <div className="flex flex-wrap gap-2">

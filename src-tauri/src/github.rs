@@ -43,6 +43,45 @@ fn capture(program: &str, args: &[&str]) -> Result<(i32, String, String), String
     ))
 }
 
+/// Like `capture`, but writes `stdin_data` to the child's stdin and then closes
+/// it (EOF). Used for `gh auth login --with-token`, which reads the token from
+/// stdin so it never appears in a process argument list.
+fn capture_stdin(
+    program: &str,
+    args: &[&str],
+    stdin_data: &str,
+) -> Result<(i32, String, String), String> {
+    use std::io::Write;
+    let mut command = Command::new(crate::tools::resolve(program));
+    command
+        .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    let mut child = command.spawn().map_err(|error| {
+        format!("Failed to start {program}: {error}. {}", crate::tools::not_found(program))
+    })?;
+    {
+        let mut stdin = child.stdin.take().ok_or("Could not open stdin for gh.".to_string())?;
+        stdin
+            .write_all(stdin_data.as_bytes())
+            .map_err(|e| format!("Could not send the token to gh: {e}"))?;
+        // `stdin` is dropped here, closing the pipe so gh reads EOF and proceeds.
+    }
+    let output = child.wait_with_output().map_err(|e| e.to_string())?;
+    Ok((
+        output.status.code().unwrap_or(-1),
+        String::from_utf8_lossy(&output.stdout).trim().to_string(),
+        String::from_utf8_lossy(&output.stderr).trim().to_string(),
+    ))
+}
+
 fn git_config(key: &str) -> Option<String> {
     capture("git", &["config", "--global", "--get", key])
         .ok()
@@ -275,4 +314,57 @@ pub fn start_github_login(
         }
     });
     Ok(id)
+}
+
+/// Sign in to GitHub with a personal access token instead of the browser flow.
+///
+/// The token is the user's own credential: it is piped straight to
+/// `gh auth login --with-token` over stdin, never placed on a command line,
+/// written to a job log, or echoed back in an error (any accidental occurrence
+/// is masked). On success we also run `gh auth setup-git` so HTTPS pushes use
+/// it. `(async)` because it makes network calls to GitHub.
+#[tauri::command(async)]
+pub fn github_login_with_token(token: String) -> Result<(), String> {
+    let token = token.trim();
+    if token.is_empty() {
+        return Err("Paste a GitHub personal access token.".to_string());
+    }
+    if token.split_whitespace().count() != 1 {
+        return Err(
+            "That doesn't look like a token — it should be a single value with no spaces."
+                .to_string(),
+        );
+    }
+    if capture("gh", &["--version"]).is_err() {
+        return Err(crate::tools::not_found("gh"));
+    }
+
+    // Guard every surfaced message against the token accidentally appearing in it.
+    let mask = |text: String| text.replace(token, "***");
+
+    let (code, _out, err) = capture_stdin(
+        "gh",
+        &["auth", "login", "--hostname", "github.com", "--git-protocol", "https", "--with-token"],
+        token,
+    )?;
+    if code != 0 {
+        let message = mask(err);
+        return Err(if message.trim().is_empty() {
+            "GitHub rejected the token. Check it hasn't expired and has the `repo` scope."
+                .to_string()
+        } else {
+            message
+        });
+    }
+    // Make Git use gh's stored credentials for HTTPS pushes. Best-effort — the
+    // sign-in already succeeded, so only report a genuine setup error.
+    if let Ok((setup_code, _, setup_err)) = capture("gh", &["auth", "setup-git"]) {
+        if setup_code != 0 && !setup_err.trim().is_empty() {
+            return Err(format!(
+                "Signed in, but configuring Git credentials failed: {}",
+                mask(setup_err)
+            ));
+        }
+    }
+    Ok(())
 }
