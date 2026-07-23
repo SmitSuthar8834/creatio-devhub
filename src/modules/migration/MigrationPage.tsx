@@ -21,7 +21,7 @@ export default function MigrationPage({ onShowJobs }: { onShowJobs: () => void }
           <LookupMigration onShowJobs={onShowJobs} />
         </TabsContent>
         <TabsContent value="objects">
-          <ObjectMigration />
+          <ObjectMigration onShowJobs={onShowJobs} />
         </TabsContent>
       </Tabs>
     </div>

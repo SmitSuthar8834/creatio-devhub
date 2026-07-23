@@ -410,6 +410,23 @@ export const objectDependencies = (env: string, table: string) =>
 export const objectRowCount = (env: string, table: string) =>
   invoke<number>("object_row_count", { env, table });
 
+/** Dry-run: the full-column upsert that would copy an object's rows. Read-only. */
+export const buildObjectMigration = (opts: {
+  sourceEnv: string;
+  targetEnv: string;
+  table: string;
+  remapOwner: boolean;
+}) => invoke<string>("build_object_migration", opts);
+
+/** Copy one object's rows onto the target as a full-column upsert. Mutating. Returns a job id. */
+export const migrateObject = (opts: {
+  sourceEnv: string;
+  targetEnv: string;
+  table: string;
+  remapOwner: boolean;
+  skipBackup: boolean;
+}) => invoke<string>("migrate_object", opts);
+
 // ---------- sql ----------
 
 export interface SqlResult {

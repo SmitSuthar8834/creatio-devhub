@@ -330,7 +330,7 @@ fn value_diffs(source: &[LookupRow], target: &[LookupRow]) -> Vec<DiffRow> {
 
 // --------------------------------------------------------------- IO: reads
 
-fn temp_path(ext: &str) -> PathBuf {
+pub(crate) fn temp_path(ext: &str) -> PathBuf {
     let n = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos();
     std::env::temp_dir().join(format!("devhub-refdata-{n}.{ext}"))
 }
@@ -872,7 +872,7 @@ pub fn build_lookup_migration(source_env: String, tables: Vec<String>) -> Result
 }
 
 /// Directory holding applied/rollback migration scripts, kept as a record.
-fn migrations_dir(app: &AppHandle) -> Result<PathBuf, String> {
+pub(crate) fn migrations_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = app
         .path()
         .app_data_dir()

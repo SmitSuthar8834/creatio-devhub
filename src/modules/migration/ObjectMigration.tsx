@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
-import { ChevronRight, Database, RefreshCw, Search } from "lucide-react";
+import { ChevronRight, Database, Play, RefreshCw, Search, ShieldAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -16,15 +25,18 @@ import { cn } from "@/lib/utils";
 import ErrorNote from "../../lib/ErrorNote";
 import { logError } from "../../lib/errorLog";
 import {
+  buildObjectMigration,
   EnvSummary,
   listEnvironments,
   listObjects,
+  migrateObject,
   ObjectColumn,
   objectColumns,
   ObjectDependency,
   objectDependencies,
   ObjectInfo,
   objectRowCount,
+  onJobUpdate,
 } from "../../lib/ipc";
 
 const SOURCE = "Migration";
@@ -36,7 +48,7 @@ const SOURCE = "Migration";
  * rows each side holds, and expand its dependency tree — the order a later copy
  * has to respect. Read-only: nothing here writes to an environment.
  */
-export default function ObjectMigration() {
+export default function ObjectMigration({ onShowJobs }: { onShowJobs: () => void }) {
   const [envs, setEnvs] = useState<EnvSummary[]>([]);
   const [source, setSource] = useState("");
   const [target, setTarget] = useState("");
@@ -53,7 +65,15 @@ export default function ObjectMigration() {
   const [targetMissing, setTargetMissing] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  const [remapOwner, setRemapOwner] = useState(true);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [previewBusy, setPreviewBusy] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [skipBackup, setSkipBackup] = useState(false);
+
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   const fail = (e: unknown, context: string, forEnv?: string) => {
     const message = String(e);
@@ -69,6 +89,21 @@ export default function ObjectMigration() {
         setTarget(list.find((item) => !item.isActive)?.name ?? "");
       })
       .catch((e) => fail(e, "Load environments"));
+  }, []);
+
+  // Surface the outcome of an object migration the same way the lookup screen
+  // does — the detail lives in Jobs.
+  useEffect(() => {
+    const un = onJobUpdate((job) => {
+      if (job.kind === "migrate-object" && ["succeeded", "failed"].includes(job.status)) {
+        setNotice(
+          job.status === "succeeded"
+            ? `Migration to ${job.env} finished — see Jobs for the row counts.`
+            : `Migration to ${job.env} failed — open Jobs for the reason and the rollback file path.`,
+        );
+      }
+    });
+    return () => { un.then((fn) => fn()); };
   }, []);
 
   const runSearch = async (term = filter) => {
@@ -91,6 +126,8 @@ export default function ObjectMigration() {
     setSelected(table);
     setLoadingDetail(true);
     setError("");
+    setNotice("");
+    setPreview(null);
     setColumns([]);
     setDeps([]);
     setSourceCount(null);
@@ -140,15 +177,51 @@ export default function ObjectMigration() {
     }
   };
 
+  const runPreview = async () => {
+    if (!selected || !source || !target) return;
+    setPreviewBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      setPreview(await buildObjectMigration({ sourceEnv: source, targetEnv: target, table: selected, remapOwner }));
+    } catch (e) {
+      setPreview(null);
+      fail(e, "Preview object SQL", source);
+    } finally {
+      setPreviewBusy(false);
+    }
+  };
+
+  const openConfirm = () => {
+    setConfirmText("");
+    setSkipBackup(false);
+    setNotice("");
+    setError("");
+    setConfirmOpen(true);
+  };
+
+  const migrate = async () => {
+    if (!selected) return;
+    try {
+      await migrateObject({ sourceEnv: source, targetEnv: target, table: selected, remapOwner, skipBackup });
+      setConfirmOpen(false);
+      setNotice(`Migrating ${selected} to ${target} — follow it in Jobs.`);
+    } catch (e) {
+      fail(e, "Migrate object", target);
+    }
+  };
+
   const referenceColumns = new Set(deps.map((dep) => dep.column));
+  const ownerColumns = deps.filter((dep) => dep.referencesTable === "SysAdminUnit").map((dep) => dep.column);
   const sameEnv = !!source && source === target;
 
   return (
     <div className="grid gap-4">
       <p className="text-sm text-muted-foreground">
-        Inspect any object and its foreign-key hierarchy across two environments before copying
-        rows. Pick an object, compare how many rows each side holds, and expand its dependency tree —
-        the order a migration has to respect. This tab is read-only; copying rows is the next step.
+        Inspect and copy a single object's rows between environments. Pick an object, compare how
+        many rows each side holds, expand its foreign-key hierarchy, then copy its rows as a
+        full-column upsert. One object at a time — related objects it depends on are not pulled
+        along, so make sure the target already has them.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -285,6 +358,60 @@ export default function ObjectMigration() {
                 </div>
               </div>
 
+              <section className="grid gap-3 rounded-lg border p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold">Copy rows to {target || "target"}</h3>
+                  <Button variant="ghost" size="sm" onClick={onShowJobs}>Jobs</Button>
+                </div>
+                <p className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  <span>
+                    Full-column upsert keyed on <code className="rounded bg-muted px-1 font-mono">Id</code>,
+                    written as raw SQL — it bypasses Creatio's validation and business logic. Unless turned
+                    off, a runnable rollback script is written first (its path is logged in the job).
+                  </span>
+                </p>
+
+                <Label className="flex items-start gap-2 font-normal">
+                  <Checkbox
+                    className="mt-0.5"
+                    checked={remapOwner}
+                    onCheckedChange={(checked) => setRemapOwner(!!checked)}
+                  />
+                  <span>
+                    Remap ownership to the target's Supervisor
+                    {ownerColumns.length > 0 && (
+                      <span className="ml-1 text-xs text-muted-foreground">({ownerColumns.join(", ")})</span>
+                    )}
+                    <span className="block text-xs text-muted-foreground">
+                      Owner/created-by columns point at users that differ per environment; remapping avoids
+                      broken references.
+                    </span>
+                  </span>
+                </Label>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button variant="outline" disabled={!target || sameEnv || previewBusy} onClick={runPreview}>
+                    {previewBusy ? "Building…" : "Preview SQL"}
+                  </Button>
+                  <Button variant="destructive" disabled={!target || sameEnv} onClick={openConfirm}>
+                    <Play aria-hidden="true" />
+                    Migrate {selected} to {target || "target"}…
+                  </Button>
+                </div>
+
+                {notice && <p className="text-sm text-muted-foreground">{notice}</p>}
+
+                {preview !== null && (
+                  <div className="grid gap-1">
+                    <Label className="text-xs">Dry run — the SQL that would run on {target}</Label>
+                    <ScrollArea className="h-56 rounded-lg border">
+                      <pre className="p-3 font-mono text-xs whitespace-pre-wrap break-all">{preview}</pre>
+                    </ScrollArea>
+                  </div>
+                )}
+              </section>
+
               <section className="grid gap-2">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold">Dependency hierarchy</h3>
@@ -339,6 +466,41 @@ export default function ObjectMigration() {
           )}
         </div>
       </div>
+
+      <Dialog open={confirmOpen} onOpenChange={(open) => !open && setConfirmOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Copy {selected} to {target}?</DialogTitle>
+            <DialogDescription>
+              Writes {sourceCount !== null ? sourceCount.toLocaleString() : "the source's"} row(s) of{" "}
+              <strong>{selected}</strong> from <strong>{source}</strong> into <strong>{target}</strong> as a
+              full-column upsert keyed on Id. Existing rows with the same Id are overwritten; it does not
+              copy related objects, and it bypasses Creatio validation.
+            </DialogDescription>
+          </DialogHeader>
+          <Label className="flex items-center gap-2 font-normal">
+            <Checkbox checked={!skipBackup} onCheckedChange={(checked) => setSkipBackup(!checked)} />
+            Write a rollback script first (recommended)
+          </Label>
+          <div className="grid gap-2">
+            <Label htmlFor="obj-confirm">
+              Type <strong>{target || "the target environment"}</strong> to confirm
+            </Label>
+            <Input
+              id="obj-confirm"
+              value={confirmText}
+              onChange={(event) => setConfirmText(event.target.value)}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)}>Cancel</Button>
+            <Button variant="destructive" disabled={!target || confirmText !== target} onClick={migrate}>
+              Copy rows
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -75,6 +75,8 @@ pub fn run() {
             objectmove::object_columns,
             objectmove::object_dependencies,
             objectmove::object_row_count,
+            objectmove::build_object_migration,
+            objectmove::migrate_object,
             sql::run_sql,
             sql::export_sql,
             tools::tool_paths,
