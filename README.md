@@ -6,10 +6,9 @@ It provides a visual, job-based interface over the installed
 and Git command-line tools for managing environments, packages, applications, and source-controlled
 workspaces.
 
-> **Platform status.** Windows installers are published for every release. macOS support is in the
-> codebase and is compiled and bundled on every push by the `macOS build check` CI workflow, but a
-> macOS installer is not published yet — it is released only after the build has been run and
-> exercised on a real Mac. See the handoff for the release gate.
+> **Platform status.** Windows and macOS installers are published for every release. The macOS build
+> is a universal `.dmg` (Apple Silicon + Intel) and has been validated on a real Mac. It is not yet
+> Apple-notarized, so the first launch needs a one-time right-click → Open (see Installing below).
 
 DevHub does not connect directly to Creatio APIs and does not store Creatio passwords. Environment
 registration and credentials remain owned by clio.
@@ -193,8 +192,8 @@ Rust commands ── job engine ── streamed UI events
 
 ## Installing
 
-Download the `.exe` (NSIS) or `.msi` installer from the
-[latest release](https://github.com/SmitSuthar8834/creatio-devhub/releases/latest).
+Download from the [latest release](https://github.com/SmitSuthar8834/creatio-devhub/releases/latest):
+the `.exe` (NSIS) or `.msi` on Windows, or the universal `.dmg` on macOS.
 
 **Windows will warn you before it runs.** SmartScreen shows *"Windows protected your PC — unknown
 publisher"*; choose **More info → Run anyway**. The installer is not signed with a Windows code
@@ -206,10 +205,11 @@ verify an update genuinely came from this project before installing it. Windows 
 signature. Removing the SmartScreen warning would need a separate Authenticode certificate; see the
 handoff for what that involves.
 
-**On macOS** (once a build is published) the app is not yet Apple-notarized, so Gatekeeper blocks
-the first launch with *"cannot be opened because it is from an unidentified developer."* Right-click
-(or Control-click) the app in Finder and choose **Open** once; after that it launches normally.
-Notarization needs a paid Apple Developer account and is not set up yet — see the handoff.
+**On macOS**, download the universal `.dmg` and drag DevHub to Applications — no Terminal needed. The
+app is not yet Apple-notarized, so Gatekeeper blocks the *first* launch with *"cannot be opened
+because it is from an unidentified developer."* Right-click (or Control-click) the app in Finder and
+choose **Open** once; after that it launches normally by double-click. Notarization (which would drop
+that first-launch step) needs a paid Apple Developer account and is not set up yet — see the handoff.
 
 ## Prerequisites
 

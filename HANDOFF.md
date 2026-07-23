@@ -44,12 +44,16 @@ Website: <https://smitsuthar8834.github.io/creatio-devhub/> (branch `gh-pages`)
 > a BOM. Use `[System.IO.File]::WriteAllText` with `UTF8Encoding($false)` (or an editor that
 > preserves encoding) for JSON the toolchain parses. The broken tag was deleted, never reused.
 
-## macOS support — code + CI, release gated on a real-Mac run (2026-07-22)
+## macOS support — SHIPPED and validated (v0.8.7, 2026-07-23)
 
-DevHub was Windows-only. It now compiles and bundles on macOS too, but **no mac installer is
-published yet, by choice**: the main dev box has no Mac, so a mac build has only ever been compiled,
-never launched. A junior with a Mac is the release gate (see below). This was scoped as *"code + CI,
-no release"* precisely because of [[verify-before-shipping-ui]].
+DevHub was Windows-only. It now compiles, bundles, and runs on macOS, and the **universal `.dmg`
+ships in v0.8.7** (Apple Silicon + Intel; `latest.json` carries all `darwin-*` updater entries).
+The build was **validated on a real Mac (2026-07-23)** — all five release-gate checks passed (launch,
+environment discovery, tool discovery, a real clio op, job cancellation + no orphaned processes).
+The one remaining mac gap is **Apple notarization**: first launch needs a one-time right-click → Open
+until a paid Apple Developer account signs it. (Original scoping, kept for history: this was built as
+*"code + CI, no release"* per [[verify-before-shipping-ui]], with a real-Mac run as the gate; the gate
+is now satisfied.)
 
 **What already made this easy.** The Rust code was mostly platform-guarded already — `CommandExt`
 creation-flags behind `#[cfg(windows)]`, `candidates()`/`well_known()` already had non-Windows
@@ -89,12 +93,15 @@ branches, `terminate_process_tree` already had a `#[cfg(not(windows))]` arm. The
 and the `.icns` icon, so no bundle-config change was needed. `updater.windows.installMode` is
 Windows-scoped and harmless on mac.
 
-**Release gate before tagging any mac build (do NOT skip — this is the whole point of the scoping):**
-1. Junior runs `./dev.sh` on the Mac; confirm the shell renders and clio/git/gh resolve.
-2. Exercise **job cancellation** (the new process-group kill) and a real clio job end-to-end.
-3. Confirm tool discovery finds Homebrew-installed clio/git/gh (`~/.dotnet/tools`, `/opt/homebrew/bin`).
-4. Only then bump the version and tag — the mac job in `release.yml` will publish the universal dmg.
-5. First launch on any other Mac needs **right-click → Open** until Apple notarization is added.
+**Release gate — SATISFIED 2026-07-23.** All five checks passed on a real Mac (Apple Silicon):
+1. ✅ `./dev.sh` launched; shell renders; clio/git/gh resolved.
+2. ✅ Job cancellation (the new process-group kill) + a real clio op end-to-end, no orphaned processes.
+3. ✅ Tool discovery found Homebrew clio/git/gh (`~/.dotnet/tools`, `/opt/homebrew/bin`).
+4. ✅ Environment discovery — the hard-won one: clio's mac settings path is `$HOME/creatio/clio/
+   appsettings.json` (NOT `~/.local/share`; found via `clio ver`'s "settings file path"). Fixed in
+   `settings_path()`; all 7 registered envs list correctly.
+5. First launch on any other Mac still needs **right-click → Open** until Apple notarization is added
+   (paid Apple Developer account; the only remaining mac task).
 
 ## Design system: shadcn/ui migration (v0.4.0, 2026-07-20)
 
@@ -1021,13 +1028,11 @@ The signing key stays in the private repo; only signed output crosses over, so t
   makes `dotnet tool update clio -g` fail with `Access to the path … is denied`, so a user who
   force-closes DevHub can then find the Update button in the clio banner failing for no visible
   reason. A shutdown hook terminating live job process trees would fix it.
-- **Cross-platform: code + CI done, macOS release gated on a real-Mac run** (2026-07-22). The app
-  now compiles and bundles on macOS as well as Windows — see "macOS support" below. The one thing
-  that is *not* done, deliberately, is publishing a macOS installer: nobody on the main dev box has
-  a Mac, so a mac build has never been *launched*, only compiled. A junior with a Mac is to run
-  `./dev.sh` and exercise the screens before any tag ships a mac build. Apple notarization (paid
-  Apple Developer account) is also still absent, so a published mac build warns at first launch
-  until a tester right-click → Opens it. [[verify-before-shipping-ui]].
+- **Cross-platform: SHIPPED and validated** (v0.8.7, 2026-07-23). The app compiles, bundles, and runs
+  on macOS as well as Windows — see "macOS support" above. The universal `.dmg` is published and was
+  validated on a real Mac (all five gate checks passed). The only remaining mac gap is **Apple
+  notarization** (paid Apple Developer account): until then a published mac build warns at first
+  launch and the user right-click → Opens it once.
 - **Open bug — "Start empty" workspace is not actually empty.** `create_workspace_flow` still
   passes `-e <env>` to `clio create-workspace`, so clio connects and populates the package
   selection instead of scaffolding an empty workspace (and it fails outright if the environment is
