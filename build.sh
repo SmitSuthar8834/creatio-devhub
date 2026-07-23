@@ -9,6 +9,17 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Pick up Rust even if this shell wasn't restarted after rustup installed it.
+if ! command -v cargo >/dev/null 2>&1 && [ -f "$HOME/.cargo/env" ]; then
+  . "$HOME/.cargo/env"
+fi
+if ! command -v cargo >/dev/null 2>&1; then
+  echo "error: 'cargo' not found — Rust is not installed." >&2
+  echo "  Install it:  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh" >&2
+  echo "  Then:        source \"\$HOME/.cargo/env\" && ./build.sh" >&2
+  exit 1
+fi
+
 key="$HOME/.tauri/creatio-devhub.key"
 if [[ -f "$key" ]]; then
   export TAURI_SIGNING_PRIVATE_KEY="$key"

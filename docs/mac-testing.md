@@ -95,6 +95,17 @@ cd creatio-devhub
 the Rust dependencies — expect 5–15 minutes.** After that the DevHub window opens
 on its own. Later runs are fast.
 
+> **If you see `cargo metadata ... No such file or directory`:** Rust is
+> installed but this Terminal was opened before it was on PATH. Fix it with:
+>
+> ```bash
+> source "$HOME/.cargo/env"
+> ```
+>
+> then run `./dev.sh` again. (The script now does this for you, so this only
+> bites an older checkout.) If `cargo --version` still fails, Rust isn't
+> installed — redo the Rust step in section 1.
+
 ## 6. Verify these five things
 
 Go through each and note what you see (a screenshot of each is ideal).
