@@ -2,7 +2,7 @@
 
 Last verified: **2026-07-22**
 
-Current version: **0.8.6** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
+Current version: **0.8.7** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
 table below was last written; see per-release commit messages for their scope. v0.4.0 is the
 shadcn/ui design-system release described below; v0.5.0 adds the automatic update notice and
 stops trusting clio's exit code over its own output; v0.5.1 stops reporting a successful SQL
@@ -33,7 +33,9 @@ needed raw SQL to bypass app validation). The method is preserved in
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.8.6>
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.8.7> (marketing-content
+migration removed; **first-ever macOS build published here** — the "no mac tag until validated" gate was
+consciously overridden by the maintainer, so treat the mac dmg as unvalidated/un-notarized).
 
 Website: <https://smitsuthar8834.github.io/creatio-devhub/> (branch `gh-pages`)
 
