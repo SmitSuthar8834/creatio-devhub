@@ -7,6 +7,7 @@ mod envstate;
 mod git;
 mod github;
 mod jobs;
+mod objectmove;
 mod packages;
 mod refdata;
 mod sql;
@@ -70,6 +71,10 @@ pub fn run() {
             refdata::diff_lookups,
             refdata::build_lookup_migration,
             refdata::migrate_lookups,
+            objectmove::list_objects,
+            objectmove::object_columns,
+            objectmove::object_dependencies,
+            objectmove::object_row_count,
             sql::run_sql,
             sql::export_sql,
             tools::tool_paths,

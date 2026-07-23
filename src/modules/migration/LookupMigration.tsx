@@ -153,9 +153,9 @@ export default function MigrationPage({ onShowJobs }: { onShowJobs: () => void }
   const sameEnv = !!source && source === target;
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-4 p-6">
+    <div className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold tracking-tight">Migrate reference data</h1>
+        <h2 className="text-base font-semibold">Reference data (lookups)</h2>
         <Button variant="ghost" onClick={onShowJobs}>Jobs</Button>
       </div>
 
