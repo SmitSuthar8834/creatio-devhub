@@ -104,7 +104,8 @@ fn column_index(columns: &[String], name: &str) -> Option<usize> {
 
 /// Search entity objects in `env` for the Migration picker. An empty filter is
 /// allowed but still capped by the query's `LIMIT`.
-#[tauri::command]
+// `(async)` runs these clio-backed reads off the UI thread — see sql::run_sql.
+#[tauri::command(async)]
 pub fn list_objects(env: String, filter: String) -> Result<Vec<ObjectInfo>, String> {
     let (columns, data) = run_select(env.trim(), &list_objects_sql(filter.trim()))?;
     let (Some(table_at), Some(package_at)) =
@@ -126,7 +127,7 @@ pub fn list_objects(env: String, filter: String) -> Result<Vec<ObjectInfo>, Stri
 }
 
 /// List an object table's columns.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn object_columns(env: String, table: String) -> Result<Vec<ObjectColumn>, String> {
     if !is_safe_identifier(table.trim()) {
         return Err(format!("Refusing an unsafe table name: {table}"));
@@ -156,7 +157,7 @@ pub fn object_columns(env: String, table: String) -> Result<Vec<ObjectColumn>, S
 
 /// The foreign-key dependencies of an object table — the input to the hierarchy
 /// view and, later, to insert ordering.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn object_dependencies(env: String, table: String) -> Result<Vec<ObjectDependency>, String> {
     if !is_safe_identifier(table.trim()) {
         return Err(format!("Refusing an unsafe table name: {table}"));
@@ -184,7 +185,7 @@ pub fn object_dependencies(env: String, table: String) -> Result<Vec<ObjectDepen
 
 /// Count the rows in an object table — used for the two-sided source/target
 /// refresh view.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn object_row_count(env: String, table: String) -> Result<i64, String> {
     if !is_safe_identifier(table.trim()) {
         return Err(format!("Refusing an unsafe table name: {table}"));

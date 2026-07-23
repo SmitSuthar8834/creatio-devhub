@@ -511,7 +511,8 @@ fn read_snapshot(app: &AppHandle, env: &str) -> Result<LookupSnapshot, String> {
 // ------------------------------------------------------------- commands
 
 /// List every lookup registered in `env` — the picker for the Migration screen.
-#[tauri::command]
+// `(async)` runs this clio-backed read off the UI thread — see sql::run_sql.
+#[tauri::command(async)]
 pub fn list_lookups(env: String) -> Result<Vec<LookupInfo>, String> {
     enumerate(env.trim())
 }

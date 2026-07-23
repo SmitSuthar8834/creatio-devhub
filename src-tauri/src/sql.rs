@@ -328,7 +328,14 @@ mod tests {
 }
 
 /// Run `query` against `env` and return the result set for the grid.
-#[tauri::command]
+///
+/// Declared `(async)` so Tauri runs it on a worker thread instead of the main
+/// (UI) thread. clio's `execute-sql-script` blocks for however long the run
+/// takes, and against a non-default environment that includes establishing a
+/// fresh session — several seconds, sometimes more. On the main thread that
+/// froze the whole window ("Not Responding"); off it, the UI stays responsive
+/// and only the SQL screen shows its "Running…" state.
+#[tauri::command(async)]
 pub fn run_sql(env: String, query: String) -> Result<SqlResult, String> {
     query_env(&env, &query)
 }
@@ -428,7 +435,11 @@ fn parse_csv(path: &Path) -> Result<SqlResult, String> {
 
 /// Run `query` against `env` and let clio write the result straight to `path`
 /// in `format` ("csv" or "xlsx"). Export is not row-capped.
-#[tauri::command]
+///
+/// `(async)` for the same reason as `run_sql`: the clio call blocks, and against
+/// a non-default environment that block is long enough to freeze the UI if it
+/// ran on the main thread.
+#[tauri::command(async)]
 pub fn export_sql(env: String, query: String, format: String, path: String) -> Result<(), String> {
     let env = env.trim();
     require_env(env)?;

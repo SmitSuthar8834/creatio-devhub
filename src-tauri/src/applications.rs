@@ -138,7 +138,10 @@ pub fn parse_applications_json(raw: &str) -> Result<Vec<ApplicationInfo>, String
     Ok(applications)
 }
 
-#[tauri::command]
+// `(async)` keeps these clio-backed reads off the main (UI) thread — against a
+// non-default environment clio must establish a fresh session, and on the main
+// thread that blocking call froze the whole window. See sql::run_sql.
+#[tauri::command(async)]
 pub fn list_applications(
     cache: State<'_, CacheState>,
     env: String,
@@ -166,7 +169,7 @@ pub fn list_applications(
 /// One query for the whole list rather than one per tile. Returns an error only
 /// when SQL itself is unavailable; the Applications screen ignores that and
 /// shows the plain clio data.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn application_extras(env: String) -> Result<Vec<ApplicationExtras>, String> {
     let sql = r#"SELECT a."Code", a."Maintainer", a."CreatedOn", a."ModifiedOn",
        a."RequiredPlatformVersion", COUNT(pa."SysPackageId") AS "PackageCount"
@@ -196,7 +199,7 @@ GROUP BY a."Code", a."Maintainer", a."CreatedOn", a."ModifiedOn", a."RequiredPla
 /// optional: a missing one adds a note and leaves its fields blank, so an
 /// environment without cliogate still gets the pages and package name that clio
 /// reports on its own.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn application_details(env: String, code: String) -> Result<ApplicationDetails, String> {
     let code = code.trim().to_string();
     if code.is_empty() {
