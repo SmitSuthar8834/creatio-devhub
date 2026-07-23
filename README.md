@@ -246,6 +246,9 @@ Windows box's Visual Studio toolchain — the Unix toolchains need no such wrapp
 ./dev.sh
 ```
 
+For a full from-scratch macOS setup and the verification checklist a first-time Mac tester should
+run, see [`docs/mac-testing.md`](docs/mac-testing.md).
+
 Run frontend validation:
 
 ```powershell
