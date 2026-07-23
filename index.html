@@ -259,7 +259,7 @@
       <a href="#specs">Requirements</a>
       <a href="#feedback">Feedback</a>
       <a href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">GitHub</a>
-      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.4/creatio-devhub_0.8.4_x64-setup.exe">
+      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.0/creatio-devhub_0.9.0_x64-setup.exe">
         <svg class="ic"><use href="#i-dl"/></svg> Download
       </a>
     </nav>
@@ -274,7 +274,7 @@
         <h1>Ship Creatio work without living in the <em>terminal</em>.</h1>
         <p class="lede">A native desktop workbench for Creatio developers: environments, source-controlled workspaces, package &amp; app deployment, SQL, and GitHub — all driven from one app.</p>
         <div class="cta-row">
-          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.4/creatio-devhub_0.8.4_x64-setup.exe">
+          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.0/creatio-devhub_0.9.0_x64-setup.exe">
             <svg class="ic"><use href="#i-dl"/></svg> <span class="hero-dl-label">Download for Windows</span>
           </a>
           <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">
@@ -282,7 +282,7 @@
           </a>
         </div>
         <div class="meta">
-          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.8.4 · Windows 10/11 (x64)</span>
+          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.9.0 · Windows 10/11 (x64)</span>
           <span class="ok"><svg class="ic"><use href="#i-check"/></svg> signed installer &amp; auto-updates</span>
         </div>
       </div>
@@ -326,8 +326,8 @@
     <div class="wrap">
       <div class="stats">
         <div class="stat stat-live"><div class="stat-num" id="dl-count">—</div><div class="stat-cap">installer downloads</div></div>
-        <div class="stat"><div class="stat-num" id="dl-version">v0.8.4</div><div class="stat-cap">latest version</div></div>
-        <div class="stat"><div class="stat-num" id="dl-releases">14</div><div class="stat-cap">releases shipped</div></div>
+        <div class="stat"><div class="stat-num" id="dl-version">v0.9.0</div><div class="stat-cap">latest version</div></div>
+        <div class="stat"><div class="stat-num" id="dl-releases">29</div><div class="stat-cap">releases shipped</div></div>
       </div>
       <div class="stats-note" id="stats-note">Counts update live from <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases" target="_blank" rel="noopener">GitHub Releases</a>.</div>
     </div>
@@ -354,12 +354,17 @@
         <article class="card">
           <div class="card-ic"><svg class="ic"><use href="#i-gh"/></svg></div>
           <h3>GitHub, both ways</h3>
-          <p>Create a repo straight from a workspace and push it — or deploy back <em>from</em> a repo to restore a broken environment.</p>
+          <p>Sign in from Settings — browser or token — then create a repo straight from a workspace, pick one from a dropdown, or deploy back <em>from</em> a repo to restore a broken environment.</p>
         </article>
         <article class="card">
           <div class="card-ic"><svg class="ic"><use href="#i-swap"/></svg></div>
           <h3>Deploy env → env</h3>
           <p>Move a package or a whole application between environments, with a drift guard that blocks pushing over changes you haven't pulled.</p>
+        </article>
+        <article class="card">
+          <div class="card-ic"><svg class="ic"><use href="#i-db"/></svg></div>
+          <h3>Data migration</h3>
+          <p>Compare and copy lookup values — or any object's rows, with its foreign-key hierarchy mapped out — between environments, with an automatic rollback script.</p>
         </article>
         <article class="card">
           <div class="card-ic"><svg class="ic"><use href="#i-table"/></svg></div>
@@ -406,11 +411,43 @@
       </div>
       <div class="changelog">
         <div class="rel">
-          <div class="rel-tag">v0.8.4<span class="badge">latest</span></div>
+          <div class="rel-tag">v0.9.0<span class="badge">latest</span></div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>GitHub sign-in without the scavenger hunt</h4>
+            <p>Signing in to GitHub used to bury the one-time code in the Jobs log; now it appears right in <strong>Settings</strong>, with buttons to copy it and open the GitHub device page. Prefer not to use the browser flow at all? Paste a <strong>personal access token</strong> instead &mdash; it goes straight to the GitHub CLI over a private channel, and DevHub never stores or logs it. Workspaces also gain a <strong>repository picker</strong>: choose any repo from your GitHub account in a dropdown to set &mdash; or change &mdash; where a workspace pushes, instead of hunting down and pasting a remote URL. The manual URL box remains for repos outside your account.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.8.9 &ndash; v0.8.10</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Copy any object's data &mdash; and no more frozen window</h4>
+            <p>The Migration screen now goes beyond lookups. A new <strong>Objects</strong> tab searches every entity in an environment &mdash; Lead, Contact, your custom objects &mdash; shows its columns and foreign-key hierarchy, and copies a chosen object's rows into another environment, with a rollback script written first. Alongside it, an important fix: running <strong>SQL against an environment other than your default</strong> used to freeze the whole window while the connection was established &mdash; Windows would even mark DevHub &ldquo;Not Responding&rdquo;. Those reads (SQL, packages, applications, lookups, objects and GitHub lists) now run off the interface thread, so the app stays responsive and only the screen you asked shows its loading state.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.8.8</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Every failure, collected in one place</h4>
+            <p>A new app-wide <strong>Errors</strong> view gathers failures from every screen as they happen, with a toast when something new lands &mdash; no more losing an error message because you switched tabs. The SQL screen is reorganized into <strong>Editor, Saved queries and Errors</strong> tabs, and a failed query can be reloaded into the editor straight from its error entry.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.8.5 &ndash; v0.8.7</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>DevHub comes to the Mac</h4>
+            <p>DevHub now ships a <strong>universal macOS build</strong> (Apple Silicon and Intel) alongside Windows, with the same signed auto-updates. It finds your clio environments where the Mac build of clio actually keeps them, and job cancellation cleans up the whole process tree. Builds aren&rsquo;t yet Apple-notarized, so the first launch is right-click &rarr; <b>Open</b>. One honest retirement: the marketing-content migration introduced in v0.8.3&ndash;v0.8.4 proved to fight the platform on real environments &mdash; dense per-environment references meant raw-SQL workarounds that bypassed Creatio&rsquo;s own validation &mdash; and was removed in v0.8.7. The Migration screen instead focuses on what works reliably: lookups, and (since v0.8.9) any object&rsquo;s data.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.8.4</div>
           <div>
             <div class="rel-date">July 2026</div>
             <h4>Move campaigns and emails between environments</h4>
-            <p>The Migration screen now copies <strong>marketing content</strong> &mdash; campaigns, bulk emails, email designer templates, dynamic content, and campaign <strong>flow diagrams</strong> &mdash; from one environment to another with their original IDs, so everything that references them keeps working. Pick individual campaigns and bulk emails or move everything missing; parents a selected record needs come along automatically. References the target cannot satisfy are resolved for you: a missing contact or lookup is matched to the target's row of the same name where one exists, otherwise the field is cleared &mdash; and every such change is listed in the result. A rollback script is written before anything is inserted. If you installed v0.8.3, update: it shipped this feature without the reference resolution and fails on records owned by environment-specific contacts.</p>
+            <p>The Migration screen now copies <strong>marketing content</strong> &mdash; campaigns, bulk emails, email designer templates, dynamic content, and campaign <strong>flow diagrams</strong> &mdash; from one environment to another with their original IDs, so everything that references them keeps working. Pick individual campaigns and bulk emails or move everything missing; parents a selected record needs come along automatically. References the target cannot satisfy are resolved for you: a missing contact or lookup is matched to the target's row of the same name where one exists, otherwise the field is cleared &mdash; and every such change is listed in the result. A rollback script is written before anything is inserted. If you installed v0.8.3, update: it shipped this feature without the reference resolution and fails on records owned by environment-specific contacts. <em>Update, this feature was retired in v0.8.7 &mdash; see the note above.</em></p>
           </div>
         </div>
         <div class="rel">
@@ -630,12 +667,12 @@
         <div class="dl-platform">
           <h3 class="dl-os"><svg class="ic"><use href="#i-check"/></svg> Windows</h3>
           <div class="dl-links">
-            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.4/creatio-devhub_0.8.4_x64-setup.exe">
+            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.0/creatio-devhub_0.9.0_x64-setup.exe">
               <svg class="ic"><use href="#i-dl"/></svg> Download installer (.exe)
             </a>
-            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.8.4/creatio-devhub_0.8.4_x64_en-US.msi">Get the .msi</a>
+            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.0/creatio-devhub_0.9.0_x64_en-US.msi">Get the .msi</a>
           </div>
-          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.7.0 · NSIS &amp; MSI · signed · auto-updates after install</div>
+          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.9.0 · NSIS &amp; MSI · signed · auto-updates after install</div>
         </div>
 
         <div class="dl-platform">
