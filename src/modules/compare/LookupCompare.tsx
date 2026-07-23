@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import ErrorNote from "../../lib/ErrorNote";
+import { logError } from "../../lib/errorLog";
 import {
   captureLookups, deleteLookupSnapshot, DiffReport, DiffRow, diffLookups, EnvSummary,
   listEnvironments, listLookupSnapshots, LookupSnapshotInfo, onJobUpdate,
@@ -47,6 +48,12 @@ export default function LookupCompare({ onShowJobs }: { onShowJobs: () => void }
   const [differencesOnly, setDifferencesOnly] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [error, setError] = useState("");
+  // Show the failure inline and record it into the app-wide Errors view.
+  const reportError = (e: unknown) => {
+    const message = String(e);
+    setError(message);
+    logError("Compare", message);
+  };
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -59,7 +66,7 @@ export default function LookupCompare({ onShowJobs }: { onShowJobs: () => void }
         setSource(list.find((item) => item.isActive)?.name ?? list[0]?.name ?? "");
         setTarget(list.find((item) => !item.isActive)?.name ?? "");
       })
-      .catch((e) => setError(String(e)));
+      .catch((e) => reportError(e));
     refreshSnapshots();
   }, []);
 
@@ -84,7 +91,7 @@ export default function LookupCompare({ onShowJobs }: { onShowJobs: () => void }
         `Reading every lookup's values in ${env} — follow it in Jobs. It reads the whole lookup set (a minute or two, longer for cloud) and writes nothing to the environment.`,
       );
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     }
   };
 
@@ -97,7 +104,7 @@ export default function LookupCompare({ onShowJobs }: { onShowJobs: () => void }
       setReport(await diffLookups(source, target));
     } catch (e) {
       setReport(null);
-      setError(String(e));
+      reportError(e);
     } finally {
       setBusy(false);
     }
@@ -110,7 +117,7 @@ export default function LookupCompare({ onShowJobs }: { onShowJobs: () => void }
       setReport(null);
       setNotice(`Deleted the lookup snapshot of ${env}.`);
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     }
   };
 

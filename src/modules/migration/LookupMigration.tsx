@@ -22,10 +22,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ErrorNote from "../../lib/ErrorNote";
+import { logError } from "../../lib/errorLog";
 import {
   buildLookupMigration, EnvSummary, listEnvironments, listLookups, LookupInfo,
   migrateLookups, onJobUpdate,
 } from "../../lib/ipc";
+
+const SOURCE = "Migration";
 
 /** Write-side surface for reference-data migration: pick lookups in a source
  *  environment, preview the idempotent upsert, then apply it to a target as a
@@ -47,6 +50,13 @@ export default function MigrationPage({ onShowJobs }: { onShowJobs: () => void }
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
+  // Show the failure inline and record it into the app-wide Errors view.
+  const fail = (e: unknown, context: string, forEnv?: string) => {
+    const message = String(e);
+    setError(message);
+    logError(SOURCE, message, { context, env: forEnv });
+  };
+
   useEffect(() => {
     listEnvironments()
       .then((list) => {
@@ -54,7 +64,7 @@ export default function MigrationPage({ onShowJobs }: { onShowJobs: () => void }
         setSource(list.find((item) => item.isActive)?.name ?? list[0]?.name ?? "");
         setTarget(list.find((item) => !item.isActive)?.name ?? "");
       })
-      .catch((e) => setError(String(e)));
+      .catch((e) => fail(e, "Load environments"));
   }, []);
 
   // Loading the source's lookups resets everything downstream of it.
@@ -66,7 +76,7 @@ export default function MigrationPage({ onShowJobs }: { onShowJobs: () => void }
     setPreview(null);
     listLookups(source)
       .then(setLookups)
-      .catch((e) => { setLookups([]); setError(String(e)); })
+      .catch((e) => { setLookups([]); fail(e, "Load lookups", source); })
       .finally(() => setLoading(false));
   }, [source]);
 
@@ -117,7 +127,7 @@ export default function MigrationPage({ onShowJobs }: { onShowJobs: () => void }
       setPreview(await buildLookupMigration(source, [...selected]));
     } catch (e) {
       setPreview(null);
-      setError(String(e));
+      fail(e, "Preview SQL", source);
     } finally {
       setPreviewBusy(false);
     }
@@ -136,7 +146,7 @@ export default function MigrationPage({ onShowJobs }: { onShowJobs: () => void }
       setConfirmOpen(false);
       setNotice(`Migrating ${selected.size} lookup(s) to ${target} — follow it in Jobs.`);
     } catch (e) {
-      setError(String(e));
+      fail(e, "Migrate", target);
     }
   };
 

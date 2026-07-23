@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ErrorNote from "../../lib/ErrorNote";
+import { logError } from "../../lib/errorLog";
 import {
   ApplicationDetails, applicationDetails, ApplicationExtras, applicationExtras, ApplicationInfo,
   deployApplicationBetweenEnvironments, EnvSummary, listApplications, listEnvironments,
@@ -42,6 +43,12 @@ export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => voi
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // Show the failure inline and record it into the app-wide Errors view.
+  const reportError = (e: unknown) => {
+    const message = String(e);
+    setError(message);
+    logError("Applications", message);
+  };
   const [notice, setNotice] = useState("");
   const [selectedApp, setSelectedApp] = useState<ApplicationInfo | null>(null);
   const [targetEnv, setTargetEnv] = useState("");
@@ -59,7 +66,7 @@ export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => voi
       setEnvironments(list);
       const initial = list.find((environment) => environment.isActive) ?? list[0];
       if (initial) setSourceEnv(initial.name);
-    }).catch((reason) => setError(String(reason)));
+    }).catch((reason) => reportError(reason));
   }, []);
 
   const refresh = async (forceRefresh = true) => {
@@ -73,7 +80,7 @@ export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => voi
       setFromCache(result.fromCache);
     } catch (reason) {
       setApplications([]);
-      setError(String(reason));
+      reportError(reason);
     } finally {
       setLoading(false);
     }
@@ -156,7 +163,7 @@ export default function ApplicationsPage({ onShowJobs }: { onShowJobs: () => voi
       });
       setNotice(`Deploying ${application.name} from ${sourceEnv} to ${target}. Follow the streamed output in Jobs.`);
     } catch (reason) {
-      setError(String(reason));
+      reportError(reason);
     }
   };
 

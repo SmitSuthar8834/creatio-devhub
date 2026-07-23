@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ErrorNote from "../../lib/ErrorNote";
+import { logError } from "../../lib/errorLog";
 import {
   deployFromGithub,
   EnvSummary,
@@ -57,6 +58,12 @@ export default function DeployFromGithubDialog({ onClose, onStarted }: Props) {
   const [backup, setBackup] = useState(true);
 
   const [error, setError] = useState("");
+  // Show the failure inline and record it into the app-wide Errors view.
+  const reportError = (e: unknown) => {
+    const message = String(e);
+    setError(message);
+    logError("Workspaces", message);
+  };
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -127,7 +134,7 @@ export default function DeployFromGithubDialog({ onClose, onStarted }: Props) {
       });
       onStarted();
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     } finally {
       setBusy(false);
     }

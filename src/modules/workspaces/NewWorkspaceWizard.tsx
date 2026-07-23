@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ErrorNote from "../../lib/ErrorNote";
+import { logError } from "../../lib/errorLog";
 import { createWorkspaceFlow, EnvSummary, listEnvironments, registerWorkspace } from "../../lib/ipc";
 
 interface Props {
@@ -38,6 +39,12 @@ export default function NewWorkspaceWizard({ onClose, onStarted }: Props) {
   const [startEmpty, setStartEmpty] = useState(true);
   const [existingPath, setExistingPath] = useState("");
   const [error, setError] = useState("");
+  // Show the failure inline and record it into the app-wide Errors view.
+  const reportError = (e: unknown) => {
+    const message = String(e);
+    setError(message);
+    logError("Workspaces", message);
+  };
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -79,7 +86,7 @@ export default function NewWorkspaceWizard({ onClose, onStarted }: Props) {
       }
       onStarted();
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     } finally {
       setBusy(false);
     }

@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import ErrorNote from "../../lib/ErrorNote";
+import { logError } from "../../lib/errorLog";
 import {
   addPackageToWorkspace,
   Commit,
@@ -61,6 +62,12 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
   const [remoteInput, setRemoteInput] = useState(w.remote ?? "");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  // Show the failure inline and record it into the app-wide Errors view.
+  const reportError = (e: unknown) => {
+    const message = String(e);
+    setError(message);
+    logError("Workspaces", message);
+  };
   const [showPush, setShowPush] = useState(false);
   const [skipBackup, setSkipBackup] = useState(false);
   const [drift, setDrift] = useState("");
@@ -75,7 +82,7 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
   const [repoPrivate, setRepoPrivate] = useState(true);
 
   const refresh = useCallback(() => {
-    wsStatus(w.id).then(setChanges).catch((e) => setError(String(e)));
+    wsStatus(w.id).then(setChanges).catch((e) => reportError(e));
     wsLog(w.id).then(setCommits).catch(() => setCommits([]));
   }, [w.id]);
 
@@ -119,7 +126,7 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
       await pullWorkspace(w.id);
       setNotice("Pull started — follow it on the Jobs screen.");
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     }
   };
 
@@ -134,7 +141,7 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
       refresh();
       onChanged();
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     }
   };
 
@@ -183,7 +190,7 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
     setPkgLoading(true);
     listPackages(w.env)
       .then((res) => setPkgList(res.items))
-      .catch((e) => setError(String(e)))
+      .catch((e) => reportError(e))
       .finally(() => setPkgLoading(false));
   };
 
@@ -195,7 +202,7 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
       await addPackageToWorkspace(w.id, name);
       setNotice(`Adding ${name} to the workspace — follow it on the Jobs screen.`);
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     }
   };
 
@@ -208,7 +215,7 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
       setNotice("Creating the GitHub repository and pushing — follow it on the Jobs screen.");
       onChanged();
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     }
   };
 

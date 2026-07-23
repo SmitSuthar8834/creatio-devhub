@@ -9,6 +9,7 @@ import {
   Package,
   Server,
   Settings,
+  TriangleAlert,
 } from "lucide-react";
 import {
   Sidebar,
@@ -20,6 +21,7 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
@@ -39,11 +41,13 @@ import MigrationPage from "./modules/migration/MigrationPage";
 import PackagesPage from "./modules/packages/PackagesPage";
 import SettingsPage from "./modules/settings/SettingsPage";
 import SqlPage from "./modules/sql/SqlPage";
+import ErrorsPage from "./modules/errors/ErrorsPage";
 import UpdateBanner from "./modules/updates/UpdateBanner";
 import WorkspacesPage from "./modules/workspaces/WorkspacesPage";
+import { useErrorLog } from "./lib/errorLog";
 import logoMark from "./assets/icons/logo-mark.png";
 
-type Page = "environments" | "workspaces" | "packages" | "applications" | "compare" | "migration" | "sql" | "jobs" | "settings";
+type Page = "environments" | "workspaces" | "packages" | "applications" | "compare" | "migration" | "sql" | "jobs" | "errors" | "settings";
 
 const NAV: { id: Page; label: string; icon: typeof Server }[] = [
   { id: "environments", label: "Environments", icon: Server },
@@ -54,12 +58,14 @@ const NAV: { id: Page; label: string; icon: typeof Server }[] = [
   { id: "migration", label: "Migration", icon: ArrowRightLeft },
   { id: "sql", label: "SQL", icon: Database },
   { id: "jobs", label: "Jobs", icon: ListChecks },
+  { id: "errors", label: "Errors", icon: TriangleAlert },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
 export default function App() {
   const [page, setPage] = useState<Page>("environments");
   const [workspaceToOpen, setWorkspaceToOpen] = useState<string | null>(null);
+  const errorCount = useErrorLog().length;
 
   // Auto-capture catalog state: warm the active environment's cache on launch,
   // and again whenever the default environment changes.
@@ -112,6 +118,9 @@ export default function App() {
                       <n.icon />
                       <span>{n.label}</span>
                     </SidebarMenuButton>
+                    {n.id === "errors" && errorCount > 0 && (
+                      <SidebarMenuBadge>{errorCount > 99 ? "99+" : errorCount}</SidebarMenuBadge>
+                    )}
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
@@ -163,6 +172,7 @@ export default function App() {
           {page === "compare" && <ComparePage onShowJobs={() => setPage("jobs")} />}
           {page === "migration" && <MigrationPage onShowJobs={() => setPage("jobs")} />}
           {page === "sql" && <SqlPage onShowJobs={() => setPage("jobs")} />}
+          {page === "errors" && <ErrorsPage />}
           {page === "settings" && <SettingsPage />}
         </div>
       </SidebarInset>

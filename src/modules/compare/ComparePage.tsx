@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ErrorNote from "../../lib/ErrorNote";
+import { logError } from "../../lib/errorLog";
 import LookupCompare from "./LookupCompare";
 import {
   captureEnvState, deleteSnapshot, DiffReport, DiffRow, diffEnvironments, EnvSummary,
@@ -73,6 +74,12 @@ export default function ComparePage({ onShowJobs }: { onShowJobs: () => void }) 
   const [category, setCategory] = useState<string>("package");
   const [differencesOnly, setDifferencesOnly] = useState(true);
   const [error, setError] = useState("");
+  // Show the failure inline and record it into the app-wide Errors view.
+  const reportError = (e: unknown) => {
+    const message = String(e);
+    setError(message);
+    logError("Compare", message);
+  };
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   /** Setting values are masked until explicitly revealed, per row. */
@@ -88,7 +95,7 @@ export default function ComparePage({ onShowJobs }: { onShowJobs: () => void }) 
         setSource(list.find((item) => item.isActive)?.name ?? list[0]?.name ?? "");
         setTarget(list.find((item) => !item.isActive)?.name ?? "");
       })
-      .catch((e) => setError(String(e)));
+      .catch((e) => reportError(e));
     refreshSnapshots();
   }, []);
 
@@ -117,7 +124,7 @@ export default function ComparePage({ onShowJobs }: { onShowJobs: () => void }) 
           : `Reading ${env}. A first capture reads the whole configuration and can take several minutes — follow it in Jobs. It can be cancelled; nothing is written to the environment.`,
       );
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     }
   };
 
@@ -130,7 +137,7 @@ export default function ComparePage({ onShowJobs }: { onShowJobs: () => void }) 
       setReport(await diffEnvironments(source, target));
     } catch (e) {
       setReport(null);
-      setError(String(e));
+      reportError(e);
     } finally {
       setBusy(false);
     }
@@ -143,7 +150,7 @@ export default function ComparePage({ onShowJobs }: { onShowJobs: () => void }) 
       setReport(null);
       setNotice(`Deleted the snapshot of ${env}.`);
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     }
   };
 
@@ -158,7 +165,7 @@ export default function ComparePage({ onShowJobs }: { onShowJobs: () => void }) 
       await exportDiffReport(source, target, path);
       setNotice("Report saved. Setting values were omitted deliberately.");
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     }
   };
 

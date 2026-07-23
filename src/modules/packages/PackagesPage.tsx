@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import ErrorNote from "../../lib/ErrorNote";
+import { logError } from "../../lib/errorLog";
 import {
   addPackageToWorkspace, deployPackageBetweenEnvironments, EnvSummary, listEnvironments,
   listPackages, listWorkspaces, onCatalogUpdated, onJobUpdate, PackageAction, PackageInfo,
@@ -72,6 +73,12 @@ export default function PackagesPage({
   const [maintainer, setMaintainer] = useState(ALL_MAINTAINERS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // Show the failure inline and record it into the app-wide Errors view.
+  const reportError = (e: unknown) => {
+    const message = String(e);
+    setError(message);
+    logError("Packages", message);
+  };
   const [notice, setNotice] = useState("");
   const [dialog, setDialog] = useState<DialogState>(null);
   const [confirmText, setConfirmText] = useState("");
@@ -97,7 +104,7 @@ export default function PackagesPage({
       setEnvs(list);
       const initial = list.find((item) => item.isActive) ?? list[0];
       if (initial) setEnv(initial.name);
-    }).catch((e) => setError(String(e)));
+    }).catch((e) => reportError(e));
   }, []);
 
   /** Lock state is an enhancement, not part of the listing: clio reports none,
@@ -125,7 +132,7 @@ export default function PackagesPage({
       setFromCache(result.fromCache);
     } catch (e) {
       setPackages([]);
-      setError(String(e));
+      reportError(e);
     } finally {
       setLoading(false);
     }
@@ -222,7 +229,7 @@ export default function PackagesPage({
       await runPackageAction({ env, ...opts });
       setNotice("Job started. Follow the live output on the Jobs screen.");
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     }
   };
 
@@ -257,7 +264,7 @@ export default function PackagesPage({
       setSelectedWorkspace(matches[0]?.id ?? "");
       setDialog({ kind: "workspace", pkg });
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     }
   };
 
@@ -272,7 +279,7 @@ export default function PackagesPage({
       setPendingWorkspaceJob({ jobId, workspaceId });
       setNotice(`Adding ${pkg.name} to the workspace. This page will open its Changes tab when the restore finishes.`);
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     }
   };
 
@@ -326,7 +333,7 @@ export default function PackagesPage({
       });
       setNotice(`Deploying ${pkg.name} from ${env} to ${target}. Follow the job output in Jobs.`);
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     }
   };
 

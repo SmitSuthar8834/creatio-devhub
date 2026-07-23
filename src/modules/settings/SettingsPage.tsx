@@ -27,6 +27,7 @@ import {
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { checkForAppUpdate, installAppUpdate, Update } from "../../lib/appUpdate";
 import ErrorNote from "../../lib/ErrorNote";
+import { logError } from "../../lib/errorLog";
 import { setThemeMode, ThemeMode, useTheme } from "../../lib/theme";
 import {
   EnvSummary, getGithubStatus, getToolPaths, GithubStatus, listEnvironments, onJobUpdate,
@@ -44,6 +45,12 @@ export default function SettingsPage() {
   const [selected, setSelected] = useState("");
   const [saved, setSaved] = useState("");
   const [error, setError] = useState("");
+  // Show the failure inline and record it into the app-wide Errors view.
+  const reportError = (e: unknown) => {
+    const message = String(e);
+    setError(message);
+    logError("Settings", message);
+  };
   const [busy, setBusy] = useState(false);
   const [github, setGithub] = useState<GithubStatus | null>(null);
   const [gitName, setGitName] = useState("");
@@ -70,7 +77,7 @@ export default function SettingsPage() {
       setSelected(active?.name ?? "");
       setSaved(active?.name ?? "");
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     }
   };
 
@@ -182,7 +189,7 @@ export default function SettingsPage() {
       await setDefaultEnvironment(selected);
       setSaved(selected);
     } catch (e) {
-      setError(String(e));
+      reportError(e);
     } finally {
       setBusy(false);
     }

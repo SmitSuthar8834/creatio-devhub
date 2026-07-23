@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { save } from "@tauri-apps/plugin-dialog";
-import { BookmarkX, CircleCheck, Download, Info, Play, TriangleAlert } from "lucide-react";
+import { BookmarkX, CircleCheck, Download, Info, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,12 +24,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import ErrorNote from "../../lib/ErrorNote";
+import ErrorLogPanel from "../../lib/ErrorLogPanel";
+import { AppErrorEntry, logError, useErrorLog } from "../../lib/errorLog";
 import { EnvSummary, exportSql, listEnvironments, runSql, SqlResult } from "../../lib/ipc";
 
 const SAMPLE = 'SELECT "Id", "Name", "CreatedOn"\nFROM "Contact"\nORDER BY "CreatedOn" DESC\nLIMIT 50';
 const SAVED_QUERIES_KEY = "creatio-devhub.saved-sql-queries.v1";
-const ERROR_LOG_KEY = "creatio-devhub.sql-error-log.v1";
-const ERROR_LOG_LIMIT = 50;
+const SQL_SOURCE = "SQL";
 
 interface SavedSqlQuery {
   id: string;
@@ -37,16 +38,6 @@ interface SavedSqlQuery {
   env: string;
   query: string;
   updatedAt: number;
-}
-
-interface SqlErrorEntry {
-  id: string;
-  at: number;
-  env: string;
-  query: string;
-  message: string;
-  /** Whether the failure came from running the query or exporting its result. */
-  kind: "run" | "export";
 }
 
 function readSavedQueries(): SavedSqlQuery[] {
@@ -66,26 +57,6 @@ function readSavedQueries(): SavedSqlQuery[] {
   }
 }
 
-function readErrorLog(): SqlErrorEntry[] {
-  try {
-    const value = JSON.parse(localStorage.getItem(ERROR_LOG_KEY) ?? "[]");
-    if (!Array.isArray(value)) return [];
-    return value.filter(
-      (item): item is SqlErrorEntry =>
-        typeof item?.id === "string" &&
-        typeof item?.at === "number" &&
-        typeof item?.env === "string" &&
-        typeof item?.query === "string" &&
-        typeof item?.message === "string" &&
-        (item?.kind === "run" || item?.kind === "export"),
-    );
-  } catch {
-    return [];
-  }
-}
-
-const newId = () => globalThis.crypto?.randomUUID?.() ?? `id-${Date.now()}-${Math.random()}`;
-
 /**
  * Run SQL against a Creatio environment (via clio + cliogate) and export the
  * result to CSV or Excel. Read-heavy by nature — the grid caps at 5,000 rows,
@@ -103,23 +74,19 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
   const [savedQueries, setSavedQueries] = useState<SavedSqlQuery[]>(readSavedQueries);
   const [savedName, setSavedName] = useState("");
   const [activeSavedId, setActiveSavedId] = useState<string | null>(null);
-  const [errorLog, setErrorLog] = useState<SqlErrorEntry[]>(readErrorLog);
   const [tab, setTab] = useState("editor");
+  const errorLog = useErrorLog(SQL_SOURCE);
 
-  const persistErrorLog = (next: SqlErrorEntry[]) => {
-    const trimmed = next.slice(0, ERROR_LOG_LIMIT);
-    setErrorLog(trimmed);
-    localStorage.setItem(ERROR_LOG_KEY, JSON.stringify(trimmed));
-  };
-
-  // Keep a device-local history of failures so they collect in the Errors tab
-  // instead of flashing once and disappearing.
-  const recordError = (message: string, kind: SqlErrorEntry["kind"], forEnv = env, forQuery = query) => {
+  // Show the failure inline for immediate feedback and record it into the shared
+  // app-wide error log, so it also collects in the Errors tab and global Errors view.
+  const recordError = (
+    message: string,
+    context: "Run" | "Export",
+    forEnv = env,
+    forQuery = query,
+  ) => {
     setError(message);
-    persistErrorLog([
-      { id: newId(), at: Date.now(), env: forEnv, query: forQuery, message, kind },
-      ...errorLog,
-    ]);
+    logError(SQL_SOURCE, message, { context, env: forEnv, detail: forQuery });
   };
 
   useEffect(() => {
@@ -146,7 +113,7 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
       else if (res.rowCount === 0) setNotice("Query ran — 0 rows returned.");
     } catch (e) {
       setResult(null);
-      recordError(String(e), "run", runEnv, runQuery);
+      recordError(String(e), "Run", runEnv, runQuery);
     } finally {
       setLoading(false);
     }
@@ -240,29 +207,21 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
       await exportSql({ env, query, format, path });
       setNotice(`Exported to ${path}`);
     } catch (e) {
-      recordError(String(e), "export");
+      recordError(String(e), "Export");
     } finally {
       setExporting(null);
     }
   };
 
-  const openErrorQuery = (entry: SqlErrorEntry) => {
-    if (envs.some((item) => item.name === entry.env)) setEnv(entry.env);
-    setQuery(entry.query);
+  // Reload the SQL text from a logged error back into the editor. The failing
+  // query is carried on the entry's `detail`.
+  const openErrorQuery = (entry: AppErrorEntry) => {
+    if (entry.env && envs.some((item) => item.name === entry.env)) setEnv(entry.env);
+    if (entry.detail) setQuery(entry.detail);
     setResult(null);
     setError("");
     setNotice(`Loaded the query from the ${new Date(entry.at).toLocaleString()} error.`);
     setTab("editor");
-  };
-
-  const dismissError = (entry: SqlErrorEntry) => {
-    persistErrorLog(errorLog.filter((item) => item.id !== entry.id));
-  };
-
-  const clearErrorLog = () => {
-    if (errorLog.length === 0) return;
-    if (!window.confirm(`Clear all ${errorLog.length} logged error${errorLog.length === 1 ? "" : "s"}?`)) return;
-    persistErrorLog([]);
   };
 
   // An UPDATE/INSERT/DDL that worked: it reports success rather than a grid.
@@ -530,62 +489,19 @@ export default function SqlPage({ onShowJobs }: { onShowJobs: () => void }) {
         </TabsContent>
 
         <TabsContent value="errors" className="grid gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold">Errors</h2>
-              <p className="text-sm text-muted-foreground">
-                Failed runs and exports, most recent first. Stored on this device (last {ERROR_LOG_LIMIT}).
-              </p>
-            </div>
-            {errorLog.length > 0 && (
-              <Button variant="outline" size="sm" onClick={clearErrorLog}>Clear all</Button>
-            )}
+          <div>
+            <h2 className="text-base font-semibold">Errors</h2>
+            <p className="text-sm text-muted-foreground">
+              Failed runs and exports from this screen. They also appear in the app-wide{" "}
+              <strong>Errors</strong> view in the sidebar.
+            </p>
           </div>
-
-          {errorLog.length === 0
-            ? (
-              <div className="grid justify-items-center gap-1 rounded-lg border border-dashed p-8 text-center">
-                <CircleCheck className="size-6 text-success" aria-hidden="true" />
-                <p className="text-sm font-medium">No errors logged</p>
-                <p className="text-sm text-muted-foreground">
-                  When a run or export fails, it will be collected here.
-                </p>
-              </div>
-            )
-            : (
-              <div className="grid gap-3">
-                {errorLog.map((entry) => (
-                  <article key={entry.id} className="grid gap-2 rounded-lg border p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <TriangleAlert className="size-4 text-destructive" aria-hidden="true" />
-                        <Badge variant="secondary">{entry.kind === "export" ? "Export" : "Run"}</Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {entry.env || "no environment"} · {new Date(entry.at).toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="outline" onClick={() => openErrorQuery(entry)}>
-                          Open query
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => dismissError(entry)}
-                        >
-                          Dismiss
-                        </Button>
-                      </div>
-                    </div>
-                    <ErrorNote error={entry.message} />
-                    <code className="truncate font-mono text-xs text-muted-foreground">
-                      {entry.query.replace(/\s+/g, " ").slice(0, 140) || "(empty query)"}
-                    </code>
-                  </article>
-                ))}
-              </div>
-            )}
+          <ErrorLogPanel
+            source={SQL_SOURCE}
+            onReuse={openErrorQuery}
+            reuseLabel="Open query"
+            emptyHint="When a run or export fails, it will be collected here."
+          />
         </TabsContent>
       </Tabs>
     </div>
