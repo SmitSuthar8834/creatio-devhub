@@ -6,19 +6,37 @@ use tauri::{AppHandle, Emitter, State};
 /// clio's own settings file — the single source of truth for environments.
 /// We read it only to LIST environments; secrets are never exposed to the UI.
 pub fn settings_path() -> Result<PathBuf, String> {
-    // clio is a .NET tool and writes appsettings.json under
-    // SpecialFolder.LocalApplicationData: `%LOCALAPPDATA%` on Windows, and
-    // `$XDG_DATA_HOME` (falling back to `~/.local/share`) on macOS/Linux.
-    let base = if cfg!(windows) {
-        std::env::var("LOCALAPPDATA").map_err(|_| "LOCALAPPDATA not set".to_string())?
-    } else {
-        std::env::var("XDG_DATA_HOME")
-            .ok()
-            .filter(|s| !s.is_empty())
-            .or_else(|| std::env::var("HOME").ok().map(|h| format!("{h}/.local/share")))
-            .ok_or_else(|| "HOME not set".to_string())?
-    };
-    Ok(PathBuf::from(base).join("creatio").join("clio").join("appsettings.json"))
+    // clio stores appsettings.json at a per-platform base; the subpath
+    // creatio/clio/appsettings.json is the same everywhere. Verified against a
+    // real install via `clio ver` ("settings file path: ..."):
+    //   Windows:     %LOCALAPPDATA%\creatio\clio\appsettings.json
+    //   macOS/Linux: $HOME/creatio/clio/appsettings.json
+    // (Not the .NET SpecialFolder.LocalApplicationData `~/.local/share` location
+    // one might expect — clio uses the home dir directly on Unix.)
+    let rel = |base: PathBuf| base.join("creatio").join("clio").join("appsettings.json");
+
+    if cfg!(windows) {
+        let base = std::env::var("LOCALAPPDATA").map_err(|_| "LOCALAPPDATA not set".to_string())?;
+        return Ok(rel(PathBuf::from(base)));
+    }
+
+    let home = std::env::var("HOME").map_err(|_| "HOME not set".to_string())?;
+    let primary = rel(PathBuf::from(&home));
+    if primary.exists() {
+        return Ok(primary);
+    }
+    // Fallback for any clio build that follows .NET's LocalApplicationData
+    // instead: $XDG_DATA_HOME, else ~/.local/share.
+    let xdg = std::env::var("XDG_DATA_HOME")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| format!("{home}/.local/share"));
+    let alt = rel(PathBuf::from(xdg));
+    if alt.exists() {
+        return Ok(alt);
+    }
+    // Neither present yet — return the canonical home-dir location.
+    Ok(primary)
 }
 
 #[derive(Clone, Serialize)]
