@@ -376,6 +376,40 @@ export const migrateLookups = (opts: {
   skipBackup: boolean;
 }) => invoke<string>("migrate_lookups", opts);
 
+// ---------- general object (entity) migration ----------
+
+export interface ObjectInfo {
+  table: string;
+  package: string;
+}
+
+export interface ObjectColumn {
+  name: string;
+  dataType: string;
+  nullable: boolean;
+}
+
+export interface ObjectDependency {
+  column: string;
+  referencesTable: string;
+}
+
+/** Search entity objects (Lead, Contact, Account, …) by name. Needs cliogate. */
+export const listObjects = (env: string, filter: string) =>
+  invoke<ObjectInfo[]>("list_objects", { env, filter });
+
+/** An object table's columns, in definition order. */
+export const objectColumns = (env: string, table: string) =>
+  invoke<ObjectColumn[]>("object_columns", { env, table });
+
+/** An object's foreign-key dependencies (column → referenced table). */
+export const objectDependencies = (env: string, table: string) =>
+  invoke<ObjectDependency[]>("object_dependencies", { env, table });
+
+/** Count the rows in an object table — for the source/target refresh view. */
+export const objectRowCount = (env: string, table: string) =>
+  invoke<number>("object_row_count", { env, table });
+
 // ---------- sql ----------
 
 export interface SqlResult {
