@@ -42,6 +42,7 @@ import PackagesPage from "./modules/packages/PackagesPage";
 import SettingsPage from "./modules/settings/SettingsPage";
 import SqlPage from "./modules/sql/SqlPage";
 import ErrorsPage from "./modules/errors/ErrorsPage";
+import ErrorToaster from "./modules/errors/ErrorToaster";
 import UpdateBanner from "./modules/updates/UpdateBanner";
 import WorkspacesPage from "./modules/workspaces/WorkspacesPage";
 import { useErrorLog } from "./lib/errorLog";
@@ -177,6 +178,7 @@ export default function App() {
         </div>
       </SidebarInset>
       <JobToaster onShowJobs={() => setPage("jobs")} />
+      <ErrorToaster onShowErrors={() => setPage("errors")} />
       <Toaster position="bottom-right" closeButton />
     </SidebarProvider>
   );

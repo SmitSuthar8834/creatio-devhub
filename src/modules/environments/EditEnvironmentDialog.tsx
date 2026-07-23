@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ErrorNote from "../../lib/ErrorNote";
+import { logError } from "../../lib/errorLog";
 import { EnvSummary, runClioJob } from "../../lib/ipc";
 
 interface Props {
@@ -41,8 +42,14 @@ export default function EditEnvironmentDialog({ env, onClose, onSubmitted }: Pro
       return;
     }
     const args = ["reg-web-app", env.name, "-u", uri.trim(), "-l", login.trim(), "-p", password];
-    const jobId = await runClioJob("reg-web-app", args, env.name);
-    onSubmitted(jobId);
+    try {
+      const jobId = await runClioJob("reg-web-app", args, env.name);
+      onSubmitted(jobId);
+    } catch (e) {
+      const message = String(e);
+      setError(message);
+      logError("Environments", message, { context: "Update", env: env.name });
+    }
   };
 
   return (

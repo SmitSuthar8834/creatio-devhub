@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ErrorNote from "../../lib/ErrorNote";
+import { logError } from "../../lib/errorLog";
 import { runClioJob } from "../../lib/ipc";
 
 interface Props {
@@ -49,8 +50,14 @@ export default function AddEnvironmentDialog({ onClose, onSubmitted }: Props) {
       }
       args.push("--ClientId", clientId, "--ClientSecret", clientSecret, "--AuthAppUri", authAppUri);
     }
-    const jobId = await runClioJob("reg-web-app", args, name.trim());
-    onSubmitted(jobId);
+    try {
+      const jobId = await runClioJob("reg-web-app", args, name.trim());
+      onSubmitted(jobId);
+    } catch (e) {
+      const message = String(e);
+      setError(message);
+      logError("Environments", message, { context: "Register", env: name.trim() });
+    }
   };
 
   return (
