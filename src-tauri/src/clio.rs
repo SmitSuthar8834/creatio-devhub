@@ -93,7 +93,9 @@ pub fn list_environments() -> Result<Vec<EnvSummary>, String> {
     Ok(envs)
 }
 
-#[tauri::command]
+// `(async)` — this shells `clio reg-web-app` and then re-reads the settings;
+// off the UI thread so switching the default env can't freeze the window.
+#[tauri::command(async)]
 pub fn set_default_environment(app: AppHandle, name: String) -> Result<(), String> {
     let name = name.trim();
     if name.is_empty() {
@@ -173,7 +175,8 @@ fn parse_available_version(out: &str) -> Option<String> {
         .filter(|value| value.chars().next().is_some_and(|c| c.is_ascii_digit()))
 }
 
-#[tauri::command]
+// `(async)` — shells `clio ver` (and dotnet); keep it off the UI thread.
+#[tauri::command(async)]
 pub fn clio_status() -> ClioStatus {
     let dotnet = std::process::Command::new(crate::tools::resolve("dotnet"))
         .arg("--version")

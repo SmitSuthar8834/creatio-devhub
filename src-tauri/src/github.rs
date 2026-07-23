@@ -68,7 +68,9 @@ fn unauthenticated(error: Option<String>) -> GithubStatus {
     }
 }
 
-#[tauri::command]
+// `(async)` — shells `gh api user` (a network call); off the UI thread so a
+// slow or hanging GitHub request can't freeze the window.
+#[tauri::command(async)]
 pub fn github_status() -> GithubStatus {
     // Re-scan on every status check so a gh installed while DevHub is open is
     // picked up by the Refresh button rather than needing a restart.
@@ -128,7 +130,7 @@ pub struct GithubRepo {
 
 /// List the signed-in account's GitHub repositories (for the "Deploy from
 /// GitHub" picker). Read-only; requires `gh` to be authenticated.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn list_github_repos() -> Result<Vec<GithubRepo>, String> {
     let (code, out, err) = capture(
         "gh",
@@ -174,7 +176,7 @@ pub fn list_github_repos() -> Result<Vec<GithubRepo>, String> {
 }
 
 /// List branch names of a `owner/name` repository via the GitHub API.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn list_repo_branches(repo: String) -> Result<Vec<String>, String> {
     let repo = repo.trim();
     if repo.is_empty() || !repo.contains('/') {

@@ -31,7 +31,8 @@ pub struct PackageLockState {
 /// whole list, following `applications::application_extras`: an environment
 /// without cliogate gets an `Err` the Packages screen ignores, and the table
 /// renders exactly as it did before.
-#[tauri::command]
+// `(async)` runs these clio-backed reads off the UI thread — see sql::run_sql.
+#[tauri::command(async)]
 pub fn package_lock_states(env: String) -> Result<Vec<PackageLockState>, String> {
     let sql = r#"SELECT p."Name", p."InstallType" FROM "SysPackage" p ORDER BY p."Name""#;
     let result = crate::sql::query_env(&env, sql)?;
@@ -138,7 +139,7 @@ pub fn parse_package_json(raw: &str) -> Result<Vec<PackageInfo>, String> {
     Ok(packages)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn list_packages(
     cache: State<'_, CacheState>,
     env: String,
