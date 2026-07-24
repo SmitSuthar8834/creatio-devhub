@@ -14,7 +14,55 @@ mod sql;
 mod tools;
 mod workspaces;
 
-use tauri::Manager;
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::{Manager, WindowEvent};
+
+/// Restore and focus the main window (used by the tray icon and menu).
+fn show_main_window(app: &tauri::AppHandle) {
+    if let Some(win) = app.get_webview_window("main") {
+        let _ = win.show();
+        let _ = win.unminimize();
+        let _ = win.set_focus();
+    }
+}
+
+/// Build the system-tray icon with a minimal Show / Quit menu.
+fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
+    let show = MenuItem::with_id(app, "show", "Show Creatio DevHub", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&show, &quit])?;
+
+    let mut builder = TrayIconBuilder::with_id("main-tray")
+        .tooltip("Creatio DevHub")
+        .menu(&menu)
+        // Left-click opens the menu is default on Windows; we also handle it below.
+        .show_menu_on_left_click(false)
+        .on_menu_event(|app, event| match event.id.as_ref() {
+            "show" => show_main_window(app),
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            // Left-click the tray icon to restore the window.
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                show_main_window(tray.app_handle());
+            }
+        });
+
+    // Reuse the app's own icon for the tray.
+    if let Some(icon) = app.default_window_icon().cloned() {
+        builder = builder.icon(icon);
+    }
+
+    builder.build(app)?;
+    Ok(())
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -32,7 +80,17 @@ pub fn run() {
             if let Ok(dir) = app.path().app_data_dir() {
                 app.state::<jobs::JobState>().init_persistence(dir.join("jobs"));
             }
+            setup_tray(app.handle())?;
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // Closing the window hides it to the tray instead of quitting.
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "main" {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             applications::list_applications,

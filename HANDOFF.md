@@ -2,7 +2,14 @@
 
 Last verified: **2026-07-24**
 
-Current version: **0.9.3** (**v0.9.3** — WorkspaceDetail clarity pass: a new **Packages** tab
+Current version: **0.9.4** (**v0.9.4** — minimize-to-tray: clicking the window's close (X)
+button now hides Creatio DevHub to the Windows system tray instead of quitting, so background
+jobs keep running. Left-click the tray icon to restore the window; right-click gives a minimal
+**Show Creatio DevHub / Quit** menu (Quit is the only real exit). Implemented in
+`src-tauri/src/lib.rs` via `TrayIconBuilder` + a `WindowEvent::CloseRequested` handler that calls
+`prevent_close()` + `hide()`; the `tray-icon` Cargo feature was enabled. Tray reuses the existing
+app icon (`icons/icon.ico`). `cargo check` clean; ⚠ native tray NOT yet live-run in the window
+before tagging, per the usual pattern. Previous — **v0.9.3** — WorkspaceDetail clarity pass: a new **Packages** tab
 lists the packages a workspace version-controls (backend `list_workspace_packages` reading
 `.clio/workspaceSettings.json`), and the ambiguous **Pull/Push from Cloud** buttons are renamed
 **Pull/Push from Creatio** with env-named tooltips + a push dialog that spells out "not a GitHub
@@ -39,7 +46,10 @@ needed raw SQL to bypass app validation). The method is preserved in
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.9.2> (**Migration →
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.9.4> (**minimize
+to system tray** — see the version note at the top of this file).
+
+Previous release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.9.2> (**Migration →
 Objects: multi-package objects shown honestly**. v0.9.1 collapsed each object to one row but labelled it
 with only its base package, hiding that e.g. `Account` lives in ~9 packages. `list_objects_sql` now
 `GROUP BY "Name"` and returns `Package` (the `ExtendParent = false` home schema) plus `Packages` — the
