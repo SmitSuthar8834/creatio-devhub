@@ -259,7 +259,7 @@
       <a href="#specs">Requirements</a>
       <a href="#feedback">Feedback</a>
       <a href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">GitHub</a>
-      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.1/creatio-devhub_0.9.1_x64-setup.exe">
+      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.2/creatio-devhub_0.9.2_x64-setup.exe">
         <svg class="ic"><use href="#i-dl"/></svg> Download
       </a>
     </nav>
@@ -274,7 +274,7 @@
         <h1>Ship Creatio work without living in the <em>terminal</em>.</h1>
         <p class="lede">A native desktop workbench for Creatio developers: environments, source-controlled workspaces, package &amp; app deployment, SQL, and GitHub — all driven from one app.</p>
         <div class="cta-row">
-          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.1/creatio-devhub_0.9.1_x64-setup.exe">
+          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.2/creatio-devhub_0.9.2_x64-setup.exe">
             <svg class="ic"><use href="#i-dl"/></svg> <span class="hero-dl-label">Download for Windows</span>
           </a>
           <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">
@@ -282,7 +282,7 @@
           </a>
         </div>
         <div class="meta">
-          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.9.1 · Windows 10/11 (x64)</span>
+          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.9.2 · Windows 10/11 (x64)</span>
           <span class="ok"><svg class="ic"><use href="#i-check"/></svg> signed installer &amp; auto-updates</span>
         </div>
       </div>
@@ -326,7 +326,7 @@
     <div class="wrap">
       <div class="stats">
         <div class="stat stat-live"><div class="stat-num" id="dl-count">—</div><div class="stat-cap">installer downloads</div></div>
-        <div class="stat"><div class="stat-num" id="dl-version">v0.9.1</div><div class="stat-cap">latest version</div></div>
+        <div class="stat"><div class="stat-num" id="dl-version">v0.9.2</div><div class="stat-cap">latest version</div></div>
         <div class="stat"><div class="stat-num" id="dl-releases">29</div><div class="stat-cap">releases shipped</div></div>
       </div>
       <div class="stats-note" id="stats-note">Counts update live from <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases" target="_blank" rel="noopener">GitHub Releases</a>.</div>
@@ -411,11 +411,19 @@
       </div>
       <div class="changelog">
         <div class="rel">
-          <div class="rel-tag">v0.9.1<span class="badge">latest</span></div>
+          <div class="rel-tag">v0.9.2<span class="badge">latest</span></div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Migration &rsaquo; Objects: honest about multi-package objects</h4>
+            <p>An object like <strong>Account</strong> is defined and extended across many packages &mdash; nine, in a typical instance. The list now shows each object once but tells the truth about that: the badge reads its home package plus a count (e.g. <strong>CrtCoreBase&nbsp;+8</strong>), and hovering it lists every package the object touches. Objects that live in a single package just show that package, as before.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.9.1</div>
           <div>
             <div class="rel-date">July 2026</div>
             <h4>Migration &rsaquo; Objects: each object listed once</h4>
-            <p>The Migration screen's <strong>Objects</strong> search used to list a common object like <strong>Account</strong> many times over &mdash; once for every package that defines or extends it. Because those entries shared a name, the list rendered scrambled and picking one object highlighted almost all of them. Now each object appears <strong>exactly once</strong>, tagged with its home package, so the list is clean and selection behaves.</p>
+            <p>The Migration screen's <strong>Objects</strong> search used to list a common object like <strong>Account</strong> many times over &mdash; once for every package that defines or extends it. Because those entries shared a name, the list rendered scrambled and picking one object highlighted almost all of them. Now each object appears <strong>exactly once</strong>, so the list is clean and selection behaves.</p>
           </div>
         </div>
         <div class="rel">
@@ -675,12 +683,12 @@
         <div class="dl-platform">
           <h3 class="dl-os"><svg class="ic"><use href="#i-check"/></svg> Windows</h3>
           <div class="dl-links">
-            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.1/creatio-devhub_0.9.1_x64-setup.exe">
+            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.2/creatio-devhub_0.9.2_x64-setup.exe">
               <svg class="ic"><use href="#i-dl"/></svg> Download installer (.exe)
             </a>
-            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.1/creatio-devhub_0.9.1_x64_en-US.msi">Get the .msi</a>
+            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.2/creatio-devhub_0.9.2_x64_en-US.msi">Get the .msi</a>
           </div>
-          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.9.1 · NSIS &amp; MSI · signed · auto-updates after install</div>
+          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.9.2 · NSIS &amp; MSI · signed · auto-updates after install</div>
         </div>
 
         <div class="dl-platform">
