@@ -1,8 +1,8 @@
 # Creatio DevHub — Engineering Handoff
 
-Last verified: **2026-07-23**
+Last verified: **2026-07-24**
 
-Current version: **0.8.10** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
+Current version: **0.9.1** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
 table below was last written; see per-release commit messages for their scope. v0.4.0 is the
 shadcn/ui design-system release described below; v0.5.0 adds the automatic update notice and
 stops trusting clio's exit code over its own output; v0.5.1 stops reporting a successful SQL
@@ -33,14 +33,23 @@ needed raw SQL to bypass app validation). The method is preserved in
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.8.10> (**Migration →
-Objects, Stage 2**: copy one entity object's rows between environments as a full-column
-`INSERT … ON CONFLICT ("Id") DO UPDATE`, with an owner/created-by → target-Supervisor remap, Preview
-SQL, a type-to-confirm dialog, and a runnable rollback. Raw-SQL, one object at a time — no
-cross-object dependency ordering yet; the target must already hold the objects it depends on. **Not
-runtime-tested against a live Creatio DB at release** — validate on dev-834.)
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.9.1> (**Migration →
+Objects list de-duplication fix**: `list_objects` (SysSchema) returned one row per *package* that
+defines or replaces an object, so a common object like `Account` appeared ~9 times — once per package
+badge. The duplicate `Name`s collided on the React list's `key={obj.table}` / `selected === obj.table`
+identity, so the list rendered corrupted and selecting one object highlighted nearly all of them. Fixed
+in `objectmove.rs` with `SELECT DISTINCT ON ("Name") … ORDER BY "Name", "ExtendParent" ASC NULLS LAST,
+"Package"` — one row per object, the `ExtendParent = false` base schema winning the package badge so it
+names the object's home package. Verified against live Dev-thoughtworks (`Account` → one row,
+`CrtCoreBase`) and in the real UI (8 unique rows, exactly one selected, no duplicate-key warning); 9
+objectmove tests pass.)
 
-Previous releases: **v0.8.9** (Migration → Objects, Stage 1: read-only object search, source/target
+Previous release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.9.0> (GitHub
+sign-in: device-code surfaced in Settings, PAT token sign-in, and a workspace repo picker).
+
+Previous releases: **v0.8.10** (Migration → Objects, Stage 2: copy one entity object's rows between
+environments as a full-column `INSERT … ON CONFLICT ("Id") DO UPDATE`, owner/created-by →
+target-Supervisor remap, Preview SQL, type-to-confirm dialog, runnable rollback). **v0.8.9** (Migration → Objects, Stage 1: read-only object search, source/target
 row counts with refresh, and a lazily-expanding FK dependency hierarchy with cycle detection; plus
 `#[tauri::command(async)]` on clio-backed commands so long clio calls no longer freeze the window).
 **v0.8.8** (app-wide Errors sidebar view — source-tagged, filterable, count badge, toast on each new

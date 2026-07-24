@@ -51,10 +51,19 @@ pub struct ObjectDependency {
 /// term can't return the whole schema. Only schemas whose physical table exists
 /// and carries an `Id` column are listed — the same guard the lookup code uses,
 /// which drops abstract/virtual schemas that have no table to copy.
+///
+/// One entity object maps to one physical table, but Creatio holds a separate
+/// `SysSchema` row for every package that defines or *replaces* it — so a common
+/// object like `Account` has many rows, one per package. Migration is
+/// table-level (a full-column upsert on the physical table), so listing the same
+/// table N times is noise, and the duplicate names break the UI's row identity.
+/// `DISTINCT ON ("Name")` collapses each object to a single row, and the
+/// `ExtendParent` tie-break keeps the base schema (`false`) over its per-package
+/// replacements (`true`) so the package badge names the object's home package.
 pub fn list_objects_sql(filter: &str) -> String {
     let needle = escape_literal(filter);
     format!(
-        r#"SELECT s."Name" AS "Table", COALESCE(p."Name", '') AS "Package"
+        r#"SELECT DISTINCT ON (s."Name") s."Name" AS "Table", COALESCE(p."Name", '') AS "Package"
 FROM "SysSchema" s
 LEFT JOIN "SysPackage" p ON p."Id" = s."SysPackageId"
 WHERE s."ManagerName" = 'EntitySchemaManager'
@@ -63,7 +72,7 @@ WHERE s."ManagerName" = 'EntitySchemaManager'
     WHERE c.table_name = s."Name" AND c.column_name = 'Id'
   )
   AND s."Name" ILIKE '%{needle}%'
-ORDER BY s."Name"
+ORDER BY s."Name", s."ExtendParent" ASC NULLS LAST, p."Name"
 LIMIT 300"#
     )
 }
@@ -620,6 +629,11 @@ mod tests {
         assert!(sql.contains("ILIKE '%Lead%'"));
         assert!(sql.contains("'EntitySchemaManager'"));
         assert!(sql.contains("LIMIT 300"));
+        // One row per object: an entity defined/replaced across several packages
+        // must not appear once per package (that broke the list's row identity).
+        assert!(sql.contains(r#"DISTINCT ON (s."Name")"#));
+        // The base schema (ExtendParent = false) wins the per-object package badge.
+        assert!(sql.contains(r#"s."ExtendParent" ASC"#));
         // A quote in the filter is escaped, never breaking out of the literal.
         assert!(list_objects_sql("O'Brien").contains("ILIKE '%O''Brien%'"));
     }
