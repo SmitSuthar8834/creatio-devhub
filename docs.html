@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0F172A">
+<meta name="description" content="The complete Creatio DevHub guide — every screen and feature, step by step, with screenshots.">
+<title>Creatio DevHub — Guide &amp; Documentation</title>
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">&#128421;</text></svg>'>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0F172A; --surface:#1E293B; --surface-2:#172033; --muted:#272F42;
+    --border:#2C3A52; --border-2:#475569; --fg:#F8FAFC; --fg-soft:#A3B0C6; --fg-faint:#6B7A94;
+    --accent:#22C55E; --accent-dim:#16A34A; --on-accent:#04140A; --danger:#EF4444; --info:#818CF8;
+    --font-sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"Cascadia Code","SF Mono",Consolas,monospace;
+    --r:12px; --shadow:0 24px 64px -28px rgba(0,0,0,.85);
+    --nav-h:64px;
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; scroll-padding-top:calc(var(--nav-h) + 20px); }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--font-sans);
+    line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a { color:inherit; text-decoration:none; }
+  .ic { width:18px; height:18px; flex:none; stroke:currentColor; fill:none;
+    stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .eyebrow { font-family:var(--font-mono); font-size:12px; font-weight:500;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--accent); }
+  code, kbd { font-family:var(--font-mono); font-size:.88em; }
+  code { background:var(--muted); padding:.12em .42em; border-radius:6px; color:#DCE6F5; border:1px solid var(--border); }
+  kbd { background:var(--surface); border:1px solid var(--border-2); border-bottom-width:2px;
+    padding:.1em .4em; border-radius:6px; font-size:.8em; color:var(--fg-soft); }
+
+  /* topbar */
+  .topbar { position:sticky; top:0; z-index:60; background:rgba(15,23,42,.86);
+    backdrop-filter:blur(14px); border-bottom:1px solid var(--border); }
+  .topbar-in { display:flex; align-items:center; gap:20px; height:var(--nav-h);
+    max-width:1280px; margin:0 auto; padding:0 24px; }
+  .brand { display:flex; align-items:center; gap:11px; font-weight:700; letter-spacing:-.01em; }
+  .brand-mark { width:34px; height:34px; border-radius:10px; flex:none; display:grid; place-items:center;
+    background:linear-gradient(150deg,var(--accent),var(--accent-dim)); color:var(--on-accent); }
+  .brand-mark svg { width:19px; height:19px; stroke-width:2.4; }
+  .brand small { display:block; font-family:var(--font-mono); font-size:10px; font-weight:400; color:var(--fg-faint); margin-top:1px; }
+  .top-links { margin-left:auto; display:flex; align-items:center; gap:8px; }
+  .top-links a { padding:8px 12px; border-radius:9px; color:var(--fg-soft); font-size:14px; font-weight:500; }
+  .top-links a:hover { color:var(--fg); background:var(--muted); }
+  .btn { display:inline-flex; align-items:center; gap:8px; border-radius:10px; font-weight:600;
+    font-size:14px; padding:9px 15px; border:1px solid transparent; cursor:pointer; }
+  .btn-primary { background:var(--accent); color:var(--on-accent); }
+  .btn-primary:hover { background:#2ee06a; }
+  .btn-ghost { border-color:var(--border-2); color:var(--fg); }
+  .btn-ghost:hover { background:var(--muted); }
+
+  /* layout */
+  .shell { max-width:1280px; margin:0 auto; padding:0 24px;
+    display:grid; grid-template-columns:256px minmax(0,1fr); gap:44px; align-items:start; }
+  .toc { position:sticky; top:calc(var(--nav-h) + 24px); align-self:start;
+    max-height:calc(100vh - var(--nav-h) - 48px); overflow-y:auto; padding:22px 0 40px; }
+  .toc h4 { font-size:11px; letter-spacing:.11em; text-transform:uppercase; color:var(--fg-faint);
+    margin:20px 0 8px; font-weight:600; }
+  .toc h4:first-child { margin-top:4px; }
+  .toc a { display:flex; align-items:center; gap:9px; padding:6px 11px; border-radius:8px;
+    color:var(--fg-soft); font-size:13.5px; border-left:2px solid transparent; }
+  .toc a .ic { width:15px; height:15px; color:var(--fg-faint); }
+  .toc a:hover { color:var(--fg); background:var(--muted); }
+  .toc a.active { color:var(--fg); background:color-mix(in srgb, var(--accent) 12%, transparent);
+    border-left-color:var(--accent); }
+  .toc a.active .ic { color:var(--accent); }
+
+  main { min-width:0; padding:40px 0 96px; }
+
+  .hero-doc { border-bottom:1px solid var(--border); padding-bottom:34px; margin-bottom:8px; }
+  .hero-doc h1 { font-size:clamp(30px,4.4vw,44px); line-height:1.08; letter-spacing:-.025em;
+    margin:14px 0 12px; font-weight:800; }
+  .hero-doc p.lead { font-size:18px; color:var(--fg-soft); max-width:60ch; margin:0; }
+  .hero-meta { display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; }
+  .chip { display:inline-flex; align-items:center; gap:7px; font-size:12.5px; color:var(--fg-soft);
+    background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:6px 12px; }
+  .chip .ic { width:14px; height:14px; color:var(--accent); }
+
+  section.doc { padding-top:52px; scroll-margin-top:calc(var(--nav-h) + 20px); }
+  section.doc > .eyebrow { display:block; margin-bottom:8px; }
+  section.doc h2 { font-size:27px; letter-spacing:-.02em; margin:0 0 6px; font-weight:750; }
+  section.doc h3 { font-size:17.5px; margin:34px 0 8px; font-weight:650; letter-spacing:-.01em; }
+  section.doc h3 .num { color:var(--accent); font-family:var(--font-mono); font-size:14px; margin-right:8px; }
+  section.doc p { color:var(--fg-soft); margin:12px 0; }
+  section.doc p strong, section.doc li strong { color:var(--fg); font-weight:600; }
+  section.doc ul, section.doc ol { color:var(--fg-soft); padding-left:22px; margin:12px 0; }
+  section.doc li { margin:7px 0; }
+  section.doc ul.plain { list-style:none; padding-left:0; }
+  section.doc ul.plain li { display:flex; gap:11px; align-items:flex-start; margin:11px 0; }
+  section.doc ul.plain li .ic { color:var(--accent); margin-top:3px; width:17px; height:17px; }
+
+  .lead-row { display:flex; gap:14px; align-items:flex-start; }
+  .lead-ic { width:42px; height:42px; border-radius:11px; flex:none; display:grid; place-items:center;
+    background:color-mix(in srgb, var(--accent) 16%, transparent); color:var(--accent); border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+  .lead-ic svg { width:22px; height:22px; }
+
+  figure { margin:24px 0 6px; }
+  .shot { border-radius:14px; border:1px solid var(--border); overflow:hidden; background:var(--surface-2);
+    box-shadow:var(--shadow); cursor:zoom-in; }
+  .shot-bar { display:flex; align-items:center; gap:7px; padding:10px 14px; background:var(--surface);
+    border-bottom:1px solid var(--border); }
+  .dot { width:11px; height:11px; border-radius:50%; }
+  .shot-bar .grow { flex:1; }
+  .shot-bar span.path { font-family:var(--font-mono); font-size:11px; color:var(--fg-faint); }
+  .shot img { display:block; width:100%; height:auto; }
+  figcaption { color:var(--fg-faint); font-size:13px; margin-top:11px; padding-left:2px; }
+  figcaption b { color:var(--fg-soft); font-weight:600; }
+
+  .callout { display:flex; gap:12px; border:1px solid var(--border); background:var(--surface);
+    border-radius:12px; padding:15px 17px; margin:22px 0; }
+  .callout .ic { flex:none; margin-top:2px; }
+  .callout.tip { border-color:color-mix(in srgb, var(--accent) 40%, var(--border)); }
+  .callout.tip .ic { color:var(--accent); }
+  .callout.warn { border-color:color-mix(in srgb, #F59E0B 45%, var(--border)); }
+  .callout.warn .ic { color:#F59E0B; }
+  .callout p { margin:0; color:var(--fg-soft); font-size:14.5px; }
+  .callout b { color:var(--fg); }
+
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+  @media (max-width:1000px){ .grid2 { grid-template-columns:1fr; } }
+
+  footer { border-top:1px solid var(--border); margin-top:40px; }
+  .foot-in { max-width:1280px; margin:0 auto; padding:34px 24px; display:flex; flex-wrap:wrap;
+    gap:16px; align-items:center; color:var(--fg-faint); font-size:13.5px; }
+  .foot-in a { color:var(--fg-soft); } .foot-in a:hover { color:var(--fg); }
+
+  /* mobile TOC */
+  .toc-toggle { display:none; }
+  @media (max-width:900px){
+    .shell { grid-template-columns:1fr; gap:0; }
+    .toc { position:fixed; inset:var(--nav-h) 0 auto 0; z-index:50; background:var(--bg);
+      border-bottom:1px solid var(--border); max-height:70vh; padding:14px 20px;
+      transform:translateY(-140%); transition:transform .25s ease; }
+    .toc.open { transform:translateY(0); }
+    .toc-toggle { display:inline-flex; }
+    main { padding-top:24px; }
+  }
+
+  /* lightbox */
+  .lb { position:fixed; inset:0; z-index:100; background:rgba(3,7,18,.92); display:none;
+    align-items:center; justify-content:center; padding:32px; cursor:zoom-out; }
+  .lb.open { display:flex; }
+  .lb img { max-width:100%; max-height:100%; border-radius:10px; box-shadow:var(--shadow); }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+  <symbol id="i-branch" viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
+  <symbol id="i-pkg" viewBox="0 0 24 24"><path d="m7.5 4.3 9 5.1"/><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.8 2.2a2 2 0 0 0-1.6 0L2.6 6.1a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.6 0l8.6-3.9a1 1 0 0 0 0-1.8Z"/><path d="m6.1 10.4-3.5 1.6a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.6 0l8.6-3.9a1 1 0 0 0 0-1.8l-3.5-1.6"/></symbol>
+  <symbol id="i-compare" viewBox="0 0 24 24"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M21 3l-7 7"/><path d="M3 3l7 7"/><path d="M16 21h5v-5"/><path d="M8 21H3v-5"/><path d="M21 21l-7-7"/><path d="M3 21l7-7"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="m8 3-4 4 4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></symbol>
+  <symbol id="i-term" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-cog" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-gh" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.7 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.5 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></symbol>
+</svg>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark"><svg viewBox="0 0 24 24" class="ic"><use href="#i-code"/></svg></span>
+      <span>DevHub <small>guide &amp; documentation</small></span>
+    </a>
+    <div class="top-links">
+      <button class="btn btn-ghost toc-toggle" id="tocToggle" aria-label="Contents"><svg class="ic"><use href="#i-menu"/></svg> Contents</button>
+      <a href="index.html">Home</a>
+      <a class="btn btn-ghost" href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener"><svg class="ic"><use href="#i-gh"/></svg> GitHub</a>
+      <a class="btn btn-primary" href="index.html#download"><svg class="ic"><use href="#i-dl"/></svg> Download</a>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <!-- ============ TABLE OF CONTENTS ============ -->
+  <aside class="toc" id="toc">
+    <h4>Start here</h4>
+    <a href="#overview"><svg class="ic"><use href="#i-book"/></svg> Overview</a>
+    <a href="#getting-started"><svg class="ic"><use href="#i-rocket"/></svg> Getting started</a>
+    <a href="#layout"><svg class="ic"><use href="#i-home"/></svg> The window, tour</a>
+    <h4>Every screen</h4>
+    <a href="#environments"><svg class="ic"><use href="#i-db"/></svg> Environments</a>
+    <a href="#workspaces"><svg class="ic"><use href="#i-branch"/></svg> Workspaces &amp; Git</a>
+    <a href="#packages"><svg class="ic"><use href="#i-pkg"/></svg> Packages</a>
+    <a href="#applications"><svg class="ic"><use href="#i-layers"/></svg> Applications</a>
+    <a href="#compare"><svg class="ic"><use href="#i-compare"/></svg> Compare</a>
+    <a href="#migration"><svg class="ic"><use href="#i-swap"/></svg> Migration</a>
+    <a href="#sql"><svg class="ic"><use href="#i-term"/></svg> SQL</a>
+    <a href="#jobs"><svg class="ic"><use href="#i-list"/></svg> Jobs</a>
+    <a href="#errors"><svg class="ic"><use href="#i-alert"/></svg> Errors</a>
+    <a href="#settings"><svg class="ic"><use href="#i-cog"/></svg> Settings</a>
+    <h4>Good to know</h4>
+    <a href="#safety"><svg class="ic"><use href="#i-shield"/></svg> Safety &amp; updates</a>
+  </aside>
+
+  <!-- ============ CONTENT ============ -->
+  <main>
+    <div class="hero-doc" id="overview">
+      <span class="eyebrow">Documentation</span>
+      <h1>The complete DevHub guide.</h1>
+      <p class="lead">Every screen, every button — what it is, where it lives, and how to use it, with a screenshot for each. If you have never opened DevHub before, start at the top and read straight down.</p>
+      <div class="hero-meta">
+        <span class="chip"><svg class="ic"><use href="#i-check"/></svg> 10 screens covered</span>
+        <span class="chip"><svg class="ic"><use href="#i-check"/></svg> Windows &amp; macOS</span>
+        <span class="chip"><svg class="ic"><use href="#i-check"/></svg> Click any image to zoom</span>
+      </div>
+    </div>
+
+    <p style="margin-top:22px; color:var(--fg-soft)">
+      <b style="color:var(--fg)">What is DevHub?</b> It is a desktop app — think “GitHub Desktop for Creatio.” It puts a real
+      interface over three command-line tools you would otherwise type by hand: <code>clio</code> (Creatio), <code>git</code>,
+      and <code>gh</code> (GitHub). You manage environments, version-control packages, run SQL, compare and move data, and
+      deploy — without living in a terminal. DevHub stores no passwords; <code>clio</code> owns those.
+    </p>
+
+    <!-- GETTING STARTED -->
+    <section class="doc" id="getting-started">
+      <span class="eyebrow">Setup</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-rocket"/></svg></span>
+        <div>
+          <h2>Getting started</h2>
+          <p>Install the app, point it at your tools, and register your first environment. This is a one-time setup.</p>
+        </div>
+      </div>
+
+      <h3><span class="num">1</span>Install DevHub</h3>
+      <p>Download the signed installer from the <a href="index.html#download" style="color:var(--accent)">home page</a>.
+      On <strong>Windows</strong>, run the <code>.exe</code> (or <code>.msi</code>). On <strong>macOS</strong>, open the
+      universal <code>.dmg</code>; the first launch needs <strong>right-click → Open</strong> until the build is notarized.
+      Updates are signed and arrive automatically — see <a href="#safety" style="color:var(--accent)">Safety &amp; updates</a>.</p>
+
+      <h3><span class="num">2</span>Install the command-line tools DevHub drives</h3>
+      <p>DevHub does not replace <code>clio</code>, <code>git</code>, and <code>gh</code> — it drives them. It searches your
+      <code>PATH</code> and the usual install locations automatically. If any tool is missing or lives somewhere unusual, the
+      <a href="#settings" style="color:var(--accent)">Settings</a> screen shows you exactly what it found and lets you install
+      or pin a path. <code>clio</code> itself can be installed, updated, or repaired from inside DevHub.</p>
+
+      <h3><span class="num">3</span>Register your first environment</h3>
+      <p>Open the <a href="#environments" style="color:var(--accent)">Environments</a> screen, click
+      <strong>Add environment</strong>, and enter your Creatio URL and credentials. Then <strong>Install gate</strong> —
+      the <em>cliogate</em> helper that unlocks SQL, lookup capture, and object inspection. You are ready to work.</p>
+
+      <div class="callout tip">
+        <svg class="ic"><use href="#i-check"/></svg>
+        <p><b>The green dot, bottom-left of every screen, means “Local desktop.”</b> DevHub runs entirely on your machine
+        and talks to your environments directly — nothing is proxied through a server.</p>
+      </div>
+    </section>
+
+    <!-- LAYOUT TOUR -->
+    <section class="doc" id="layout">
+      <span class="eyebrow">Orientation</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></span>
+        <div>
+          <h2>The window, in one tour</h2>
+          <p>Every screen shares the same frame. Learn it once and you can find anything.</p>
+        </div>
+      </div>
+
+      <ul class="plain">
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Left sidebar</b> — the ten screens. It collapses to icons with the toggle at the top; hover a collapsed icon for its label. A red badge on <b>Errors</b> counts unread failures.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Header</b> — shows where you are (“<i>Screen</i> / DevHub”) and a <b>Help &amp; updates</b> shortcut to Settings.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Running-job toaster, bottom-right</b> — whenever DevHub is doing something (a capture, a deploy), a live indicator shows the phase and an <b>Open Jobs</b> link. It never blocks you.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Banners</b> — a slim bar appears under the header only when it matters: <code>clio</code> needs attention, or a new DevHub release is ready.</span></li>
+      </ul>
+
+      <figure>
+        <div class="shot" data-full="assets/docs/environments.png">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">DevHub — Environments</span></div>
+          <img src="assets/docs/environments.png" alt="DevHub window showing the sidebar, header, environment cards and the running-job toaster" loading="lazy">
+        </div>
+        <figcaption><b>The shared frame.</b> Sidebar (left), header (top), content (center), and the live job indicator (bottom-right). The <code>Errors</code> badge shows unread failures.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ENVIRONMENTS -->
+    <section class="doc" id="environments">
+      <span class="eyebrow">Screen 1</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-db"/></svg></span>
+        <div>
+          <h2>Environments</h2>
+          <p>Every Creatio instance you work with — local, dev, staging, cloud — as a card you can act on.</p>
+        </div>
+      </div>
+
+      <p>Each card carries the environment’s <strong>URL</strong>, its <strong>auth kind</strong> (OAuth or password),
+      and tags for <strong>default</strong> and <strong>dev mode</strong>. The buttons on every card:</p>
+      <ul class="plain">
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Ping</b> — check the instance is reachable and you are authenticated.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Open</b> — launch the Creatio app in your browser.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Settings</b> — change the URL or credentials.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Install gate</b> — install/update <em>cliogate</em>, required for SQL, lookup capture, and object inspection.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Remove</b> — unregister the environment from clio.</span></li>
+      </ul>
+      <p>Use <strong>Add environment</strong> (top-right) to register a new one. The card marked <strong>default</strong> is
+      the one DevHub pre-selects everywhere else — you set it here or in Settings.</p>
+
+      <figure>
+        <div class="shot" data-full="assets/docs/environments.png">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Environments</span></div>
+          <img src="assets/docs/environments.png" alt="Environments screen with four instance cards" loading="lazy">
+        </div>
+        <figcaption><b>Environments.</b> One card per instance, with per-card actions. The <b>default</b> tag marks the active environment used across DevHub.</figcaption>
+      </figure>
+    </section>
+
+    <!-- WORKSPACES -->
+    <section class="doc" id="workspaces">
+      <span class="eyebrow">Screen 2</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-branch"/></svg></span>
+        <div>
+          <h2>Workspaces &amp; Git</h2>
+          <p>A workspace is a local, Git-tracked folder holding Creatio package source. Pull from Creatio, commit, push to Creatio, and sync with GitHub.</p>
+        </div>
+      </div>
+
+      <p>The list shows each workspace with its environment, branch, remote status, and how many files are uncommitted.
+      Two buttons up top: <strong>New workspace</strong> (create one — empty, or seeded from packages) and
+      <strong>Deploy from GitHub</strong> (clone a repo and push it straight into an environment). Click <strong>Open</strong>
+      on a card to enter its detail view.</p>
+
+      <h3>Inside a workspace</h3>
+      <p>The detail view is where day-to-day version control happens. Along the top: <strong>Add package</strong>,
+      <strong>Pull from Creatio</strong> (fetch the latest package source), and <strong>Push to Creatio</strong> (pack and
+      install back). Three tabs organise the rest:</p>
+      <ul class="plain">
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Changes</b> — every modified/added file with its status (<code>M</code>, <code>A</code>). Click one to see its diff on the right. Type a message and <b>Commit</b>.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Packages</b> — which packages this workspace version-controls.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>History</b> — the commit log, plus GitHub wiring: pick or change the remote repository, and push your branch.</span></li>
+      </ul>
+
+      <div class="grid2">
+        <figure>
+          <div class="shot" data-full="assets/docs/workspace-detail.png">
+            <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Workspace · Changes</span></div>
+            <img src="assets/docs/workspace-detail.png" alt="Workspace detail, Changes tab" loading="lazy">
+          </div>
+          <figcaption><b>Changes &amp; commit.</b> Staged file list, diff viewer, and a commit box — Pull / Push to Creatio up top.</figcaption>
+        </figure>
+        <figure>
+          <div class="shot" data-full="assets/docs/workspace-history.png">
+            <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Workspace · History</span></div>
+            <img src="assets/docs/workspace-history.png" alt="Workspace detail, History tab" loading="lazy">
+          </div>
+          <figcaption><b>History &amp; GitHub.</b> Commit log plus repository picker and remote push.</figcaption>
+        </figure>
+      </div>
+
+      <figure>
+        <div class="shot" data-full="assets/docs/workspaces.png">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Workspaces</span></div>
+          <img src="assets/docs/workspaces.png" alt="Workspaces list" loading="lazy">
+        </div>
+        <figcaption><b>The workspace list.</b> Each card shows branch, remote status, uncommitted count, and last pull/push.</figcaption>
+      </figure>
+    </section>
+
+    <!-- PACKAGES -->
+    <section class="doc" id="packages">
+      <span class="eyebrow">Screen 3</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-pkg"/></svg></span>
+        <div>
+          <h2>Packages</h2>
+          <p>Browse every package in an environment, act on it, and move it between environments.</p>
+        </div>
+      </div>
+
+      <p>Pick an <strong>Environment</strong> and, optionally, filter by name or maintainer. The table lists each package’s
+      <strong>version</strong>, <strong>maintainer</strong>, and <strong>lock state</strong>. Per-row actions:</p>
+      <ul class="plain">
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Pull</b> — download the package source.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Add to workspace</b> — bring it under version control in a workspace.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>More</b> — lock / unlock, activate / deactivate, hotfix, bump version, delete, and deploy to another environment.</span></li>
+      </ul>
+      <p>The <strong>Install archive</strong> button (or the drop zone) installs a <code>.zip</code>/<code>.gz</code> package.
+      Data comes from a fast local cache; <strong>Refresh</strong> re-reads the environment.</p>
+
+      <figure>
+        <div class="shot" data-full="assets/docs/packages.png">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Packages</span></div>
+          <img src="assets/docs/packages.png" alt="Packages table with lock states and row actions" loading="lazy">
+        </div>
+        <figcaption><b>Packages.</b> Version, maintainer, and lock state per package; Pull, Add to workspace, and a <b>More</b> menu for the rest. Drag a package archive onto the drop zone to install it.</figcaption>
+      </figure>
+    </section>
+
+    <!-- APPLICATIONS -->
+    <section class="doc" id="applications">
+      <span class="eyebrow">Screen 4</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-layers"/></svg></span>
+        <div>
+          <h2>Applications</h2>
+          <p>Creatio applications — the descriptor-level unit that bundles several packages — as rich tiles you can drill into and deploy.</p>
+        </div>
+      </div>
+
+      <p>Each tile shows the app’s code, version, description, developer, package count, required platform version, and last
+      update. <strong>Deploy to environment…</strong> transfers the whole application (all its packages) to another
+      registered environment — different from deploying a single package on the Packages screen.</p>
+
+      <h3>Details drill-down</h3>
+      <p><strong>Details</strong> opens a dialog with everything <code>clio</code>’s list omits: created/modified/installed
+      dates, support link, schema prefix, hidden/update flags, the full <strong>package list</strong>, and the app’s
+      <strong>pages</strong> with the base schema each extends.</p>
+
+      <figure>
+        <div class="shot" data-full="assets/docs/application-details.png">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Applications · Details</span></div>
+          <img src="assets/docs/application-details.png" alt="Application details dialog" loading="lazy">
+        </div>
+        <figcaption><b>Application details.</b> The descriptor facts, its packages, and its pages — all in one dialog.</figcaption>
+      </figure>
+      <figure>
+        <div class="shot" data-full="assets/docs/applications.png">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Applications</span></div>
+          <img src="assets/docs/applications.png" alt="Applications catalog tiles" loading="lazy">
+        </div>
+        <figcaption><b>The catalog.</b> Each tile summarises an application; <b>Deploy to environment…</b> moves the whole thing.</figcaption>
+      </figure>
+    </section>
+
+    <!-- COMPARE -->
+    <section class="doc" id="compare">
+      <span class="eyebrow">Screen 5</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-compare"/></svg></span>
+        <div>
+          <h2>Compare environments</h2>
+          <p>See exactly how two environments differ — packages, settings, features, web services, and reference data.</p>
+        </div>
+      </div>
+
+      <p>Comparison runs against <strong>saved snapshots</strong>, not live instances, so it is fast and read-only —
+      <em>nothing here writes to any environment.</em> Two tabs: <strong>Configuration</strong> and <strong>Lookups</strong>.</p>
+
+      <h3><span class="num">1</span>Capture, then compare</h3>
+      <p>Choose a <strong>Source</strong> and <strong>Target</strong>. Each side shows when it was last captured and how long
+      that took; use <strong>Re-capture</strong> to refresh. Then press <strong>Compare</strong>.</p>
+
+      <h3><span class="num">2</span>Read the diff</h3>
+      <p>Results group by category — <strong>Packages, Settings, Features, Web services</strong>. Each row shows the value on
+      each side and a status pill: <strong>Differs</strong>, <strong>Only in source</strong>, or <strong>Only in target</strong>.
+      Package rows expand to the schema level. Tick <strong>Differences only</strong> to hide matches, and
+      <strong>Export report…</strong> to save the comparison.</p>
+
+      <div class="callout warn">
+        <svg class="ic"><use href="#i-shield"/></svg>
+        <p><b>Setting values can include secrets.</b> Snapshots store them as captured, so values stay <b>hidden until you reveal them</b>, exported reports omit them entirely, and Delete removes the stored snapshot file.</p>
+      </div>
+
+      <div class="grid2">
+        <figure>
+          <div class="shot" data-full="assets/docs/compare-setup.png">
+            <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Compare · setup</span></div>
+            <img src="assets/docs/compare-setup.png" alt="Compare setup with source and target snapshots" loading="lazy">
+          </div>
+          <figcaption><b>Set it up.</b> Pick two captured snapshots and press Compare.</figcaption>
+        </figure>
+        <figure>
+          <div class="shot" data-full="assets/docs/compare-diff.png">
+            <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Compare · results</span></div>
+            <img src="assets/docs/compare-diff.png" alt="Compare results with category tabs and diff table" loading="lazy">
+          </div>
+          <figcaption><b>Read the diff.</b> Category tabs, per-side values, and status pills; rows expand to schema level.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- MIGRATION -->
+    <section class="doc" id="migration">
+      <span class="eyebrow">Screen 6</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-swap"/></svg></span>
+        <div>
+          <h2>Migration</h2>
+          <p>Move <em>data</em> — not just packages — between environments. Two modes: reference-data lookups, and individual object records.</p>
+        </div>
+      </div>
+
+      <h3>Lookups</h3>
+      <p>Copies lookup (reference-data) values from a source environment to a target. Rows are matched on their <code>Id</code>,
+      so migrating <strong>updates existing rows and adds missing ones</strong> without breaking references other records rely
+      on. Pick source and target, tick the lookups to move (or <strong>Select all shown</strong>), then
+      <strong>Preview SQL</strong> to inspect the exact upsert, or <strong>Migrate</strong> to apply it. To see what differs
+      first, use <a href="#compare" style="color:var(--accent)">Compare → Lookups</a>.</p>
+
+      <h3>Objects</h3>
+      <p>Inspect and copy a single object’s rows. Search for an object (Lead, Contact, QntProject…), and DevHub shows its
+      <strong>row counts on both sides</strong>, its <strong>columns</strong> with types, and its
+      <strong>foreign-key dependency hierarchy</strong> — expand a row to walk further down; cycles are marked. Copy runs as a
+      full-column upsert keyed on <code>Id</code>. <strong>Remap ownership to the target’s Supervisor</strong> rewrites
+      owner/created-by columns so references don’t break across environments.</p>
+
+      <div class="callout warn">
+        <svg class="ic"><use href="#i-alert"/></svg>
+        <p><b>Migrating writes to the target.</b> Unless you turn it off, DevHub first records a <b>runnable rollback script</b> (its path is logged in the job) so the change can be undone. One object at a time — related objects it depends on are <b>not</b> pulled along, so make sure the target already has them.</p>
+      </div>
+
+      <div class="grid2">
+        <figure>
+          <div class="shot" data-full="assets/docs/migration-lookups.png">
+            <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Migration · Lookups</span></div>
+            <img src="assets/docs/migration-lookups.png" alt="Migration lookups tab" loading="lazy">
+          </div>
+          <figcaption><b>Lookups.</b> Tick the reference data to copy; Preview SQL or Migrate. A rollback script is written first.</figcaption>
+        </figure>
+        <figure>
+          <div class="shot" data-full="assets/docs/migration-objects.png">
+            <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Migration · Objects</span></div>
+            <img src="assets/docs/migration-objects.png" alt="Migration objects tab with dependency hierarchy and columns" loading="lazy">
+          </div>
+          <figcaption><b>Objects.</b> Row counts, columns, and the foreign-key dependency tree for one object, with owner remap.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- SQL -->
+    <section class="doc" id="sql">
+      <span class="eyebrow">Screen 7</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-term"/></svg></span>
+        <div>
+          <h2>SQL</h2>
+          <p>Run raw SQL against a Creatio database and export the result — with the guardrails you’d want.</p>
+        </div>
+      </div>
+
+      <p>Choose an <strong>Environment</strong> (it needs <em>cliogate</em>), write your query, and press
+      <strong>Run</strong> — or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd>. Results show as a grid with row and column
+      counts. Export the <strong>full</strong> result to <strong>CSV</strong> or <strong>Excel</strong> (the on-screen grid
+      caps at 5,000 rows; export does not). Name and <strong>Save query</strong> to reuse it from the
+      <strong>Saved queries</strong> tab; failures collect in the <strong>Errors</strong> tab.</p>
+
+      <div class="callout warn">
+        <svg class="ic"><use href="#i-alert"/></svg>
+        <p><b>This runs directly against the database.</b> <code>UPDATE</code> / <code>DELETE</code> are not sandboxed — there is no undo. Read twice before you run a write.</p>
+      </div>
+
+      <figure>
+        <div class="shot" data-full="assets/docs/sql.png">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">SQL</span></div>
+          <img src="assets/docs/sql.png" alt="SQL editor with a query and results grid" loading="lazy">
+        </div>
+        <figcaption><b>SQL.</b> Editor, Run, CSV/Excel export, saved queries, and a results grid.</figcaption>
+      </figure>
+    </section>
+
+    <!-- JOBS -->
+    <section class="doc" id="jobs">
+      <span class="eyebrow">Screen 8</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-list"/></svg></span>
+        <div>
+          <h2>Jobs</h2>
+          <p>Everything DevHub runs in the background — captures, deploys, pushes — with live logs and safe cancellation.</p>
+        </div>
+      </div>
+
+      <p>Long-running work becomes a <strong>job</strong> so the UI never freezes. The list shows each job’s kind,
+      environment, and duration. Select one to watch its <strong>phase</strong> and stream its <strong>log</strong> line by
+      line. A running job can be <strong>cancelled</strong> safely — DevHub stops the underlying process and its children,
+      leaving no orphans. <strong>Clear history</strong> tidies finished jobs; the running one stays.</p>
+
+      <figure>
+        <div class="shot" data-full="assets/docs/jobs.png">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Jobs</span></div>
+          <img src="assets/docs/jobs.png" alt="Jobs screen with a running job and its log" loading="lazy">
+        </div>
+        <figcaption><b>Jobs.</b> Live phase, streaming log, and safe cancellation for every background task.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ERRORS -->
+    <section class="doc" id="errors">
+      <span class="eyebrow">Screen 9</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-alert"/></svg></span>
+        <div>
+          <h2>Errors</h2>
+          <p>Every failure across DevHub, collected in one place — each with its cause and how to fix it.</p>
+        </div>
+      </div>
+
+      <p>When a run or action fails, it lands here (most recent first) instead of vanishing in a toast. Filter by the screen
+      that produced it — <strong>Migration</strong>, <strong>SQL</strong>, and so on. Each entry shows the environment, a
+      timestamp, the underlying message (often with its SQLSTATE, e.g. <code>23503</code> for a foreign-key violation), and the
+      offending input. <strong>Dismiss</strong> one or <strong>Clear all</strong>. Entries are stored on your device.</p>
+
+      <figure>
+        <div class="shot" data-full="assets/docs/errors.png">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Errors</span></div>
+          <img src="assets/docs/errors.png" alt="Errors screen with categorized failures" loading="lazy">
+        </div>
+        <figcaption><b>Errors.</b> A durable, filterable log — cause and fix for each failure, kept on this device.</figcaption>
+      </figure>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="doc" id="settings">
+      <span class="eyebrow">Screen 10</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-cog"/></svg></span>
+        <div>
+          <h2>Settings</h2>
+          <p>Your environments, identity, appearance, and the CLI tools DevHub drives.</p>
+        </div>
+      </div>
+
+      <ul class="plain">
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>DevHub updates</b> — DevHub checks for signed releases automatically; <b>Check for updates</b> forces it now.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Appearance</b> — <b>System</b>, <b>Light</b>, or <b>Dark</b>. System follows your OS setting.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Default environment</b> — the instance DevHub pre-selects across every screen.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>GitHub &amp; Git identity</b> — which account pushes over HTTPS (browser or a <b>personal access token</b>), plus the author name/email recorded in new commits. Tokens go straight to the GitHub CLI — DevHub never stores or logs them.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Command-line tools</b> — where DevHub resolved <code>clio</code>, <code>git</code>, and <code>gh</code>. <b>Locate…</b> pins a custom path; <b>Re-scan</b> searches again.</span></li>
+      </ul>
+
+      <figure>
+        <div class="shot" data-full="assets/docs/settings.png">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Settings</span></div>
+          <img src="assets/docs/settings.png" alt="Settings screen: updates, appearance, default environment, identity, tools" loading="lazy">
+        </div>
+        <figcaption><b>Settings.</b> Updates, theme, default environment, GitHub/Git identity, and tool paths — top to bottom.</figcaption>
+      </figure>
+    </section>
+
+    <!-- SAFETY -->
+    <section class="doc" id="safety">
+      <span class="eyebrow">Good to know</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-shield"/></svg></span>
+        <div>
+          <h2>Safety &amp; updates</h2>
+          <p>The habits DevHub builds in so a bad click doesn’t become a bad day.</p>
+        </div>
+      </div>
+
+      <ul class="plain">
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Signed auto-updates.</b> DevHub only installs releases signed with the project key. A new version shows as a header banner; you choose when to install.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Backups before writes.</b> Deployments and migrations record a rollback/backup first (its path is logged in the job) unless you explicitly skip it.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Typed confirmation.</b> Destructive or cross-environment actions make you type the target’s name — so the intended instance is never a guess.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>No stored credentials.</b> DevHub keeps no passwords; <code>clio</code> owns them, and DevHub never surfaces raw credential values.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Nothing is proxied.</b> It is a local desktop app — it talks to your environments and GitHub directly.</span></li>
+      </ul>
+
+      <div class="callout tip">
+        <svg class="ic"><use href="#i-gh"/></svg>
+        <p>Found a gap in this guide, or something behaving differently? Open an issue on
+        <a href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener" style="color:var(--accent)">GitHub</a> —
+        the docs live alongside the app.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="foot-in">
+    <span>Creatio DevHub — the desktop workbench for Creatio developers.</span>
+    <span style="margin-left:auto"><a href="index.html">Home</a> · <a href="https://github.com/SmitSuthar8834/creatio-devhub" target="_blank" rel="noopener">Source</a> · <a href="index.html#download">Download</a></span>
+  </div>
+</footer>
+
+<div class="lb" id="lb"><img id="lbImg" src="" alt=""></div>
+
+<script>
+  // Scrollspy: highlight the current section in the TOC.
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+    var map = {};
+    links.forEach(function (a) { var id = a.getAttribute('href').slice(1); map[id] = a; });
+    var sections = Object.keys(map).map(function (id) { return document.getElementById(id); }).filter(Boolean);
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          links.forEach(function (l) { l.classList.remove('active'); });
+          if (map[e.target.id]) map[e.target.id].classList.add('active');
+        }
+      });
+    }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 });
+    sections.forEach(function (s) { obs.observe(s); });
+  })();
+
+  // Mobile contents toggle.
+  (function () {
+    var t = document.getElementById('tocToggle'), toc = document.getElementById('toc');
+    if (!t) return;
+    t.addEventListener('click', function () { toc.classList.toggle('open'); });
+    toc.addEventListener('click', function (e) { if (e.target.closest('a')) toc.classList.remove('open'); });
+  })();
+
+  // Lightbox: click a screenshot to zoom.
+  (function () {
+    var lb = document.getElementById('lb'), img = document.getElementById('lbImg');
+    document.querySelectorAll('.shot').forEach(function (s) {
+      s.addEventListener('click', function () {
+        img.src = s.getAttribute('data-full') || s.querySelector('img').src;
+        lb.classList.add('open');
+      });
+    });
+    lb.addEventListener('click', function () { lb.classList.remove('open'); img.src = ''; });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { lb.classList.remove('open'); img.src = ''; } });
+  })();
+</script>
+</body>
+</html>
