@@ -88,6 +88,7 @@ pub fn run() {
             workspaces::create_workspace_flow,
             workspaces::pull_workspace,
             workspaces::add_package_to_workspace,
+            workspaces::list_workspace_packages,
             workspaces::push_workspace_cloud,
             workspaces::ws_status,
             workspaces::ws_diff,

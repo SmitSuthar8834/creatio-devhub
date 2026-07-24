@@ -515,6 +515,10 @@ export const createWorkspaceFlow = (opts: {
 
 export const pullWorkspace = (id: string) => invoke<string>("pull_workspace", { id });
 
+/** Package names this workspace version-controls (from workspaceSettings.json). */
+export const listWorkspacePackages = (id: string) =>
+  invoke<string[]>("list_workspace_packages", { id });
+
 export const addPackageToWorkspace = (id: string, packageName: string) =>
   invoke<string>("add_package_to_workspace", { id, package: packageName });
 

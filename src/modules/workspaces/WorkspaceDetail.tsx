@@ -3,6 +3,7 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  Package,
   Plus,
   Sparkles,
   TriangleAlert,
@@ -39,6 +40,7 @@ import {
   GithubRepo,
   listGithubRepos,
   listPackages,
+  listWorkspacePackages,
   onJobUpdate,
   PackageInfo,
   pullWorkspace,
@@ -62,8 +64,11 @@ interface Props {
 }
 
 export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onShowJobs }: Props) {
-  const [tab, setTab] = useState<"changes" | "history">("changes");
+  const [tab, setTab] = useState<"changes" | "packages" | "history">("changes");
   const [changes, setChanges] = useState<FileChange[]>([]);
+  // Packages this workspace version-controls (from .clio/workspaceSettings.json).
+  const [wsPackages, setWsPackages] = useState<string[]>([]);
+  const [wsPackagesLoaded, setWsPackagesLoaded] = useState(false);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [diff, setDiff] = useState("");
   const [commits, setCommits] = useState<Commit[]>([]);
@@ -94,10 +99,18 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
   const [repos, setRepos] = useState<GithubRepo[]>([]);
   const [settingRemote, setSettingRemote] = useState(false);
 
+  const loadWsPackages = useCallback(() => {
+    listWorkspacePackages(w.id)
+      .then(setWsPackages)
+      .catch(() => setWsPackages([]))
+      .finally(() => setWsPackagesLoaded(true));
+  }, [w.id]);
+
   const refresh = useCallback(() => {
     wsStatus(w.id).then(setChanges).catch((e) => reportError(e));
     wsLog(w.id).then(setCommits).catch(() => setCommits([]));
-  }, [w.id]);
+    loadWsPackages();
+  }, [w.id, loadWsPackages]);
 
   const checkRemote = useCallback(() => {
     if (!w.remote) return;
@@ -193,7 +206,7 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
     setShowPush(false);
     try {
       await pushWorkspaceCloud(w.id, force, skipBackup);
-      setNotice("Push to Cloud started — the server-side compile takes minutes. Follow it on the Jobs screen; you'll get a notification when it finishes.");
+      setNotice("Push to Creatio started — the server-side compile takes minutes. Follow it on the Jobs screen; you'll get a notification when it finishes.");
     } catch (e) {
       const msg = String(e);
       if (msg.includes("DRIFT:")) {
@@ -264,7 +277,8 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
     p.name.toLowerCase().includes(pkgFilter.trim().toLowerCase()),
   );
 
-  const hasPackages = changes.length > 0 || (w.lastPull != null);
+  const hasPackages =
+    wsPackages.length > 0 || changes.length > 0 || w.lastPull != null;
   const hasRepo = !!w.remote;
   // Which listed repo, if any, the workspace's current remote points at — so the
   // dropdown can show it selected rather than blank.
@@ -311,13 +325,20 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
             <Plus aria-hidden="true" />
             Add package
           </Button>
-          <Button variant="outline" onClick={doPull}>
+          <Button
+            variant="outline"
+            onClick={doPull}
+            title={`Download the latest package source from the “${w.env}” Creatio environment into this workspace.`}
+          >
             <ArrowDown aria-hidden="true" />
-            Pull from Cloud
+            Pull from Creatio
           </Button>
-          <Button onClick={() => setShowPush(true)}>
+          <Button
+            onClick={() => setShowPush(true)}
+            title={`Pack this workspace and install it into the “${w.env}” Creatio environment.`}
+          >
             <ArrowUp aria-hidden="true" />
-            Push to Cloud
+            Push to Creatio
           </Button>
           <Button variant="ghost" onClick={onShowJobs}>Jobs</Button>
         </div>
@@ -452,11 +473,12 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
       <Dialog open={showPush} onOpenChange={setShowPush}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Push to {w.env}?</DialogTitle>
+            <DialogTitle>Push to the “{w.env}” Creatio environment?</DialogTitle>
             <DialogDescription>
-              Packs this workspace and installs it into the environment. The server compiles the
-              configuration — expect several minutes. The job can't be safely cancelled once
-              installation starts.
+              Packs this workspace and installs it into the <strong>{w.env}</strong> Creatio
+              environment (this is not a GitHub push — use the History tab for Git). The server
+              compiles the configuration — expect several minutes. The job can't be safely
+              cancelled once installation starts.
             </DialogDescription>
           </DialogHeader>
           <Label className="flex items-center gap-2 font-normal">
@@ -471,14 +493,20 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowPush(false)}>Cancel</Button>
-            <Button onClick={() => doPushCloud(false)}>Push to Cloud</Button>
+            <Button onClick={() => doPushCloud(false)}>Push to Creatio</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as "changes" | "history")}>
+      <Tabs
+        value={tab}
+        onValueChange={(v) => setTab(v as "changes" | "packages" | "history")}
+      >
         <TabsList>
           <TabsTrigger value="changes">Changes ({changes.length})</TabsTrigger>
+          <TabsTrigger value="packages">
+            Packages{wsPackagesLoaded ? ` (${wsPackages.length})` : ""}
+          </TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
       </Tabs>
@@ -487,7 +515,7 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
         <>
           {changes.length === 0 ? (
             <p className="text-muted-foreground">
-              Working tree is clean. Pull from Cloud to fetch the latest package changes.
+              Working tree is clean. Pull from Creatio to fetch the latest package changes.
             </p>
           ) : (
             <div className="grid gap-3 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
@@ -548,6 +576,52 @@ export default function WorkspaceDetail({ workspace: w, onBack, onChanged, onSho
             </div>
           )}
         </>
+      )}
+
+      {tab === "packages" && (
+        <div className="grid gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-muted-foreground">
+              Creatio packages this workspace version-controls. Only these are pulled from and
+              pushed to the “{w.env}” environment.
+            </p>
+            <Button variant="outline" size="sm" onClick={openAddPkg}>
+              <Plus aria-hidden="true" />
+              Add package
+            </Button>
+          </div>
+          {!wsPackagesLoaded ? (
+            <p className="text-sm text-muted-foreground">Loading packages…</p>
+          ) : wsPackages.length === 0 ? (
+            <div className="grid gap-3 rounded-lg border bg-card p-4">
+              <span className="text-sm text-muted-foreground">
+                No packages yet. Add the Creatio packages you want to version-control — only the
+                ones you pick get downloaded.
+              </span>
+              <div>
+                <Button size="sm" onClick={openAddPkg}>
+                  <Plus aria-hidden="true" />
+                  Add packages
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-1 rounded-lg border p-1">
+              {wsPackages.map((name) => (
+                <div
+                  key={name}
+                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm"
+                >
+                  <Package
+                    className="size-4 shrink-0 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                  <span className="font-medium">{name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {tab === "history" && (

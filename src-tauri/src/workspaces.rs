@@ -326,23 +326,43 @@ pub fn pull_workspace(
     Ok(job_id)
 }
 
-fn workspace_has_package(dir: &Path, package: &str) -> bool {
+/// Package names selected in the workspace, read from
+/// `.clio/workspaceSettings.json`. Empty when the file is missing or unreadable
+/// (callers treat that as "no packages" rather than an error).
+fn read_workspace_packages(dir: &Path) -> Vec<String> {
     let settings = dir.join(".clio").join("workspaceSettings.json");
     let Ok(raw) = std::fs::read_to_string(settings) else {
-        return false;
+        return Vec::new();
     };
     let Ok(json) = serde_json::from_str::<serde_json::Value>(&raw) else {
-        return false;
+        return Vec::new();
     };
     json.get("Packages")
         .or_else(|| json.get("packages"))
         .and_then(|value| value.as_array())
-        .is_some_and(|packages| {
-            packages.iter().any(|item| {
-                item.as_str()
-                    .is_some_and(|name| name.eq_ignore_ascii_case(package))
-            })
+        .map(|packages| {
+            packages
+                .iter()
+                .filter_map(|item| item.as_str().map(|s| s.to_string()))
+                .collect()
         })
+        .unwrap_or_default()
+}
+
+fn workspace_has_package(dir: &Path, package: &str) -> bool {
+    read_workspace_packages(dir)
+        .iter()
+        .any(|name| name.eq_ignore_ascii_case(package))
+}
+
+/// The packages a workspace version-controls, sorted case-insensitively for the
+/// Packages tab. Missing settings file yields an empty list, not an error.
+#[tauri::command]
+pub fn list_workspace_packages(ws: State<'_, WsState>, id: String) -> Result<Vec<String>, String> {
+    let w = ws.get(&id)?;
+    let mut names = read_workspace_packages(&PathBuf::from(&w.path));
+    names.sort_by_key(|name| name.to_lowercase());
+    Ok(names)
 }
 
 /// Append an existing cloud package to a workspace's managed package selection,
@@ -923,5 +943,35 @@ mod tests {
         assert!(workspace_has_package(&dir, "qntimportengine"));
         assert!(!workspace_has_package(&dir, "AnotherPackage"));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn reads_workspace_packages_from_settings() {
+        let dir = std::env::temp_dir().join(format!(
+            "devhub-workspace-packages-test-{}",
+            std::process::id()
+        ));
+        let clio_dir = dir.join(".clio");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&clio_dir).unwrap();
+        std::fs::write(
+            clio_dir.join("workspaceSettings.json"),
+            r#"{"Packages":["QntImportEngine","Base"],"IgnorePackages":[]}"#,
+        )
+        .unwrap();
+
+        let packages = read_workspace_packages(&dir);
+        assert_eq!(packages, vec!["QntImportEngine", "Base"]);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn reads_no_packages_when_settings_missing() {
+        let dir = std::env::temp_dir().join(format!(
+            "devhub-workspace-packages-missing-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(read_workspace_packages(&dir).is_empty());
     }
 }
