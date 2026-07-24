@@ -2,7 +2,13 @@
 
 Last verified: **2026-07-24**
 
-Current version: **0.9.2** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
+Current version: **0.9.3** (**v0.9.3** — WorkspaceDetail clarity pass: a new **Packages** tab
+lists the packages a workspace version-controls (backend `list_workspace_packages` reading
+`.clio/workspaceSettings.json`), and the ambiguous **Pull/Push from Cloud** buttons are renamed
+**Pull/Push from Creatio** with env-named tooltips + a push dialog that spells out "not a GitHub
+push" — because those buttons act on the Creatio environment, while GitHub stays in the History
+tab. tsc + 85 Rust tests green; ⚠ NOT yet live-run in the native window before tagging, per the
+usual pattern. releases v0.3.1 and v0.3.2 shipped after this doc's milestone
 table below was last written; see per-release commit messages for their scope. v0.4.0 is the
 shadcn/ui design-system release described below; v0.5.0 adds the automatic update notice and
 stops trusting clio's exit code over its own output; v0.5.1 stops reporting a successful SQL
