@@ -311,7 +311,20 @@ export default function ObjectMigration({ onShowJobs }: { onShowJobs: () => void
                       <span className="text-sm">{obj.table}</span>
                     </span>
                     {obj.package && (
-                      <Badge variant="secondary" className="shrink-0 text-[10px]">{obj.package}</Badge>
+                      <Badge
+                        variant="secondary"
+                        className="shrink-0 text-[10px]"
+                        title={
+                          obj.packages.length > 1
+                            ? `Defined/extended in ${obj.packages.length} packages: ${obj.packages.join(", ")}`
+                            : obj.package
+                        }
+                      >
+                        {obj.package}
+                        {obj.packages.length > 1 && (
+                          <span className="ml-1 font-normal opacity-70">+{obj.packages.length - 1}</span>
+                        )}
+                      </Badge>
                     )}
                   </button>
                 </li>

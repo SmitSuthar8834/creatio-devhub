@@ -20,12 +20,17 @@ use crate::refdata::{escape_literal, is_safe_identifier, migrations_dir, run_sel
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
-/// One migratable entity object: its backing table and owning package.
+/// One migratable entity object: its backing table, its home package, and every
+/// package that defines or extends it. An entity is one physical table, but
+/// Creatio spreads its schema across packages, so `packages` lists them all
+/// (with `package` naming the base/home one) — the UI shows the object once and
+/// flags that it is multi-package rather than picking a single owner silently.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ObjectInfo {
     pub table: String,
     pub package: String,
+    pub packages: Vec<String>,
 }
 
 /// One physical column of an object's table.
@@ -57,13 +62,20 @@ pub struct ObjectDependency {
 /// object like `Account` has many rows, one per package. Migration is
 /// table-level (a full-column upsert on the physical table), so listing the same
 /// table N times is noise, and the duplicate names break the UI's row identity.
-/// `DISTINCT ON ("Name")` collapses each object to a single row, and the
-/// `ExtendParent` tie-break keeps the base schema (`false`) over its per-package
-/// replacements (`true`) so the package badge names the object's home package.
+///
+/// `GROUP BY "Name"` collapses each object to a single row. `Package` is the
+/// object's home package — the base schema (`ExtendParent = false`), falling
+/// back to any package if a base can't be told apart. `Packages` is the full,
+/// alphabetical, comma-separated list of every package the object touches, so the
+/// UI can show "home +N" and reveal them all on hover instead of hiding that the
+/// object is multi-package behind one arbitrary owner.
 pub fn list_objects_sql(filter: &str) -> String {
     let needle = escape_literal(filter);
     format!(
-        r#"SELECT DISTINCT ON (s."Name") s."Name" AS "Table", COALESCE(p."Name", '') AS "Package"
+        r#"SELECT
+  s."Name" AS "Table",
+  COALESCE(min(p."Name") FILTER (WHERE s."ExtendParent" = false), min(p."Name"), '') AS "Package",
+  string_agg(DISTINCT COALESCE(p."Name", ''), ', ' ORDER BY COALESCE(p."Name", '')) AS "Packages"
 FROM "SysSchema" s
 LEFT JOIN "SysPackage" p ON p."Id" = s."SysPackageId"
 WHERE s."ManagerName" = 'EntitySchemaManager'
@@ -72,7 +84,8 @@ WHERE s."ManagerName" = 'EntitySchemaManager'
     WHERE c.table_name = s."Name" AND c.column_name = 'Id'
   )
   AND s."Name" ILIKE '%{needle}%'
-ORDER BY s."Name", s."ExtendParent" ASC NULLS LAST, p."Name"
+GROUP BY s."Name"
+ORDER BY s."Name"
 LIMIT 300"#
     )
 }
@@ -122,6 +135,7 @@ pub fn list_objects(env: String, filter: String) -> Result<Vec<ObjectInfo>, Stri
     else {
         return Err("The object search returned an unexpected shape.".to_string());
     };
+    let packages_at = column_index(&columns, "Packages");
     Ok(data
         .into_iter()
         .filter_map(|record| {
@@ -130,7 +144,22 @@ pub fn list_objects(env: String, filter: String) -> Result<Vec<ObjectInfo>, Stri
                 return None;
             }
             let package = record.get(package_at).cloned().unwrap_or_default();
-            Some(ObjectInfo { table, package })
+            // The list is a comma-joined string_agg; Creatio package names are
+            // safe identifiers, so a plain ", " split reconstructs them. Fall
+            // back to the home package alone if the column is somehow absent.
+            let packages: Vec<String> = packages_at
+                .and_then(|at| record.get(at))
+                .map(|joined| {
+                    joined
+                        .split(", ")
+                        .map(str::trim)
+                        .filter(|s| !s.is_empty())
+                        .map(str::to_string)
+                        .collect()
+                })
+                .filter(|v: &Vec<String>| !v.is_empty())
+                .unwrap_or_else(|| vec![package.clone()]);
+            Some(ObjectInfo { table, package, packages })
         })
         .collect())
 }
@@ -631,9 +660,12 @@ mod tests {
         assert!(sql.contains("LIMIT 300"));
         // One row per object: an entity defined/replaced across several packages
         // must not appear once per package (that broke the list's row identity).
-        assert!(sql.contains(r#"DISTINCT ON (s."Name")"#));
-        // The base schema (ExtendParent = false) wins the per-object package badge.
-        assert!(sql.contains(r#"s."ExtendParent" ASC"#));
+        assert!(sql.contains(r#"GROUP BY s."Name""#));
+        // The base schema (ExtendParent = false) supplies the home package badge.
+        assert!(sql.contains(r#"FILTER (WHERE s."ExtendParent" = false)"#));
+        // Every package the object touches is collected for the "home +N" badge.
+        assert!(sql.contains(r#"string_agg(DISTINCT COALESCE(p."Name", ''), ', '"#));
+        assert!(sql.contains(r#"AS "Packages""#));
         // A quote in the filter is escaped, never breaking out of the literal.
         assert!(list_objects_sql("O'Brien").contains("ILIKE '%O''Brien%'"));
     }

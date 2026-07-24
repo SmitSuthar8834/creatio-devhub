@@ -2,7 +2,7 @@
 
 Last verified: **2026-07-24**
 
-Current version: **0.9.1** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
+Current version: **0.9.2** (releases v0.3.1 and v0.3.2 shipped after this doc's milestone
 table below was last written; see per-release commit messages for their scope. v0.4.0 is the
 shadcn/ui design-system release described below; v0.5.0 adds the automatic update notice and
 stops trusting clio's exit code over its own output; v0.5.1 stops reporting a successful SQL
@@ -33,16 +33,17 @@ needed raw SQL to bypass app validation). The method is preserved in
 
 Repository: <https://github.com/SmitSuthar8834/creatio-devhub>
 
-Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.9.1> (**Migration →
-Objects list de-duplication fix**: `list_objects` (SysSchema) returned one row per *package* that
-defines or replaces an object, so a common object like `Account` appeared ~9 times — once per package
-badge. The duplicate `Name`s collided on the React list's `key={obj.table}` / `selected === obj.table`
-identity, so the list rendered corrupted and selecting one object highlighted nearly all of them. Fixed
-in `objectmove.rs` with `SELECT DISTINCT ON ("Name") … ORDER BY "Name", "ExtendParent" ASC NULLS LAST,
-"Package"` — one row per object, the `ExtendParent = false` base schema winning the package badge so it
-names the object's home package. Verified against live Dev-thoughtworks (`Account` → one row,
-`CrtCoreBase`) and in the real UI (8 unique rows, exactly one selected, no duplicate-key warning); 9
-objectmove tests pass.)
+Latest release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.9.2> (**Migration →
+Objects: multi-package objects shown honestly**. v0.9.1 collapsed each object to one row but labelled it
+with only its base package, hiding that e.g. `Account` lives in ~9 packages. `list_objects_sql` now
+`GROUP BY "Name"` and returns `Package` (the `ExtendParent = false` home schema) plus `Packages` — the
+full alphabetical `string_agg` of every package the object touches. `ObjectInfo` gains `packages:
+Vec<String>`; the list badge shows `home +N` with the complete list on hover. Verified in the real UI
+(`Account` → `CrtCoreBase +8`, hover lists all 9; single-package objects show just their package;
+selection and layout clean, no badge overflow) and against live Dev-thoughtworks; 9 objectmove tests
+pass, tsc clean. Supersedes the v0.9.1 de-duplication, which fixed the earlier crash where duplicate
+`Name`s collided on the React list's `key={obj.table}` identity — corrupting the list and highlighting
+nearly every row on select.)
 
 Previous release: <https://github.com/SmitSuthar8834/creatio-devhub/releases/tag/v0.9.0> (GitHub
 sign-in: device-code surfaced in Settings, PAT token sign-in, and a workspace repo picker).

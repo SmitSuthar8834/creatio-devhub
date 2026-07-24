@@ -563,7 +563,7 @@ dependencies = [
 
 [[package]]
 name = "creatio-devhub"
-version = "0.9.1"
+version = "0.9.2"
 dependencies = [
  "csv",
  "serde",

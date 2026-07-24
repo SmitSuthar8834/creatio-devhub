@@ -384,7 +384,10 @@ export const migrateLookups = (opts: {
 
 export interface ObjectInfo {
   table: string;
+  /** The object's home package (its base schema's package). */
   package: string;
+  /** Every package that defines or extends the object, home included. */
+  packages: string[];
 }
 
 export interface ObjectColumn {
