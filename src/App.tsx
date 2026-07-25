@@ -5,6 +5,7 @@ import {
   Database,
   GitCompare,
   FolderGit2,
+  LifeBuoy,
   ListChecks,
   Package,
   Server,
@@ -41,6 +42,7 @@ import MigrationPage from "./modules/migration/MigrationPage";
 import PackagesPage from "./modules/packages/PackagesPage";
 import SettingsPage from "./modules/settings/SettingsPage";
 import SqlPage from "./modules/sql/SqlPage";
+import SupportPage from "./modules/support/SupportPage";
 import ErrorsPage from "./modules/errors/ErrorsPage";
 import ErrorToaster from "./modules/errors/ErrorToaster";
 import UpdateBanner from "./modules/updates/UpdateBanner";
@@ -48,7 +50,7 @@ import WorkspacesPage from "./modules/workspaces/WorkspacesPage";
 import { useErrorLog } from "./lib/errorLog";
 import logoMark from "./assets/icons/logo-mark.png";
 
-type Page = "environments" | "workspaces" | "packages" | "applications" | "compare" | "migration" | "sql" | "jobs" | "errors" | "settings";
+type Page = "environments" | "workspaces" | "packages" | "applications" | "compare" | "migration" | "sql" | "jobs" | "errors" | "support" | "settings";
 
 const NAV: { id: Page; label: string; icon: typeof Server }[] = [
   { id: "environments", label: "Environments", icon: Server },
@@ -60,6 +62,7 @@ const NAV: { id: Page; label: string; icon: typeof Server }[] = [
   { id: "sql", label: "SQL", icon: Database },
   { id: "jobs", label: "Jobs", icon: ListChecks },
   { id: "errors", label: "Errors", icon: TriangleAlert },
+  { id: "support", label: "Support", icon: LifeBuoy },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
@@ -174,6 +177,7 @@ export default function App() {
           {page === "migration" && <MigrationPage onShowJobs={() => setPage("jobs")} />}
           {page === "sql" && <SqlPage onShowJobs={() => setPage("jobs")} />}
           {page === "errors" && <ErrorsPage />}
+          {page === "support" && <SupportPage />}
           {page === "settings" && <SettingsPage />}
         </div>
       </SidebarInset>

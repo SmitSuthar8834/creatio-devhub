@@ -970,7 +970,31 @@ the README and on the website download section rather than letting users guess.
 
 ## If the repository goes private
 
-Planned 2026-07-21, **not executed** — the repo is still public. Written up because flipping the
+**2026-07-25 UPDATE — partially executed, with a deliberate stop.** What was done:
+- **Backup**: durable verified git bundle at `A:\PersonalComponents\creatio-devhub-backup-2026-07-25.bundle`
+  (all 39 refs).
+- **`creatio-devhub-source` (PRIVATE)** created; all branches + all tags + HANDOFF pushed. It is
+  currently a **private mirror/backup**, NOT the active dev home.
+- **`creatio-devhub` stays PUBLIC** — it remains the release/updater/site host AND the active dev
+  repo. The updater endpoint URL is therefore unchanged, so **no installed client is stranded and
+  no bridge release was needed.** ⛔ Do NOT set `creatio-devhub` itself private — that instantly
+  kills the endpoint for every existing install.
+- **`creatio-devhub-releases` (public, empty)** was created then found redundant (we reuse the
+  existing public repo as host). Left undeleted — the `gh` token lacks `delete_repo`; delete with
+  `gh auth refresh -h github.com -s delete_repo && gh repo delete SmitSuthar8834/creatio-devhub-releases --yes`.
+- **Website (gh-pages, commit adb8127)**: removed all source-browse links (nav GitHub, hero "View
+  source", footer GitHub, footer Docs→now `docs.html`) and dropped "open-source" wording. Cosmetic
+  only — the public repo still exposes source.
+- **DECISION: leave source public** (do NOT strip/purge). Rationale: the code is already forked
+  (`PranshuBasak/creatio-devhub`), so hiding is futile, and the public repo must keep building +
+  publishing releases to the live endpoint. To make future dev *actually* private without stranding
+  users would require the private-build → public-releases **cross-publish pipeline** (a PAT +
+  `release.yml` step; see below) — validated by its OWN release test, separate from a normal-release
+  test. Not built.
+
+The original plan (below) still stands for reference should the cross-publish route ever be taken.
+
+Planned 2026-07-21, first partially executed 2026-07-25. Written up because flipping the
 visibility toggle alone would break distribution, and one of the breakages is silent.
 
 Private repositories cost nothing in version control: full history, branches, tags, Actions and
