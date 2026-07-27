@@ -326,7 +326,7 @@
         <div class="stat"><div class="stat-num" id="dl-version">v0.9.2</div><div class="stat-cap">latest version</div></div>
         <div class="stat"><div class="stat-num" id="dl-releases">29</div><div class="stat-cap">releases shipped</div></div>
       </div>
-      <div class="stats-note" id="stats-note">Counts update live from <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases" target="_blank" rel="noopener">GitHub Releases</a>.</div>
+      <div class="stats-note" id="stats-note">Download counts update live.</div>
     </div>
   </div>
 
@@ -696,13 +696,10 @@
               <svg class="ic"><use href="#i-dl"/></svg> Download for macOS (.dmg)
             </a>
           </div>
-          <div class="dl-note" id="mac-soon">Universal <code>.dmg</code> on the <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest" target="_blank" rel="noopener">latest release</a>. First launch: right-click → Open.</div>
+          <div class="dl-note" id="mac-soon">Universal <code>.dmg</code>, signed. First launch: right-click → Open.</div>
           <div class="dl-note dl-gatekeeper" id="mac-note" hidden>Not yet notarized: on first launch, right-click (or Control-click) the app in Finder and choose <b>Open</b>. After that it opens normally.</div>
         </div>
 
-        <div class="dl-links dl-all">
-          <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest" target="_blank" rel="noopener">All releases</a>
-        </div>
       </div>
     </div>
   </section>
@@ -714,7 +711,6 @@
       <span class="brand-mark"><svg viewBox="0 0 24 24" class="ic"><use href="#i-code"/></svg></span>
       <span>DevHub<small>for Creatio</small></span>
     </span>
-    <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest" target="_blank" rel="noopener">Releases</a>
     <a href="docs.html">Docs</a>
     <a href="mailto:sutharsmit574@gmail.com">Support</a>
     <div class="made">Developed by <b>Smit Suthar</b> &nbsp;·&nbsp; Found an issue or have feedback? Email <a href="mailto:sutharsmit574@gmail.com?subject=Creatio%20DevHub%20—%20issue%2Ffeedback">sutharsmit574@gmail.com</a></div>
@@ -784,7 +780,7 @@
     .catch(function () {
       set('dl-count', '9+');
       var n = document.getElementById('stats-note');
-      if (n) n.innerHTML = 'Live counts load on the hosted site — <a href="https://github.com/SmitSuthar8834/creatio-devhub/releases" target="_blank" rel="noopener">see release stats on GitHub</a>.';
+      if (n) n.textContent = 'Live counts load on the hosted site.';
     });
 })();
 </script>
