@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#0F172A">
+<meta name="theme-color" content="#08080C">
 <meta name="description" content="The complete Creatio DevHub guide — every screen and feature, step by step, with screenshots.">
 <title>Creatio DevHub — Guide &amp; Documentation</title>
-<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">&#128421;</text></svg>'>
+<link rel="icon" type="image/png" href="./logo-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#0F172A; --surface:#1E293B; --surface-2:#172033; --muted:#272F42;
-    --border:#2C3A52; --border-2:#475569; --fg:#F8FAFC; --fg-soft:#A3B0C6; --fg-faint:#6B7A94;
-    --accent:#22C55E; --accent-dim:#16A34A; --on-accent:#04140A; --danger:#EF4444; --info:#818CF8;
+    --bg:#08080C; --surface:#12121C; --surface-2:#0C0C14; --muted:#1A1A26;
+    --border:#1F1F2B; --border-2:#33334A; --fg:#FFFFFF; --fg-soft:#A7A7B6; --fg-faint:#6E6E82;
+    --accent:#6366F1; --accent-dim:#4F46E5; --on-accent:#FFFFFF; --danger:#FF453A; --info:#818CF8;
     --font-sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
     --font-mono:"JetBrains Mono",ui-monospace,"Cascadia Code","SF Mono",Consolas,monospace;
     --r:12px; --shadow:0 24px 64px -28px rgba(0,0,0,.85);
@@ -35,14 +35,14 @@
     padding:.1em .4em; border-radius:6px; font-size:.8em; color:var(--fg-soft); }
 
   /* topbar */
-  .topbar { position:sticky; top:0; z-index:60; background:rgba(15,23,42,.86);
+  .topbar { position:sticky; top:0; z-index:60; background:rgba(8,8,12,.86);
     backdrop-filter:blur(14px); border-bottom:1px solid var(--border); }
   .topbar-in { display:flex; align-items:center; gap:20px; height:var(--nav-h);
     max-width:1280px; margin:0 auto; padding:0 24px; }
   .brand { display:flex; align-items:center; gap:11px; font-weight:700; letter-spacing:-.01em; }
   .brand-mark { width:34px; height:34px; border-radius:10px; flex:none; display:grid; place-items:center;
-    background:linear-gradient(150deg,var(--accent),var(--accent-dim)); color:var(--on-accent); }
-  .brand-mark svg { width:19px; height:19px; stroke-width:2.4; }
+    overflow:hidden; }
+  .brand-mark img { width:34px; height:34px; object-fit:contain; display:block; }
   .brand small { display:block; font-family:var(--font-mono); font-size:10px; font-weight:400; color:var(--fg-faint); margin-top:1px; }
   .top-links { margin-left:auto; display:flex; align-items:center; gap:8px; }
   .top-links a { padding:8px 12px; border-radius:9px; color:var(--fg-soft); font-size:14px; font-weight:500; }
@@ -50,7 +50,7 @@
   .btn { display:inline-flex; align-items:center; gap:8px; border-radius:10px; font-weight:600;
     font-size:14px; padding:9px 15px; border:1px solid transparent; cursor:pointer; }
   .btn-primary { background:var(--accent); color:var(--on-accent); }
-  .btn-primary:hover { background:#2ee06a; }
+  .btn-primary:hover { background:#818CF8; }
   .btn-ghost { border-color:var(--border-2); color:var(--fg); }
   .btn-ghost:hover { background:var(--muted); }
 
@@ -175,7 +175,7 @@
 <header class="topbar">
   <div class="topbar-in">
     <a class="brand" href="index.html">
-      <span class="brand-mark"><svg viewBox="0 0 24 24" class="ic"><use href="#i-code"/></svg></span>
+      <span class="brand-mark"><img src="./logo-mark.png" alt="Creatio DevHub logo"></span>
       <span>DevHub <small>guide &amp; documentation</small></span>
     </a>
     <div class="top-links">
