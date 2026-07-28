@@ -160,6 +160,7 @@
   <symbol id="i-pkg" viewBox="0 0 24 24"><path d="m7.5 4.3 9 5.1"/><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.8 2.2a2 2 0 0 0-1.6 0L2.6 6.1a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.6 0l8.6-3.9a1 1 0 0 0 0-1.8Z"/><path d="m6.1 10.4-3.5 1.6a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.6 0l8.6-3.9a1 1 0 0 0 0-1.8l-3.5-1.6"/></symbol>
   <symbol id="i-compare" viewBox="0 0 24 24"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M21 3l-7 7"/><path d="M3 3l7 7"/><path d="M16 21h5v-5"/><path d="M8 21H3v-5"/><path d="M21 21l-7-7"/><path d="M3 21l7-7"/></symbol>
+  <symbol id="i-net" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="6" rx="1"/><rect x="14" y="15" width="7" height="6" rx="1"/><rect x="3" y="15" width="7" height="6" rx="1"/><path d="M7 9v3a2 2 0 0 0 2 2h8.5M6.5 9v6"/></symbol>
   <symbol id="i-swap" viewBox="0 0 24 24"><path d="m8 3-4 4 4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></symbol>
   <symbol id="i-term" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
   <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></symbol>
@@ -199,6 +200,7 @@
     <a href="#packages"><svg class="ic"><use href="#i-pkg"/></svg> Packages</a>
     <a href="#applications"><svg class="ic"><use href="#i-layers"/></svg> Applications</a>
     <a href="#compare"><svg class="ic"><use href="#i-compare"/></svg> Compare</a>
+    <a href="#datamodel"><svg class="ic"><use href="#i-net"/></svg> Data Model</a>
     <a href="#migration"><svg class="ic"><use href="#i-swap"/></svg> Migration</a>
     <a href="#sql"><svg class="ic"><use href="#i-term"/></svg> SQL</a>
     <a href="#jobs"><svg class="ic"><use href="#i-list"/></svg> Jobs</a>
@@ -215,7 +217,7 @@
       <h1>The complete DevHub guide.</h1>
       <p class="lead">Every screen, every button — what it is, where it lives, and how to use it, with a screenshot for each. If you have never opened DevHub before, start at the top and read straight down.</p>
       <div class="hero-meta">
-        <span class="chip"><svg class="ic"><use href="#i-check"/></svg> 10 screens covered</span>
+        <span class="chip"><svg class="ic"><use href="#i-check"/></svg> 11 screens covered</span>
         <span class="chip"><svg class="ic"><use href="#i-check"/></svg> Windows &amp; macOS</span>
         <span class="chip"><svg class="ic"><use href="#i-check"/></svg> Click any image to zoom</span>
       </div>
@@ -487,9 +489,34 @@
       </div>
     </section>
 
+    <!-- DATA MODEL -->
+    <section class="doc" id="datamodel">
+      <span class="eyebrow">Screen 6</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-net"/></svg></span>
+        <div>
+          <h2>Data Model</h2>
+          <p>Map an environment's structure two ways — an entity-relationship diagram, and a package-dependency browser. Both read straight from the selected environment; nothing is installed on Creatio.</p>
+        </div>
+      </div>
+
+      <p>Pick an <strong>Environment</strong> at the top, then work in either tab. Everything here is <em>read-only</em>.</p>
+
+      <h3><span class="num">1</span>ERD Diagram</h3>
+      <p>Search for objects — <strong>Contact</strong>, <strong>Lead</strong>, your custom objects — and add as many as you like. Press <strong>Render</strong> to draw an entity-relationship diagram built from each object's columns and the <strong>real foreign keys</strong> between the ones you selected. Scroll to zoom, drag to pan, and use <strong>Fit</strong> or <strong>Reset</strong> to reframe. Export the diagram as <strong>SVG</strong> or <strong>PNG</strong>, or copy the underlying <strong>Mermaid</strong> source to reuse elsewhere.</p>
+
+      <h3><span class="num">2</span>Package Dependencies</h3>
+      <p>Choose a <strong>schema type</strong> (entity, client module, source code, process, page, and more) and press <strong>Load</strong>. The table lists every schema of that type with how many packages define it and which package holds the <strong>latest</strong> version. Sort or filter by name, toggle <strong>Multi-package</strong> to show only schemas defined in two or more packages, and open the <strong>Catalog</strong> to jump between types. Click a row to see all of its packages in the side pane, newest first — and for an entity, <strong>Open in ERD</strong> sends it straight to the diagram tab.</p>
+
+      <div class="callout tip">
+        <svg class="ic"><use href="#i-check"/></svg>
+        <p>Relationships come from the database's own foreign-key constraints and columns come from <code>information_schema</code>, so the diagram reflects the environment exactly as deployed — no metadata service required.</p>
+      </div>
+    </section>
+
     <!-- MIGRATION -->
     <section class="doc" id="migration">
-      <span class="eyebrow">Screen 6</span>
+      <span class="eyebrow">Screen 7</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-swap"/></svg></span>
         <div>
@@ -537,7 +564,7 @@
 
     <!-- SQL -->
     <section class="doc" id="sql">
-      <span class="eyebrow">Screen 7</span>
+      <span class="eyebrow">Screen 8</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-term"/></svg></span>
         <div>
@@ -568,7 +595,7 @@
 
     <!-- JOBS -->
     <section class="doc" id="jobs">
-      <span class="eyebrow">Screen 8</span>
+      <span class="eyebrow">Screen 9</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-list"/></svg></span>
         <div>
@@ -593,7 +620,7 @@
 
     <!-- ERRORS -->
     <section class="doc" id="errors">
-      <span class="eyebrow">Screen 9</span>
+      <span class="eyebrow">Screen 10</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-alert"/></svg></span>
         <div>
@@ -618,7 +645,7 @@
 
     <!-- SETTINGS -->
     <section class="doc" id="settings">
-      <span class="eyebrow">Screen 10</span>
+      <span class="eyebrow">Screen 11</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-cog"/></svg></span>
         <div>
