@@ -261,7 +261,7 @@
       <a href="#whats-new">What's new</a>
       <a href="#specs">Requirements</a>
       <a href="#feedback">Feedback</a>
-      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.8/creatio-devhub_0.9.8_x64-setup.exe">
+      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.9/creatio-devhub_0.9.9_x64-setup.exe">
         <svg class="ic"><use href="#i-dl"/></svg> Download
       </a>
     </nav>
@@ -276,12 +276,12 @@
         <h1>Ship Creatio work without living in the <em>terminal</em>.</h1>
         <p class="lede">A native desktop workbench for Creatio developers: environments, source-controlled workspaces, package &amp; app deployment, SQL, and GitHub — all driven from one app.</p>
         <div class="cta-row">
-          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.8/creatio-devhub_0.9.8_x64-setup.exe">
+          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.9/creatio-devhub_0.9.9_x64-setup.exe">
             <svg class="ic"><use href="#i-dl"/></svg> <span class="hero-dl-label">Download for Windows</span>
           </a>
         </div>
         <div class="meta">
-          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.9.8 · Windows 10/11 (x64)</span>
+          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.9.9 · Windows 10/11 (x64)</span>
           <span class="ok"><svg class="ic"><use href="#i-check"/></svg> signed installer &amp; auto-updates</span>
         </div>
       </div>
@@ -326,7 +326,7 @@
     <div class="wrap">
       <div class="stats">
         <div class="stat stat-live"><div class="stat-num" id="dl-count">—</div><div class="stat-cap">installer downloads</div></div>
-        <div class="stat"><div class="stat-num" id="dl-version">v0.9.8</div><div class="stat-cap">latest version</div></div>
+        <div class="stat"><div class="stat-num" id="dl-version">v0.9.9</div><div class="stat-cap">latest version</div></div>
         <div class="stat"><div class="stat-num" id="dl-releases">29</div><div class="stat-cap">releases shipped</div></div>
       </div>
       <div class="stats-note" id="stats-note">Download counts update live.</div>
@@ -416,7 +416,15 @@
       </div>
       <div class="changelog">
         <div class="rel">
-          <div class="rel-tag">v0.9.8<span class="badge">latest</span></div>
+          <div class="rel-tag">v0.9.9<span class="badge">latest</span></div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>One window, one tray icon — plus a steadier Data Model screen</h4>
+            <p>Two fixes. DevHub minimizes to the system tray on close, and relaunching it (desktop shortcut or Start menu) now <strong>restores the existing window</strong> instead of starting a second copy — no more stacking up duplicate tray icons. And the <strong>Data Model</strong> screen is sturdier: a diagram that fails to render is caught and shown as a message instead of blanking the page, and entity fields are now marked <strong>PK / FK</strong> in the ERD. <em>Windows build; the matching macOS update follows shortly.</em></p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.9.8</div>
           <div>
             <div class="rel-date">July 2026</div>
             <h4>A new Data Model screen: ERD diagrams and package dependencies</h4>
@@ -696,12 +704,12 @@
         <div class="dl-platform">
           <h3 class="dl-os"><svg class="ic"><use href="#i-check"/></svg> Windows</h3>
           <div class="dl-links">
-            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.8/creatio-devhub_0.9.8_x64-setup.exe">
+            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.9/creatio-devhub_0.9.9_x64-setup.exe">
               <svg class="ic"><use href="#i-dl"/></svg> Download installer (.exe)
             </a>
-            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.8/creatio-devhub_0.9.8_x64_en-US.msi">Get the .msi</a>
+            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.9/creatio-devhub_0.9.9_x64_en-US.msi">Get the .msi</a>
           </div>
-          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.9.8 · NSIS &amp; MSI · signed · auto-updates after install</div>
+          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.9.9 · NSIS &amp; MSI · signed · auto-updates after install</div>
         </div>
 
         <div class="dl-platform">
@@ -766,7 +774,11 @@
       var assets = latest.assets || [];
       var exe = assets.filter(function (a) { return /\.exe$/i.test(a.name); })[0];
       var msi = assets.filter(function (a) { return /\.msi$/i.test(a.name); })[0];
-      var dmg = assets.filter(function (a) { return /\.dmg$/i.test(a.name); })[0];
+      // A Windows-only release has no .dmg; fall back to the newest release that has one.
+      var dmg = null;
+      for (var di = 0; di < rel.length && !dmg; di++) {
+        dmg = (rel[di].assets || []).filter(function (a) { return /\.dmg$/i.test(a.name); })[0] || null;
+      }
       Array.prototype.forEach.call(document.querySelectorAll('a[href*="creatio-devhub_"]'), function (a) {
         var href = a.getAttribute('href') || '';
         if (exe && /\.exe$/i.test(href)) a.href = exe.browser_download_url;
