@@ -261,7 +261,7 @@
       <a href="#whats-new">What's new</a>
       <a href="#specs">Requirements</a>
       <a href="#feedback">Feedback</a>
-      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.10/creatio-devhub_0.9.10_x64-setup.exe">
+      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.10.0/creatio-devhub_0.10.0_x64-setup.exe">
         <svg class="ic"><use href="#i-dl"/></svg> Download
       </a>
     </nav>
@@ -276,12 +276,12 @@
         <h1>Ship Creatio work without living in the <em>terminal</em>.</h1>
         <p class="lede">A native desktop workbench for Creatio developers: environments, source-controlled workspaces, package &amp; app deployment, SQL, and GitHub — all driven from one app.</p>
         <div class="cta-row">
-          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.10/creatio-devhub_0.9.10_x64-setup.exe">
+          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.10.0/creatio-devhub_0.10.0_x64-setup.exe">
             <svg class="ic"><use href="#i-dl"/></svg> <span class="hero-dl-label">Download for Windows</span>
           </a>
         </div>
         <div class="meta">
-          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.9.10 · Windows 10/11 (x64)</span>
+          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.10.0 · Windows 10/11 (x64)</span>
           <span class="ok"><svg class="ic"><use href="#i-check"/></svg> signed installer &amp; auto-updates</span>
         </div>
       </div>
@@ -301,6 +301,7 @@
             <div class="nv on"><svg class="ic"><use href="#i-branch"/></svg>Workspaces</div>
             <div class="nv"><svg class="ic"><use href="#i-pkg"/></svg>Packages</div>
             <div class="nv"><svg class="ic"><use href="#i-layers"/></svg>Applications</div>
+            <div class="nv"><svg class="ic"><use href="#i-code"/></svg>Logs</div>
             <div class="nv"><svg class="ic"><use href="#i-term"/></svg>Jobs</div>
           </aside>
           <div class="panel">
@@ -326,7 +327,7 @@
     <div class="wrap">
       <div class="stats">
         <div class="stat stat-live"><div class="stat-num" id="dl-count">—</div><div class="stat-cap">installer downloads</div></div>
-        <div class="stat"><div class="stat-num" id="dl-version">v0.9.10</div><div class="stat-cap">latest version</div></div>
+        <div class="stat"><div class="stat-num" id="dl-version">v0.10.0</div><div class="stat-cap">latest version</div></div>
         <div class="stat"><div class="stat-num" id="dl-releases">29</div><div class="stat-cap">releases shipped</div></div>
       </div>
       <div class="stats-note" id="stats-note">Download counts update live.</div>
@@ -370,6 +371,11 @@
           <div class="card-ic"><svg class="ic"><use href="#i-net"/></svg></div>
           <h3>Data model &amp; ERD</h3>
           <p>Render an entity-relationship diagram from any objects you pick — their columns and the real foreign keys between them — then pan, zoom, fit and export it as SVG or PNG. A second tab lists every schema's package dependencies and which package holds the latest version.</p>
+        </article>
+        <article class="card">
+          <div class="card-ic"><svg class="ic"><use href="#i-term"/></svg></div>
+          <h3>Live logs</h3>
+          <p>Watch a Creatio environment's own log as it happens — pick a level and a logger, filter while you read, pause without losing your place, and save what's on screen. Needs cliogate on the environment.</p>
         </article>
         <article class="card">
           <div class="card-ic"><svg class="ic"><use href="#i-table"/></svg></div>
@@ -416,7 +422,15 @@
       </div>
       <div class="changelog">
         <div class="rel">
-          <div class="rel-tag">v0.9.10<span class="badge">latest</span></div>
+          <div class="rel-tag">v0.10.0<span class="badge">latest</span></div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Watch Creatio's log as it happens</h4>
+            <p>A new <strong>Logs</strong> screen streams a Creatio environment's own log in real time. Pick an environment, a level and a logger pattern, then read colour-coded lines as they arrive &mdash; filter while you read, <strong>pause</strong> without losing your place (resuming tells you how many lines went by), and save what's on screen to a file. The stream keeps running while you work elsewhere in DevHub. Worth knowing, because they're Creatio's rules rather than DevHub's: an environment allows <strong>one listener at a time</strong>, so starting a stream stops anyone else watching it, and the server stops broadcasting after three hours. Requires <strong>cliogate</strong> on the environment. Also in this release: a slow environment is no longer misreported as unreachable &mdash; a first, cold export of a large package can outlast clio's patience, and DevHub now says so and suggests trying again instead of sending you to check IIS &mdash; and a job that failed for a passing reason can be <strong>retried</strong> straight from the Jobs screen. <em>Windows build.</em></p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.9.10</div>
           <div>
             <div class="rel-date">July 2026</div>
             <h4>Git is optional — workspaces you made elsewhere just work</h4>
@@ -712,12 +726,12 @@
         <div class="dl-platform">
           <h3 class="dl-os"><svg class="ic"><use href="#i-check"/></svg> Windows</h3>
           <div class="dl-links">
-            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.10/creatio-devhub_0.9.10_x64-setup.exe">
+            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.10.0/creatio-devhub_0.10.0_x64-setup.exe">
               <svg class="ic"><use href="#i-dl"/></svg> Download installer (.exe)
             </a>
-            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.9.10/creatio-devhub_0.9.10_x64_en-US.msi">Get the .msi</a>
+            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.10.0/creatio-devhub_0.10.0_x64_en-US.msi">Get the .msi</a>
           </div>
-          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.9.10 · NSIS &amp; MSI · signed · auto-updates after install</div>
+          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.10.0 · NSIS &amp; MSI · signed · auto-updates after install</div>
         </div>
 
         <div class="dl-platform">
