@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#08080C">
+<meta name="description" content="Every Creatio DevHub release, newest first — what changed and why.">
+<meta property="og:title" content="Creatio DevHub">
+<meta property="og:description" content="Ship Creatio work without living in the terminal. Environments, workspaces, SQL, deployment and GitHub in one desktop app.">
+<link rel="icon" type="image/png" href="./logo-mark.png">
+<title>Changelog — Creatio DevHub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* Design system: Dark Mode (OLED) — "code dark + run green".
+     Committed single-theme: this page is dark-only by design. */
+  :root {
+    --bg:        #08080C;
+    --surface:   #12121C;
+    --surface-2: #0C0C14;
+    --muted:     #1A1A26;
+    --border:    #1F1F2B;
+    --border-2:  #33334A;
+    --fg:        #FFFFFF;
+    --fg-soft:   #A7A7B6;
+    --fg-faint:  #6E6E82;
+    --accent:    #6366F1;
+    --accent-dim:#4F46E5;
+    --on-accent: #FFFFFF;
+    --danger:    #FF453A;
+    --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+    --r: 12px;
+    --shadow: 0 24px 64px -28px rgba(0,0,0,.85);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: var(--font-sans); line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  .wrap { width: 100%; max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+  .ic { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none;
+        stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .eyebrow {
+    font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--accent);
+  }
+
+  /* ---------- nav ---------- */
+  .topbar { position: sticky; top: 0; z-index: 60; background: rgba(8,8,12,.86);
+    backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); }
+  .topbar-in { display: flex; align-items: center; gap: 22px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 11px; font-weight: 700; letter-spacing: -.01em; }
+  .brand-mark { width: 34px; height: 34px; border-radius: 10px; flex: none; display: grid; place-items: center;
+    overflow: hidden; }
+  .brand-mark img { width: 34px; height: 34px; object-fit: contain; display: block; }
+  .brand small { display: block; font-family: var(--font-mono); font-size: 10px; font-weight: 400;
+    color: var(--fg-faint); letter-spacing: .04em; margin-top: -3px; }
+  .nav { margin-left: auto; display: flex; align-items: center; gap: 26px; }
+  .nav a:not(.btn) { text-decoration: none; color: var(--fg-soft); font-size: 14.5px; font-weight: 500;
+    transition: color .18s ease; }
+  .nav a:not(.btn):hover { color: var(--fg); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; cursor: pointer;
+    font-family: var(--font-sans); font-size: 14.5px; font-weight: 600; text-decoration: none;
+    padding: 11px 18px; border-radius: 10px; border: 1px solid transparent;
+    transition: background .2s ease, border-color .2s ease, transform .18s ease, box-shadow .2s ease; }
+  .btn-primary { background: var(--accent); color: var(--on-accent); }
+  .btn-primary:hover { background: #818CF8; transform: translateY(-1px); box-shadow: 0 12px 28px -12px var(--accent); }
+  .btn-ghost { border-color: var(--border-2); color: var(--fg); background: transparent; }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-lg { padding: 14px 24px; font-size: 15.5px; }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 78px 0 46px; }
+  .hero-grid { display: grid; grid-template-columns: 1.04fr .96fr; gap: 56px; align-items: center; }
+  h1 { font-size: clamp(36px, 5.2vw, 58px); line-height: 1.05; letter-spacing: -.03em; font-weight: 800;
+    margin: 18px 0 0; text-wrap: balance; }
+  h1 em { font-style: normal; color: var(--accent); text-shadow: 0 0 22px rgba(99,102,241,.35); }
+  .lede { font-size: 18px; color: var(--fg-soft); margin: 20px 0 0; max-width: 40ch; }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+  .meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px 20px;
+    font-family: var(--font-mono); font-size: 12px; color: var(--fg-faint); }
+  .meta .ok { color: var(--accent); display: inline-flex; align-items: center; gap: 6px; }
+  .meta .ok .ic { width: 14px; height: 14px; }
+
+  /* ---------- app mockup ---------- */
+  .window { background: #0A0A12; border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); overflow: hidden; }
+  .win-bar { display: flex; align-items: center; gap: 7px; padding: 12px 14px;
+    border-bottom: 1px solid var(--border); background: var(--surface-2); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .win-title { margin-left: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--fg-faint); }
+  .win-body { display: grid; grid-template-columns: 146px 1fr; min-height: 300px; }
+  .side { border-right: 1px solid var(--border); padding: 10px 8px; background: #08080E; }
+  .side-h { font-family: var(--font-mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
+    color: #4B5872; padding: 6px 9px; }
+  .nv { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 8px;
+    font-size: 12.5px; color: var(--fg-soft); }
+  .nv .ic { width: 15px; height: 15px; opacity: .7; }
+  .nv.on { background: rgba(99,102,241,.1); color: var(--fg); }
+  .nv.on .ic { color: var(--accent); opacity: 1; }
+  .panel { padding: 14px 16px; display: flex; flex-direction: column; }
+  .panel-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+  .panel-h strong { font-size: 13.5px; letter-spacing: -.01em; }
+  .chip { font-family: var(--font-mono); font-size: 10px; padding: 3px 10px; border-radius: 999px;
+    background: rgba(99,102,241,.13); color: var(--accent); border: 1px solid rgba(99,102,241,.28); }
+  .log { background: #07070B; border: 1px solid var(--border); border-radius: 10px; padding: 13px;
+    flex: 1; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.75; }
+  .log .t { color: #46536E; } .log .c { color: #9FB0CC; } .log .g { color: var(--accent); }
+  .caret { display: inline-block; width: 7px; height: 13px; background: var(--accent);
+    vertical-align: -2px; margin-left: 3px; animation: blink 1.1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ---------- stats ---------- */
+  .stats-band { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    background: var(--surface-2); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .stat { padding: 30px 12px 10px; text-align: center; }
+  .stat + .stat { border-left: 1px solid var(--border); }
+  .stat-num { font-size: clamp(28px, 4.2vw, 42px); font-weight: 800; letter-spacing: -.025em;
+    font-variant-numeric: tabular-nums; line-height: 1; }
+  .stat-live .stat-num { color: var(--accent); text-shadow: 0 0 20px rgba(99,102,241,.28); }
+  .stat-cap { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--fg-faint); margin-top: 10px; }
+  .stats-note { text-align: center; font-family: var(--font-mono); font-size: 11px;
+    color: var(--fg-faint); padding: 14px 0 24px; }
+  .stats-note a { color: var(--accent); text-decoration: none; }
+  .stats-note a:hover { text-decoration: underline; }
+
+  /* ---------- sections ---------- */
+  section { padding: 62px 0; }
+  .sec-head { max-width: 62ch; margin-bottom: 36px; }
+  .sec-head h2 { font-size: clamp(25px, 3.6vw, 36px); letter-spacing: -.025em; font-weight: 700;
+    margin: 10px 0 0; text-wrap: balance; }
+  .sec-head p { color: var(--fg-soft); font-size: 16.5px; margin: 12px 0 0; }
+
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+    padding: 24px; transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+  .card:hover { border-color: rgba(99,102,241,.5); transform: translateY(-3px); box-shadow: var(--shadow); }
+  .card-ic { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
+    background: rgba(99,102,241,.12); color: var(--accent); margin-bottom: 15px; }
+  .card-ic .ic { width: 19px; height: 19px; }
+  .card h3 { font-size: 17px; letter-spacing: -.01em; margin: 0 0 8px; font-weight: 650; }
+  .card p { color: var(--fg-soft); font-size: 14.5px; margin: 0; }
+  /* Feedback cards carry an action; the rest of the card grid does not. */
+  .card .btn { margin-top: 18px; }
+
+  /* ---------- flow ---------- */
+  .band { background: var(--surface-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .step { padding: 22px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); }
+  .step .n { font-family: var(--font-mono); font-size: 11.5px; color: var(--accent); font-weight: 700; }
+  .step h4 { margin: 11px 0 6px; font-size: 15.5px; letter-spacing: -.01em; }
+  .step p { margin: 0; font-size: 13.5px; color: var(--fg-soft); }
+
+  /* ---------- changelog ---------- */
+  .changelog { display: flex; flex-direction: column; }
+  .rel { display: grid; grid-template-columns: 150px 1fr; gap: 24px; padding: 24px 0;
+    border-top: 1px solid var(--border); }
+  .rel:first-child { border-top: 0; padding-top: 4px; }
+  .rel-tag { font-family: var(--font-mono); font-weight: 700; font-size: 15px; color: var(--accent); white-space: nowrap; }
+  .rel-tag .badge { display: inline-block; margin-left: 8px; font-size: 9px; letter-spacing: .08em;
+    text-transform: uppercase; background: rgba(99,102,241,.14); border: 1px solid rgba(99,102,241,.3);
+    color: var(--accent); padding: 2px 7px; border-radius: 999px; vertical-align: 2px; }
+  .rel-date { font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-faint); margin-bottom: 5px; }
+  .rel h4 { margin: 0 0 7px; font-size: 17px; letter-spacing: -.01em; }
+  .rel p { margin: 0; color: var(--fg-soft); font-size: 14.5px; max-width: 64ch; }
+  .rel p a { color: var(--accent); text-decoration: none; }
+  .rel p a:hover { text-decoration: underline; }
+
+  /* ---------- specs ---------- */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .spec { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 26px; }
+  .spec h3 { margin: 0 0 18px; font-size: 12px; font-family: var(--font-mono); letter-spacing: .1em;
+    text-transform: uppercase; color: var(--fg-faint); font-weight: 500; }
+  .spec ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+  .spec li { display: flex; gap: 12px; font-size: 14.5px; align-items: flex-start; color: var(--fg-soft); }
+  .spec li .ic { width: 17px; height: 17px; color: var(--accent); margin-top: 3px; }
+  .spec li b { color: var(--fg); font-weight: 600; }
+
+  /* ---------- download ---------- */
+  .dl-box { background: linear-gradient(180deg, var(--surface), var(--surface-2));
+    border: 1px solid var(--border); border-radius: 18px; padding: 50px 30px; text-align: center;
+    box-shadow: var(--shadow); }
+  .dl-box h2 { font-size: clamp(25px, 3.6vw, 34px); letter-spacing: -.025em; margin: 0 0 10px; }
+  .dl-box p { color: var(--fg-soft); margin: 0 auto 28px; max-width: 48ch; }
+  .dl-links { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .dl-note { margin-top: 22px; font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-faint); }
+  .dl-note a { color: var(--accent); text-decoration: none; }
+  .dl-note a:hover { text-decoration: underline; }
+  .dl-platform { padding: 26px 0; border-top: 1px solid var(--border); }
+  .dl-platform:first-of-type { border-top: 0; padding-top: 6px; }
+  .dl-os { display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 15px; letter-spacing: .01em; margin: 0 0 16px; }
+  .dl-os .ic { width: 16px; height: 16px; color: var(--accent); }
+  .dl-arch { font-family: var(--font-mono); font-size: 11px; color: var(--fg-faint);
+    font-weight: 400; letter-spacing: 0; }
+  .dl-gatekeeper { margin-top: 12px; max-width: 60ch; margin-left: auto; margin-right: auto; line-height: 1.6; }
+  .dl-gatekeeper b { color: var(--fg); }
+  .dl-all { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--border); }
+
+  /* ---------- footer ---------- */
+  footer { border-top: 1px solid var(--border); padding: 36px 0 48px; }
+  .foot { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; }
+  .foot a:not(.brand) { color: var(--fg-soft); text-decoration: none; font-size: 14px; transition: color .18s ease; }
+  .foot a:not(.brand):hover { color: var(--accent); }
+  .made { flex-basis: 100%; margin-top: 6px; font-size: 14px; color: var(--fg-soft); }
+  .made b { color: var(--fg); font-weight: 700; }
+  .made a { color: var(--accent); text-decoration: none; font-family: var(--font-mono); font-size: 13px; }
+  .made a:hover { text-decoration: underline; }
+  .disclaimer { flex-basis: 100%; color: var(--fg-faint); font-size: 12.5px; margin: 2px 0 0; max-width: 72ch; }
+
+  a:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+
+  @media (max-width: 1024px) { .features { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 860px) {
+    .hero { padding: 52px 0 34px; }
+    .hero-grid { grid-template-columns: 1fr; gap: 34px; }
+    .lede { max-width: none; }
+    .features, .flow, .split { grid-template-columns: 1fr; }
+    .rel { grid-template-columns: 1fr; gap: 8px; }
+    .nav a:not(.btn) { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  /* changelog page */
+  .page-head { padding: 56px 0 26px; border-bottom: 1px solid var(--border); }
+  .page-head h1 { font-size: clamp(30px, 4vw, 44px); margin: 14px 0 0; }
+  .page-head .lede { margin-top: 14px; max-width: 60ch; }
+  #whats-new .wrap { padding-top: 30px; padding-bottom: 60px; }
+  kbd { font-family: var(--font-mono); font-size: .85em; padding: 1px 5px; border-radius: 5px;
+        border: 1px solid var(--border-2); color: var(--fg-soft); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+  <symbol id="i-dash" viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+  <symbol id="i-branch" viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
+  <symbol id="i-pkg" viewBox="0 0 24 24"><path d="m7.5 4.3 9 5.1"/><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.8 2.2a2 2 0 0 0-1.6 0L2.6 6.1a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.6 0l8.6-3.9a1 1 0 0 0 0-1.8Z"/><path d="m6.1 10.4-3.5 1.6a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.6 0l8.6-3.9a1 1 0 0 0 0-1.8l-3.5-1.6"/></symbol>
+  <symbol id="i-term" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.7 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.5 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="m8 3-4 4 4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M12 9v12"/></symbol>
+  <symbol id="i-net" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="6" rx="1"/><rect x="14" y="15" width="7" height="6" rx="1"/><rect x="3" y="15" width="7" height="6" rx="1"/><path d="M7 9v3a2 2 0 0 0 2 2h8.5M6.5 9v6"/></symbol>
+  <symbol id="i-gh" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+</svg>
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="#" style="text-decoration:none">
+      <span class="brand-mark"><img src="./logo-mark.png" alt="Creatio DevHub logo"></span>
+      <span>DevHub<small>for Creatio</small></span>
+    </a>
+    <nav class="nav">
+      <a href="index.html#features">Features</a>
+      <a href="docs.html">Guide</a>
+      <a href="changelog.html">Changelog</a>
+      <a href="index.html#specs">Requirements</a>
+      <a href="index.html#feedback">Feedback</a>
+      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/latest">
+        <svg class="ic"><use href="#i-dl"/></svg> Download
+      </a>
+    </nav>
+  </div>
+</header>
+
+  <section class="page-head">
+    <div class="wrap">
+      <span class="eyebrow">Changelog</span>
+      <h1>Every release, newest first</h1>
+      <p class="lede">What changed in each version of DevHub, and why it mattered. Updates install
+      themselves once you are on a signed build.</p>
+    </div>
+  </section>
+
+  <section id="whats-new">
+    <div class="wrap">
+      <div class="changelog">
+
+        <div class="rel">
+          <div class="rel-tag">v0.12.0<span class="badge">latest</span></div>
+          <div>
+            <div class="rel-date">August 2026</div>
+            <h4>Schemas becomes a workspace</h4>
+            <p>The Schemas screen is now a place to work rather than a viewer. Source opens in a <strong>full code editor</strong> &mdash; syntax colouring for JavaScript, C# and SQL, find and replace, undo, multi-cursor, and <kbd>Ctrl+S</kbd> to save. A <strong>package explorer</strong> replaces the flat list, several schemas stay <strong>open as tabs</strong> with their own edits, and <kbd>Ctrl+P</kbd> jumps straight to any schema by name. Suggestions understand Creatio: Freedom UI request names, handler and <strong>lookup-filter</strong> skeletons, ESQ and web-service snippets for C#, and real table names from your environment while writing SQL. Formatting is available for JavaScript and SQL.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.11.0</div>
+          <div>
+            <div class="rel-date">August 2026</div>
+            <h4>Finish the job after a deploy &mdash; and see what's switched on</h4>
+            <p><strong>Apply changes</strong> runs compile, flush Redis and restart as one job, in that order, so a failed compile stops before anything is torn down. A new <strong>Features</strong> screen reads Creatio's feature toggles as they stand, switches them, and compares two environments side by side. <strong>Schemas</strong> arrived: open a server schema's source, see exactly what an edit would change, and save it back &mdash; with a refusal rather than an overwrite if someone else changed it meanwhile. <strong>SQL and ping</strong> moved to a direct connection: ping answers in about a tenth of a second and now reports whether Creatio reached its database and loaded its configuration. Adding a package a workspace already has now offers to pull it.</p>
+          </div>
+        </div>
+
+        <div class="rel">
+          <div class="rel-tag">v0.10.0</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Watch Creatio's log as it happens</h4>
+            <p>A new <strong>Logs</strong> screen streams a Creatio environment's own log in real time. Pick an environment, a level and a logger pattern, then read colour-coded lines as they arrive &mdash; filter while you read, <strong>pause</strong> without losing your place (resuming tells you how many lines went by), and save what's on screen to a file. The stream keeps running while you work elsewhere in DevHub. Worth knowing, because they're Creatio's rules rather than DevHub's: an environment allows <strong>one listener at a time</strong>, so starting a stream stops anyone else watching it, and the server stops broadcasting after three hours. Requires <strong>cliogate</strong> on the environment. Also in this release: a slow environment is no longer misreported as unreachable &mdash; a first, cold export of a large package can outlast clio's patience, and DevHub now says so and suggests trying again instead of sending you to check IIS &mdash; and a job that failed for a passing reason can be <strong>retried</strong> straight from the Jobs screen. <em>Windows build.</em></p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.9.10</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Git is optional — workspaces you made elsewhere just work</h4>
+            <p>Point DevHub at a workspace you created outside it &mdash; clio from VS Code, or any folder that isn't a git repository &mdash; and it no longer fails on every git action. <strong>Pull from Creatio</strong> and <strong>Add package</strong> run without a repository, and the workspace screen stops filling the Errors view with <em>"not a git repository"</em>. When you do want version control, a new <strong>Initialize git repository</strong> button on the Changes tab sets it up: git init and a .gitignore, with no automatic commit, so the first commit is still yours to review. <em>Windows build.</em></p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.9.9</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>One window, one tray icon — plus a steadier Data Model screen</h4>
+            <p>Two fixes. DevHub minimizes to the system tray on close, and relaunching it (desktop shortcut or Start menu) now <strong>restores the existing window</strong> instead of starting a second copy — no more stacking up duplicate tray icons. And the <strong>Data Model</strong> screen is sturdier: a diagram that fails to render is caught and shown as a message instead of blanking the page, and entity fields are now marked <strong>PK / FK</strong> in the ERD. <em>Windows build; the matching macOS update follows shortly.</em></p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.9.8</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>A new Data Model screen: ERD diagrams and package dependencies</h4>
+            <p>A new <strong>Data Model</strong> screen maps an environment's structure two ways. <strong>ERD Diagram</strong> builds an entity-relationship diagram from any objects you pick — their columns and the real foreign keys between them — that you can pan, zoom, fit, and export as <strong>SVG</strong> or <strong>PNG</strong>. <strong>Package Dependencies</strong> lists every schema of a chosen type with how many packages define it and which one holds the latest version, so multi-package overrides are obvious at a glance — and you can send any entity straight into the diagram. It reads directly from the selected environment, so nothing needs installing on Creatio.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.9.7</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Migration &rsaquo; Objects: honest about multi-package objects</h4>
+            <p>An object like <strong>Account</strong> is defined and extended across many packages &mdash; nine, in a typical instance. The list now shows each object once but tells the truth about that: the badge reads its home package plus a count (e.g. <strong>CrtCoreBase&nbsp;+8</strong>), and hovering it lists every package the object touches. Objects that live in a single package just show that package, as before.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.9.1</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Migration &rsaquo; Objects: each object listed once</h4>
+            <p>The Migration screen's <strong>Objects</strong> search used to list a common object like <strong>Account</strong> many times over &mdash; once for every package that defines or extends it. Because those entries shared a name, the list rendered scrambled and picking one object highlighted almost all of them. Now each object appears <strong>exactly once</strong>, so the list is clean and selection behaves.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.9.0</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>GitHub sign-in without the scavenger hunt</h4>
+            <p>Signing in to GitHub used to bury the one-time code in the Jobs log; now it appears right in <strong>Settings</strong>, with buttons to copy it and open the GitHub device page. Prefer not to use the browser flow at all? Paste a <strong>personal access token</strong> instead &mdash; it goes straight to the GitHub CLI over a private channel, and DevHub never stores or logs it. Workspaces also gain a <strong>repository picker</strong>: choose any repo from your GitHub account in a dropdown to set &mdash; or change &mdash; where a workspace pushes, instead of hunting down and pasting a remote URL. The manual URL box remains for repos outside your account.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.8.9 &ndash; v0.8.10</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Copy any object's data &mdash; and no more frozen window</h4>
+            <p>The Migration screen now goes beyond lookups. A new <strong>Objects</strong> tab searches every entity in an environment &mdash; Lead, Contact, your custom objects &mdash; shows its columns and foreign-key hierarchy, and copies a chosen object's rows into another environment, with a rollback script written first. Alongside it, an important fix: running <strong>SQL against an environment other than your default</strong> used to freeze the whole window while the connection was established &mdash; Windows would even mark DevHub &ldquo;Not Responding&rdquo;. Those reads (SQL, packages, applications, lookups, objects and GitHub lists) now run off the interface thread, so the app stays responsive and only the screen you asked shows its loading state.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.8.8</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Every failure, collected in one place</h4>
+            <p>A new app-wide <strong>Errors</strong> view gathers failures from every screen as they happen, with a toast when something new lands &mdash; no more losing an error message because you switched tabs. The SQL screen is reorganized into <strong>Editor, Saved queries and Errors</strong> tabs, and a failed query can be reloaded into the editor straight from its error entry.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.8.5 &ndash; v0.8.7</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>DevHub comes to the Mac</h4>
+            <p>DevHub now ships a <strong>universal macOS build</strong> (Apple Silicon and Intel) alongside Windows, with the same signed auto-updates. It finds your clio environments where the Mac build of clio actually keeps them, and job cancellation cleans up the whole process tree. Builds aren&rsquo;t yet Apple-notarized, so the first launch is right-click &rarr; <b>Open</b>. One honest retirement: the marketing-content migration introduced in v0.8.3&ndash;v0.8.4 proved to fight the platform on real environments &mdash; dense per-environment references meant raw-SQL workarounds that bypassed Creatio&rsquo;s own validation &mdash; and was removed in v0.8.7. The Migration screen instead focuses on what works reliably: lookups, and (since v0.8.9) any object&rsquo;s data.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.8.4</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Move campaigns and emails between environments</h4>
+            <p>The Migration screen now copies <strong>marketing content</strong> &mdash; campaigns, bulk emails, email designer templates, dynamic content, and campaign <strong>flow diagrams</strong> &mdash; from one environment to another with their original IDs, so everything that references them keeps working. Pick individual campaigns and bulk emails or move everything missing; parents a selected record needs come along automatically. References the target cannot satisfy are resolved for you: a missing contact or lookup is matched to the target's row of the same name where one exists, otherwise the field is cleared &mdash; and every such change is listed in the result. A rollback script is written before anything is inserted. If you installed v0.8.3, update: it shipped this feature without the reference resolution and fails on records owned by environment-specific contacts. <em>Update, this feature was retired in v0.8.7 &mdash; see the note above.</em></p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.8.1 &ndash; v0.8.2</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Lookup capture fixed, sharper edges filed down</h4>
+            <p>Capturing lookups no longer fails on environments where a lookup points at a table without a <strong>Name</strong> column, and values registered twice are no longer captured twice. The SQL screen now explains why <strong>RAISE NOTICE</strong> output comes back empty and how to get results into a grid, the Jobs screen keeps wide logs inside the page and can collapse the job list, and long filenames in the Workspaces change list stay readable.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.8.0</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Move reference data between environments</h4>
+            <p>Package deployment moves your configuration between environments &mdash; but not the reference data sitting in <strong>lookup</strong> tables, unless it happens to be bound to a package. Two additions close that gap. <strong>Compare</strong> gains a <strong>Lookups</strong> tab that shows exactly which lookup values differ between two environments, down to the individual row. And a new <strong>Migration</strong> screen copies the lookups you pick from one environment to another &mdash; matched on each value's identity so the records that depend on them keep working, shown to you as SQL before anything runs, and backed by an automatic rollback script so the change can be undone.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.7.0</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Compare two environments, down to the schema</h4>
+            <p>The new <strong>Compare</strong> screen answers the question that used to mean guesswork: is pre-prod still the same as dev, and what exactly differs. Capture each environment once, then see every differing package, system setting, feature and web service &mdash; and open a package to see <em>which schemas</em> moved, which is how duplicate-element collisions announce themselves before a deployment fails. Comparison runs against the saved snapshots, so re-comparing is instant and nothing is ever written to your environments. Setting values stay hidden unless you reveal them, and exported reports leave them out entirely, because that is where API keys live. The Packages screen also shows at last which packages are <strong>locked</strong>.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.6.0</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>See what an application actually contains</h4>
+            <p>Application tiles now show the <strong>developer</strong>, how many packages the app installs, the Creatio version it needs, and when it last changed — and you can filter by developer to separate your own apps from the stock ones. The new <strong>Details</strong> view opens the full descriptor: dates, links, the application's packages, and the pages it contributes.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.5.2</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>SQL errors surface, packages filter by field</h4>
+            <p>An important fix: when the database rejects a query, DevHub now shows you its actual error — clio reports those with a success code, so v0.5.1 could show a green tick instead. <strong>Update if you are on v0.5.1.</strong> The Packages screen also filters properly now: search by name or version, and pick a <strong>maintainer</strong> from its own list, with the two narrowing together.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.5.1</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Statements report success</h4>
+            <p>Running an <strong>UPDATE</strong> or other statement in the SQL screen used to look like it had failed — DevHub showed clio's own success output as an error. It now says the statement ran successfully, and the export buttons step aside when there are no rows to write.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.5.0</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Updates that announce themselves</h4>
+            <p>DevHub now tells you in the header when a new version is out — no need to go looking in Settings. It checks shortly after launch and every few hours, you can dismiss a release you're not ready for, and a check that fails while you're offline stays out of your way. Deployments are also more honest: when Creatio answers with a <strong>server error</strong>, the job is marked failed instead of green, even if the command line reported success.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.4.0</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>A refreshed interface</h4>
+            <p>DevHub's entire interface was rebuilt on a modern component system for a cleaner, more consistent look. It ships with matching <strong>light and dark themes</strong> that follow your Windows setting, and a new Appearance control in Settings to pin either one. Background environment health checks are quieter too — they no longer raise a burst of notifications when you open the app.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.3.2</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Clearer failure explanations</h4>
+            <p>When a command fails, DevHub now explains the likely cause and the steps to fix it, with the raw technical detail tucked away but still available.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.3.1</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Finds your CLIs reliably</h4>
+            <p>DevHub locates clio, Git, and the GitHub CLI from the live system PATH and the usual install locations, so a tool installed after your last sign-in is still found instead of showing as missing.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.3.0</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>clio management, and a bigger SQL grid</h4>
+            <p>DevHub now looks after the clio CLI it depends on: install it when it's missing, update it when a newer build ships, and <strong>repair</strong> a damaged install. Known failures are explained rather than dumped — a locked tool store now tells you a clio command is still running. The SQL grid also shows up to 5,000 rows (exports were always uncapped).</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.2.9</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Saved SQL queries</h4>
+            <p>Name and save queries locally, reopen them for editing, or rerun them against the environment they were saved for.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.2.8</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Clearer deployment outcomes</h4>
+            <p>Failed deployments now explain what actually happened, so a red job is diagnosable at a glance.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.2.7</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>SQL runner with CSV &amp; Excel export</h4>
+            <p>Run SQL against a registered environment from inside DevHub, read the result in a grid, and export the full result set to CSV or Excel.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.2.6</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Deploy from GitHub</h4>
+            <p>Clone a repository at a chosen branch and install it straight into an environment — restore a broken environment from known-good source, or move a package onto a fresh one.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.2.5</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Live job indicator &amp; auto-captured catalog</h4>
+            <p>An activity indicator shows running jobs from any screen. Package and application lists are captured into the cache automatically on launch and when you switch environments.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.2.4</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>Empty-first workspaces &amp; GitHub from the app</h4>
+            <p>Start an empty workspace and add only the packages you want, then create a private GitHub repo and push — without leaving DevHub.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.2.3</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>New look &amp; persistent job history</h4>
+            <p>Refreshed branding, plus a job history that survives restarts so you can revisit past runs and their logs.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.2.1</div>
+          <div>
+            <div class="rel-date">July 2026</div>
+            <h4>First public release</h4>
+            <p>Signed Windows installers (NSIS &amp; MSI) published to GitHub, with cryptographically verified auto-updates.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+<footer>
+  <div class="wrap foot">
+    <span class="brand">
+      <span class="brand-mark"><img src="./logo-mark.png" alt="Creatio DevHub logo"></span>
+      <span>DevHub<small>for Creatio</small></span>
+    </span>
+    <a href="docs.html">Docs</a>
+    <a href="mailto:sutharsmit574@gmail.com">Support</a>
+    <div class="made">Developed by <b>Smit Suthar</b> &nbsp;·&nbsp; Found an issue or have feedback? Email <a href="mailto:sutharsmit574@gmail.com?subject=Creatio%20DevHub%20—%20issue%2Ffeedback">sutharsmit574@gmail.com</a></div>
+    <p class="disclaimer">An independent community tool for developers working with the Creatio platform. Not affiliated with, endorsed by, or an official product of Creatio.</p>
+  </div>
+</footer>
+</body>
+</html>

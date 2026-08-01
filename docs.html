@@ -195,6 +195,7 @@
     <a href="#getting-started"><svg class="ic"><use href="#i-rocket"/></svg> Getting started</a>
     <a href="#layout"><svg class="ic"><use href="#i-home"/></svg> The window, tour</a>
     <h4>Every screen</h4>
+    <a href="#dashboard"><svg class="ic"><use href="#i-home"/></svg> Dashboard</a>
     <a href="#environments"><svg class="ic"><use href="#i-db"/></svg> Environments</a>
     <a href="#workspaces"><svg class="ic"><use href="#i-branch"/></svg> Workspaces &amp; Git</a>
     <a href="#packages"><svg class="ic"><use href="#i-pkg"/></svg> Packages</a>
@@ -202,7 +203,10 @@
     <a href="#compare"><svg class="ic"><use href="#i-compare"/></svg> Compare</a>
     <a href="#datamodel"><svg class="ic"><use href="#i-net"/></svg> Data Model</a>
     <a href="#migration"><svg class="ic"><use href="#i-swap"/></svg> Migration</a>
+    <a href="#features-screen"><svg class="ic"><use href="#i-check"/></svg> Features</a>
+    <a href="#schemas"><svg class="ic"><use href="#i-code"/></svg> Schemas</a>
     <a href="#sql"><svg class="ic"><use href="#i-term"/></svg> SQL</a>
+    <a href="#logs"><svg class="ic"><use href="#i-term"/></svg> Logs</a>
     <a href="#jobs"><svg class="ic"><use href="#i-list"/></svg> Jobs</a>
     <a href="#errors"><svg class="ic"><use href="#i-alert"/></svg> Errors</a>
     <a href="#settings"><svg class="ic"><use href="#i-cog"/></svg> Settings</a>
@@ -217,7 +221,7 @@
       <h1>The complete DevHub guide.</h1>
       <p class="lead">Every screen, every button — what it is, where it lives, and how to use it, with a screenshot for each. If you have never opened DevHub before, start at the top and read straight down.</p>
       <div class="hero-meta">
-        <span class="chip"><svg class="ic"><use href="#i-check"/></svg> 11 screens covered</span>
+        <span class="chip"><svg class="ic"><use href="#i-check"/></svg> 15 screens covered</span>
         <span class="chip"><svg class="ic"><use href="#i-check"/></svg> Windows &amp; macOS</span>
         <span class="chip"><svg class="ic"><use href="#i-check"/></svg> Click any image to zoom</span>
       </div>
@@ -277,7 +281,7 @@
       </div>
 
       <ul class="plain">
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Left sidebar</b> — the ten screens. It collapses to icons with the toggle at the top; hover a collapsed icon for its label. A red badge on <b>Errors</b> counts unread failures.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Left sidebar</b> — the sidebar screens. It collapses to icons with the toggle at the top; hover a collapsed icon for its label. A red badge on <b>Errors</b> counts unread failures.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Header</b> — shows where you are (“<i>Screen</i> / DevHub”) and a <b>Help &amp; updates</b> shortcut to Settings.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Running-job toaster, bottom-right</b> — whenever DevHub is doing something (a capture, a deploy), a live indicator shows the phase and an <b>Open Jobs</b> link. It never blocks you.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Banners</b> — a slim bar appears under the header only when it matters: <code>clio</code> needs attention, or a new DevHub release is ready.</span></li>
@@ -292,9 +296,31 @@
       </figure>
     </section>
 
+    <!-- DASHBOARD -->
+    <section class="doc" id="dashboard">
+      <span class="eyebrow">Screen 1</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></span>
+        <div>
+          <h2>Dashboard</h2>
+          <p>The screen DevHub opens on: what your workbench looks like right now, at a glance.</p>
+        </div>
+      </div>
+
+      <p>Four cards count your <strong>environments</strong> (and which is the default), your
+      <strong>workspaces</strong> (and how many have local changes), <strong>active jobs</strong>, and anything that
+      <strong>needs attention</strong> — failed jobs plus workspaces with uncommitted work. Below them, <strong>Recent
+      activity</strong> lists the last few jobs and updates itself live as they run, so you can watch a deploy without
+      leaving the page. A <strong>Workspace readiness</strong> meter scores six checks — environments registered, a default
+      chosen, workspaces created and present on disk, nothing dirty, nothing failed — and the quick actions jump straight
+      to whichever screen fills the gap.</p>
+
+      <p>Nothing here changes an environment; it is a read-only summary you can safely leave open.</p>
+    </section>
+
     <!-- ENVIRONMENTS -->
     <section class="doc" id="environments">
-      <span class="eyebrow">Screen 1</span>
+      <span class="eyebrow">Screen 2</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-db"/></svg></span>
         <div>
@@ -315,6 +341,22 @@
       <p>Use <strong>Add environment</strong> (top-right) to register a new one. The card marked <strong>default</strong> is
       the one DevHub pre-selects everywhere else — you set it here or in Settings.</p>
 
+            <p><strong>Apply changes</strong> finishes the job after a deploy. Installing a package is only half of getting code
+      live: Creatio still has to compile the configuration, drop its cached schemas and restart. This runs all three as a
+      single tracked job, in that order, so a failed compile stops the run <em>before</em> anything is torn down. Each step
+      is optional — leave <strong>Restart</strong> unticked for a compile-only pass.</p>
+
+      <div class="callout warn">
+        <svg class="ic"><use href="#i-alert"/></svg>
+        <p><b>A restart signs everyone out</b> of that environment for a moment, and the first page load afterwards is slow
+        while Creatio warms up. Fine on your own dev site; think twice on a shared one.</p>
+      </div>
+
+      <p>The status badge on each environment card now comes from Creatio's own health endpoint, so it answers in about a
+      tenth of a second — and it reports more than up or down: hover it to see whether Creatio reached its
+      <strong>database</strong> and loaded its <strong>configuration assembly</strong>. An environment that is running but
+      broken no longer reads as simply online.</p>
+
       <figure>
         <div class="shot" data-full="assets/docs/environments.png">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Environments</span></div>
@@ -326,7 +368,7 @@
 
     <!-- WORKSPACES -->
     <section class="doc" id="workspaces">
-      <span class="eyebrow">Screen 2</span>
+      <span class="eyebrow">Screen 3</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-branch"/></svg></span>
         <div>
@@ -378,7 +420,7 @@
 
     <!-- PACKAGES -->
     <section class="doc" id="packages">
-      <span class="eyebrow">Screen 3</span>
+      <span class="eyebrow">Screen 4</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-pkg"/></svg></span>
         <div>
@@ -408,7 +450,7 @@
 
     <!-- APPLICATIONS -->
     <section class="doc" id="applications">
-      <span class="eyebrow">Screen 4</span>
+      <span class="eyebrow">Screen 5</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-layers"/></svg></span>
         <div>
@@ -444,7 +486,7 @@
 
     <!-- COMPARE -->
     <section class="doc" id="compare">
-      <span class="eyebrow">Screen 5</span>
+      <span class="eyebrow">Screen 6</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-compare"/></svg></span>
         <div>
@@ -491,7 +533,7 @@
 
     <!-- DATA MODEL -->
     <section class="doc" id="datamodel">
-      <span class="eyebrow">Screen 6</span>
+      <span class="eyebrow">Screen 7</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-net"/></svg></span>
         <div>
@@ -516,7 +558,7 @@
 
     <!-- MIGRATION -->
     <section class="doc" id="migration">
-      <span class="eyebrow">Screen 7</span>
+      <span class="eyebrow">Screen 8</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-swap"/></svg></span>
         <div>
@@ -563,8 +605,80 @@
     </section>
 
     <!-- SQL -->
-    <section class="doc" id="sql">
-      <span class="eyebrow">Screen 8</span>
+        <!-- FEATURES -->
+    <section class="doc" id="features-screen">
+      <span class="eyebrow">Screen 9</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></span>
+        <div>
+          <h2>Features</h2>
+          <p>Creatio's feature toggles: what is switched on, switch it, and compare two environments.</p>
+        </div>
+      </div>
+
+      <p>Pick an environment and DevHub reads its feature state as it stands right now — every feature, its
+      <strong>default</strong>, and how many groups override it in each direction. The switch on the right turns one on or
+      off. Filter by code or name to find one among the hundreds a Creatio instance carries.</p>
+
+      <p>Set <strong>Compare with</strong> to a second environment and the screen becomes a difference list: each feature
+      side by side, with <em>Only differences</em> on by default. This is the fastest answer to the question that usually
+      prompts the search — <em>why does this work on dev and not on pre-prod?</em> — including features that exist on one
+      environment and not the other.</p>
+
+      <div class="callout">
+        <svg class="ic"><use href="#i-alert"/></svg>
+        <p>Switching a feature applies it to the account clio signs in as on that environment — the same scope as
+        <code>clio set-feature</code>. It is not a system-wide default, and a group override can still win for other users.
+        Reading the list needs <em>cliogate</em>.</p>
+      </div>
+    </section>
+
+    <!-- SCHEMAS -->
+    <section class="doc" id="schemas">
+      <span class="eyebrow">Screen 10</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-code"/></svg></span>
+        <div>
+          <h2>Schemas</h2>
+          <p>Server code as a project: browse packages, open several schemas at once, edit and save them.</p>
+        </div>
+      </div>
+
+      <p>Creatio keeps client-module, source-code and SQL-script schemas in its own database, normally reachable only
+      through the designers. This screen makes them a workspace. The left pane is a <strong>package explorer</strong> —
+      packages, then schema kinds, then schemas — and the filter box searches both. Because an environment can hold nine
+      thousand schemas, nothing expands until you ask, and <kbd>Ctrl</kbd>+<kbd>P</kbd> jumps straight to any schema by
+      name without touching the tree at all.</p>
+
+      <p>Schemas open as <strong>tabs</strong>. Several can stay open, each keeping its own edits, its own dirty marker and
+      its own undo history, so you can move between files the way you would in an editor. Closing a tab with unsaved work
+      asks first.</p>
+
+      <h3>The editor</h3>
+      <p>The source opens in a full code editor with syntax colouring chosen by schema kind — JavaScript for client
+      modules, C# for source code, SQL for scripts — and the shortcuts you already use:</p>
+      <ul class="ticks">
+        <li><svg class="ic"><use href="#i-check"/></svg><span><kbd>Ctrl</kbd>+<kbd>S</kbd> save · <kbd>Ctrl</kbd>+<kbd>F</kbd> find · <kbd>Ctrl</kbd>+<kbd>H</kbd> replace · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · multi-cursor</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><kbd>Ctrl</kbd>+<kbd>Space</kbd> for <b>Creatio-aware suggestions</b> — Freedom UI request names, handler and <b>lookup-filter</b> skeletons, ESQ, Select, web-service and event-listener snippets for C#, and real table names read live from your environment while writing SQL.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Format</b> for JavaScript and SQL. C# has no formatter and the button says so rather than pretending.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Full screen</b> when the split view is too tight; <kbd>Esc</kbd> leaves it.</span></li>
+      </ul>
+
+      <h3>Diff before you save</h3>
+      <p><strong>Diff</strong> compares your edit against the server's copy <em>as it is at that moment</em> and shows the
+      added and removed lines. It is worth pressing every time: it is also how you notice that someone else changed the
+      schema while you were working.</p>
+
+      <div class="callout warn">
+        <svg class="ic"><use href="#i-alert"/></svg>
+        <p><b>Saving writes straight to the environment.</b> It takes effect once the configuration is compiled —
+        <b>Environments → Apply changes</b>. If the server's copy no longer matches what you opened, the save is
+        <b>refused</b> rather than overwriting someone else's work. Schemas in locked packages are read-only and say so.</p>
+      </div>
+    </section>
+
+<section class="doc" id="sql">
+      <span class="eyebrow">Screen 11</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-term"/></svg></span>
         <div>
@@ -594,8 +708,35 @@
     </section>
 
     <!-- JOBS -->
-    <section class="doc" id="jobs">
-      <span class="eyebrow">Screen 9</span>
+        <!-- LOGS -->
+    <section class="doc" id="logs">
+      <span class="eyebrow">Screen 12</span>
+      <div class="lead-row">
+        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-term"/></svg></span>
+        <div>
+          <h2>Logs</h2>
+          <p>Creatio's own log, streaming live, without leaving DevHub.</p>
+        </div>
+      </div>
+
+      <p>Choose an environment, a <strong>level</strong> and a <strong>logger pattern</strong>, then press <strong>Start
+      streaming</strong>. Lines arrive as they happen, colour-coded by level. Filter while you read, <strong>pause</strong>
+      without losing your place — resuming tells you how many lines went by — <strong>clear</strong>, or <strong>save</strong>
+      what is on screen to a file. The stream keeps running while you work elsewhere in DevHub, and coming back to the
+      screen picks it up again.</p>
+
+      <div class="callout warn">
+        <svg class="ic"><use href="#i-alert"/></svg>
+        <p><b>Creatio allows one log listener per instance.</b> Starting a stream stops anyone else watching that
+        environment, and the server stops broadcasting after <b>three hours</b>. DevHub releases the listener when you press
+        Stop or quit the app — closing the window only hides it to the tray, and the stream carries on. Streaming needs
+        <em>cliogate</em>, and an environment registered with a user name and password (Creatio's log socket authenticates
+        by session cookie).</p>
+      </div>
+    </section>
+
+<section class="doc" id="jobs">
+      <span class="eyebrow">Screen 13</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-list"/></svg></span>
         <div>
@@ -620,7 +761,7 @@
 
     <!-- ERRORS -->
     <section class="doc" id="errors">
-      <span class="eyebrow">Screen 10</span>
+      <span class="eyebrow">Screen 14</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-alert"/></svg></span>
         <div>
@@ -645,7 +786,7 @@
 
     <!-- SETTINGS -->
     <section class="doc" id="settings">
-      <span class="eyebrow">Screen 11</span>
+      <span class="eyebrow">Screen 15</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-cog"/></svg></span>
         <div>

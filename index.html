@@ -227,6 +227,9 @@
     .nav a:not(.btn) { display: none; }
   }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  kbd { font-family: var(--font-mono); font-size: .85em; padding: 1px 5px; border-radius: 5px;
+        border: 1px solid var(--border-2); color: var(--fg-soft); }
 </style>
 </head>
 <body>
@@ -258,10 +261,10 @@
     <nav class="nav">
       <a href="#features">Features</a>
       <a href="docs.html">Guide</a>
-      <a href="#whats-new">What's new</a>
+      <a href="changelog.html">Changelog</a>
       <a href="#specs">Requirements</a>
       <a href="#feedback">Feedback</a>
-      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.10.0/creatio-devhub_0.10.0_x64-setup.exe">
+      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.0/creatio-devhub_0.12.0_x64-setup.exe">
         <svg class="ic"><use href="#i-dl"/></svg> Download
       </a>
     </nav>
@@ -276,12 +279,12 @@
         <h1>Ship Creatio work without living in the <em>terminal</em>.</h1>
         <p class="lede">A native desktop workbench for Creatio developers: environments, source-controlled workspaces, package &amp; app deployment, SQL, and GitHub — all driven from one app.</p>
         <div class="cta-row">
-          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.10.0/creatio-devhub_0.10.0_x64-setup.exe">
+          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.0/creatio-devhub_0.12.0_x64-setup.exe">
             <svg class="ic"><use href="#i-dl"/></svg> <span class="hero-dl-label">Download for Windows</span>
           </a>
         </div>
         <div class="meta">
-          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.10.0 · Windows 10/11 (x64)</span>
+          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.12.0 · Windows 10/11 (x64)</span>
           <span class="ok"><svg class="ic"><use href="#i-check"/></svg> signed installer &amp; auto-updates</span>
         </div>
       </div>
@@ -327,7 +330,7 @@
     <div class="wrap">
       <div class="stats">
         <div class="stat stat-live"><div class="stat-num" id="dl-count">—</div><div class="stat-cap">installer downloads</div></div>
-        <div class="stat"><div class="stat-num" id="dl-version">v0.10.0</div><div class="stat-cap">latest version</div></div>
+        <div class="stat"><div class="stat-num" id="dl-version">v0.12.0</div><div class="stat-cap">latest version</div></div>
         <div class="stat"><div class="stat-num" id="dl-releases">29</div><div class="stat-cap">releases shipped</div></div>
       </div>
       <div class="stats-note" id="stats-note">Download counts update live.</div>
@@ -378,6 +381,21 @@
           <p>Watch a Creatio environment's own log as it happens — pick a level and a logger, filter while you read, pause without losing your place, and save what's on screen. Needs cliogate on the environment.</p>
         </article>
         <article class="card">
+          <div class="card-ic"><svg class="ic"><use href="#i-check"/></svg></div>
+          <h3>Feature toggles</h3>
+          <p>Read Creatio's feature toggles as they stand right now, switch them, and compare two environments side by side — the form the question usually takes: why does this work on dev and not on pre-prod?</p>
+        </article>
+        <article class="card">
+          <div class="card-ic"><svg class="ic"><use href="#i-code"/></svg></div>
+          <h3>Schema workspace</h3>
+          <p>Browse an environment's schemas in a package explorer, open several as tabs, and edit the source in a full code editor with Creatio-aware suggestions. See exactly what a change would do before it is saved.</p>
+        </article>
+        <article class="card">
+          <div class="card-ic"><svg class="ic"><use href="#i-swap"/></svg></div>
+          <h3>Apply changes</h3>
+          <p>Compile, flush Redis and restart as one tracked job, in the order that makes a failed compile stop before anything is torn down — the steps that get freshly installed code actually live.</p>
+        </article>
+        <article class="card">
           <div class="card-ic"><svg class="ic"><use href="#i-table"/></svg></div>
           <h3>SQL &amp; export</h3>
           <p>Run SQL against any registered environment, read the results in a grid, and export the full set to CSV or Excel — no separate database client.</p>
@@ -418,249 +436,29 @@
       <div class="sec-head">
         <span class="eyebrow">Changelog</span>
         <h2>What's new</h2>
-        <p>DevHub ships often — and updates install themselves after the first download.</p>
+        <p>DevHub ships often &mdash; and updates install themselves after the first download.</p>
       </div>
       <div class="changelog">
+
         <div class="rel">
-          <div class="rel-tag">v0.10.0<span class="badge">latest</span></div>
+          <div class="rel-tag">v0.12.0<span class="badge">latest</span></div>
           <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Watch Creatio's log as it happens</h4>
-            <p>A new <strong>Logs</strong> screen streams a Creatio environment's own log in real time. Pick an environment, a level and a logger pattern, then read colour-coded lines as they arrive &mdash; filter while you read, <strong>pause</strong> without losing your place (resuming tells you how many lines went by), and save what's on screen to a file. The stream keeps running while you work elsewhere in DevHub. Worth knowing, because they're Creatio's rules rather than DevHub's: an environment allows <strong>one listener at a time</strong>, so starting a stream stops anyone else watching it, and the server stops broadcasting after three hours. Requires <strong>cliogate</strong> on the environment. Also in this release: a slow environment is no longer misreported as unreachable &mdash; a first, cold export of a large package can outlast clio's patience, and DevHub now says so and suggests trying again instead of sending you to check IIS &mdash; and a job that failed for a passing reason can be <strong>retried</strong> straight from the Jobs screen. <em>Windows build.</em></p>
+            <div class="rel-date">August 2026</div>
+            <h4>Schemas becomes a workspace</h4>
+            <p>The Schemas screen is now a place to work rather than a viewer. Source opens in a <strong>full code editor</strong> &mdash; syntax colouring for JavaScript, C# and SQL, find and replace, undo, multi-cursor, and <kbd>Ctrl+S</kbd> to save. A <strong>package explorer</strong> replaces the flat list, several schemas stay <strong>open as tabs</strong> with their own edits, and <kbd>Ctrl+P</kbd> jumps straight to any schema by name. Suggestions understand Creatio: Freedom UI request names, handler and <strong>lookup-filter</strong> skeletons, ESQ and web-service snippets for C#, and real table names from your environment while writing SQL. Formatting is available for JavaScript and SQL.</p>
           </div>
         </div>
         <div class="rel">
-          <div class="rel-tag">v0.9.10</div>
+          <div class="rel-tag">v0.11.0</div>
           <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Git is optional — workspaces you made elsewhere just work</h4>
-            <p>Point DevHub at a workspace you created outside it &mdash; clio from VS Code, or any folder that isn't a git repository &mdash; and it no longer fails on every git action. <strong>Pull from Creatio</strong> and <strong>Add package</strong> run without a repository, and the workspace screen stops filling the Errors view with <em>"not a git repository"</em>. When you do want version control, a new <strong>Initialize git repository</strong> button on the Changes tab sets it up: git init and a .gitignore, with no automatic commit, so the first commit is still yours to review. <em>Windows build.</em></p>
+            <div class="rel-date">August 2026</div>
+            <h4>Finish the job after a deploy &mdash; and see what's switched on</h4>
+            <p><strong>Apply changes</strong> runs compile, flush Redis and restart as one job, in that order, so a failed compile stops before anything is torn down. A new <strong>Features</strong> screen reads Creatio's feature toggles as they stand, switches them, and compares two environments side by side. <strong>Schemas</strong> arrived: open a server schema's source, see exactly what an edit would change, and save it back &mdash; with a refusal rather than an overwrite if someone else changed it meanwhile. <strong>SQL and ping</strong> moved to a direct connection: ping answers in about a tenth of a second and now reports whether Creatio reached its database and loaded its configuration. Adding a package a workspace already has now offers to pull it.</p>
           </div>
         </div>
-        <div class="rel">
-          <div class="rel-tag">v0.9.9</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>One window, one tray icon — plus a steadier Data Model screen</h4>
-            <p>Two fixes. DevHub minimizes to the system tray on close, and relaunching it (desktop shortcut or Start menu) now <strong>restores the existing window</strong> instead of starting a second copy — no more stacking up duplicate tray icons. And the <strong>Data Model</strong> screen is sturdier: a diagram that fails to render is caught and shown as a message instead of blanking the page, and entity fields are now marked <strong>PK / FK</strong> in the ERD. <em>Windows build; the matching macOS update follows shortly.</em></p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.9.8</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>A new Data Model screen: ERD diagrams and package dependencies</h4>
-            <p>A new <strong>Data Model</strong> screen maps an environment's structure two ways. <strong>ERD Diagram</strong> builds an entity-relationship diagram from any objects you pick — their columns and the real foreign keys between them — that you can pan, zoom, fit, and export as <strong>SVG</strong> or <strong>PNG</strong>. <strong>Package Dependencies</strong> lists every schema of a chosen type with how many packages define it and which one holds the latest version, so multi-package overrides are obvious at a glance — and you can send any entity straight into the diagram. It reads directly from the selected environment, so nothing needs installing on Creatio.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.9.7</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Migration &rsaquo; Objects: honest about multi-package objects</h4>
-            <p>An object like <strong>Account</strong> is defined and extended across many packages &mdash; nine, in a typical instance. The list now shows each object once but tells the truth about that: the badge reads its home package plus a count (e.g. <strong>CrtCoreBase&nbsp;+8</strong>), and hovering it lists every package the object touches. Objects that live in a single package just show that package, as before.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.9.1</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Migration &rsaquo; Objects: each object listed once</h4>
-            <p>The Migration screen's <strong>Objects</strong> search used to list a common object like <strong>Account</strong> many times over &mdash; once for every package that defines or extends it. Because those entries shared a name, the list rendered scrambled and picking one object highlighted almost all of them. Now each object appears <strong>exactly once</strong>, so the list is clean and selection behaves.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.9.0</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>GitHub sign-in without the scavenger hunt</h4>
-            <p>Signing in to GitHub used to bury the one-time code in the Jobs log; now it appears right in <strong>Settings</strong>, with buttons to copy it and open the GitHub device page. Prefer not to use the browser flow at all? Paste a <strong>personal access token</strong> instead &mdash; it goes straight to the GitHub CLI over a private channel, and DevHub never stores or logs it. Workspaces also gain a <strong>repository picker</strong>: choose any repo from your GitHub account in a dropdown to set &mdash; or change &mdash; where a workspace pushes, instead of hunting down and pasting a remote URL. The manual URL box remains for repos outside your account.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.8.9 &ndash; v0.8.10</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Copy any object's data &mdash; and no more frozen window</h4>
-            <p>The Migration screen now goes beyond lookups. A new <strong>Objects</strong> tab searches every entity in an environment &mdash; Lead, Contact, your custom objects &mdash; shows its columns and foreign-key hierarchy, and copies a chosen object's rows into another environment, with a rollback script written first. Alongside it, an important fix: running <strong>SQL against an environment other than your default</strong> used to freeze the whole window while the connection was established &mdash; Windows would even mark DevHub &ldquo;Not Responding&rdquo;. Those reads (SQL, packages, applications, lookups, objects and GitHub lists) now run off the interface thread, so the app stays responsive and only the screen you asked shows its loading state.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.8.8</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Every failure, collected in one place</h4>
-            <p>A new app-wide <strong>Errors</strong> view gathers failures from every screen as they happen, with a toast when something new lands &mdash; no more losing an error message because you switched tabs. The SQL screen is reorganized into <strong>Editor, Saved queries and Errors</strong> tabs, and a failed query can be reloaded into the editor straight from its error entry.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.8.5 &ndash; v0.8.7</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>DevHub comes to the Mac</h4>
-            <p>DevHub now ships a <strong>universal macOS build</strong> (Apple Silicon and Intel) alongside Windows, with the same signed auto-updates. It finds your clio environments where the Mac build of clio actually keeps them, and job cancellation cleans up the whole process tree. Builds aren&rsquo;t yet Apple-notarized, so the first launch is right-click &rarr; <b>Open</b>. One honest retirement: the marketing-content migration introduced in v0.8.3&ndash;v0.8.4 proved to fight the platform on real environments &mdash; dense per-environment references meant raw-SQL workarounds that bypassed Creatio&rsquo;s own validation &mdash; and was removed in v0.8.7. The Migration screen instead focuses on what works reliably: lookups, and (since v0.8.9) any object&rsquo;s data.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.8.4</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Move campaigns and emails between environments</h4>
-            <p>The Migration screen now copies <strong>marketing content</strong> &mdash; campaigns, bulk emails, email designer templates, dynamic content, and campaign <strong>flow diagrams</strong> &mdash; from one environment to another with their original IDs, so everything that references them keeps working. Pick individual campaigns and bulk emails or move everything missing; parents a selected record needs come along automatically. References the target cannot satisfy are resolved for you: a missing contact or lookup is matched to the target's row of the same name where one exists, otherwise the field is cleared &mdash; and every such change is listed in the result. A rollback script is written before anything is inserted. If you installed v0.8.3, update: it shipped this feature without the reference resolution and fails on records owned by environment-specific contacts. <em>Update, this feature was retired in v0.8.7 &mdash; see the note above.</em></p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.8.1 &ndash; v0.8.2</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Lookup capture fixed, sharper edges filed down</h4>
-            <p>Capturing lookups no longer fails on environments where a lookup points at a table without a <strong>Name</strong> column, and values registered twice are no longer captured twice. The SQL screen now explains why <strong>RAISE NOTICE</strong> output comes back empty and how to get results into a grid, the Jobs screen keeps wide logs inside the page and can collapse the job list, and long filenames in the Workspaces change list stay readable.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.8.0</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Move reference data between environments</h4>
-            <p>Package deployment moves your configuration between environments &mdash; but not the reference data sitting in <strong>lookup</strong> tables, unless it happens to be bound to a package. Two additions close that gap. <strong>Compare</strong> gains a <strong>Lookups</strong> tab that shows exactly which lookup values differ between two environments, down to the individual row. And a new <strong>Migration</strong> screen copies the lookups you pick from one environment to another &mdash; matched on each value's identity so the records that depend on them keep working, shown to you as SQL before anything runs, and backed by an automatic rollback script so the change can be undone.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.7.0</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Compare two environments, down to the schema</h4>
-            <p>The new <strong>Compare</strong> screen answers the question that used to mean guesswork: is pre-prod still the same as dev, and what exactly differs. Capture each environment once, then see every differing package, system setting, feature and web service &mdash; and open a package to see <em>which schemas</em> moved, which is how duplicate-element collisions announce themselves before a deployment fails. Comparison runs against the saved snapshots, so re-comparing is instant and nothing is ever written to your environments. Setting values stay hidden unless you reveal them, and exported reports leave them out entirely, because that is where API keys live. The Packages screen also shows at last which packages are <strong>locked</strong>.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.6.0</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>See what an application actually contains</h4>
-            <p>Application tiles now show the <strong>developer</strong>, how many packages the app installs, the Creatio version it needs, and when it last changed — and you can filter by developer to separate your own apps from the stock ones. The new <strong>Details</strong> view opens the full descriptor: dates, links, the application's packages, and the pages it contributes.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.5.2</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>SQL errors surface, packages filter by field</h4>
-            <p>An important fix: when the database rejects a query, DevHub now shows you its actual error — clio reports those with a success code, so v0.5.1 could show a green tick instead. <strong>Update if you are on v0.5.1.</strong> The Packages screen also filters properly now: search by name or version, and pick a <strong>maintainer</strong> from its own list, with the two narrowing together.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.5.1</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Statements report success</h4>
-            <p>Running an <strong>UPDATE</strong> or other statement in the SQL screen used to look like it had failed — DevHub showed clio's own success output as an error. It now says the statement ran successfully, and the export buttons step aside when there are no rows to write.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.5.0</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Updates that announce themselves</h4>
-            <p>DevHub now tells you in the header when a new version is out — no need to go looking in Settings. It checks shortly after launch and every few hours, you can dismiss a release you're not ready for, and a check that fails while you're offline stays out of your way. Deployments are also more honest: when Creatio answers with a <strong>server error</strong>, the job is marked failed instead of green, even if the command line reported success.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.4.0</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>A refreshed interface</h4>
-            <p>DevHub's entire interface was rebuilt on a modern component system for a cleaner, more consistent look. It ships with matching <strong>light and dark themes</strong> that follow your Windows setting, and a new Appearance control in Settings to pin either one. Background environment health checks are quieter too — they no longer raise a burst of notifications when you open the app.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.3.2</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Clearer failure explanations</h4>
-            <p>When a command fails, DevHub now explains the likely cause and the steps to fix it, with the raw technical detail tucked away but still available.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.3.1</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Finds your CLIs reliably</h4>
-            <p>DevHub locates clio, Git, and the GitHub CLI from the live system PATH and the usual install locations, so a tool installed after your last sign-in is still found instead of showing as missing.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.3.0</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>clio management, and a bigger SQL grid</h4>
-            <p>DevHub now looks after the clio CLI it depends on: install it when it's missing, update it when a newer build ships, and <strong>repair</strong> a damaged install. Known failures are explained rather than dumped — a locked tool store now tells you a clio command is still running. The SQL grid also shows up to 5,000 rows (exports were always uncapped).</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.2.9</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Saved SQL queries</h4>
-            <p>Name and save queries locally, reopen them for editing, or rerun them against the environment they were saved for.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.2.8</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Clearer deployment outcomes</h4>
-            <p>Failed deployments now explain what actually happened, so a red job is diagnosable at a glance.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.2.7</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>SQL runner with CSV &amp; Excel export</h4>
-            <p>Run SQL against a registered environment from inside DevHub, read the result in a grid, and export the full result set to CSV or Excel.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.2.6</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Deploy from GitHub</h4>
-            <p>Clone a repository at a chosen branch and install it straight into an environment — restore a broken environment from known-good source, or move a package onto a fresh one.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.2.5</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Live job indicator &amp; auto-captured catalog</h4>
-            <p>An activity indicator shows running jobs from any screen. Package and application lists are captured into the cache automatically on launch and when you switch environments.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.2.4</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>Empty-first workspaces &amp; GitHub from the app</h4>
-            <p>Start an empty workspace and add only the packages you want, then create a private GitHub repo and push — without leaving DevHub.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.2.3</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>New look &amp; persistent job history</h4>
-            <p>Refreshed branding, plus a job history that survives restarts so you can revisit past runs and their logs.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.2.1</div>
-          <div>
-            <div class="rel-date">July 2026</div>
-            <h4>First public release</h4>
-            <p>Signed Windows installers (NSIS &amp; MSI) published to GitHub, with cryptographically verified auto-updates.</p>
-          </div>
-        </div>
+      </div>
+      <div style="margin-top: 26px">
+        <a class="btn btn-ghost" href="changelog.html">Read the full changelog</a>
       </div>
     </div>
   </section>
@@ -726,12 +524,12 @@
         <div class="dl-platform">
           <h3 class="dl-os"><svg class="ic"><use href="#i-check"/></svg> Windows</h3>
           <div class="dl-links">
-            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.10.0/creatio-devhub_0.10.0_x64-setup.exe">
+            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.0/creatio-devhub_0.12.0_x64-setup.exe">
               <svg class="ic"><use href="#i-dl"/></svg> Download installer (.exe)
             </a>
-            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.10.0/creatio-devhub_0.10.0_x64_en-US.msi">Get the .msi</a>
+            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.0/creatio-devhub_0.12.0_x64_en-US.msi">Get the .msi</a>
           </div>
-          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.10.0 · NSIS &amp; MSI · signed · auto-updates after install</div>
+          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.12.0 · NSIS &amp; MSI · signed · auto-updates after install</div>
         </div>
 
         <div class="dl-platform">
