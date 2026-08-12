@@ -287,7 +287,55 @@
       <div class="changelog">
 
         <div class="rel">
-          <div class="rel-tag">v0.12.0<span class="badge">latest</span></div>
+          <div class="rel-tag">v0.12.6<span class="badge">latest</span></div>
+          <div>
+            <div class="rel-date">August 2026</div>
+            <h4>Cancel unlocks the moment Creatio says no</h4>
+            <p>A package install job stayed non-cancellable through its whole "modifying environment" phase &mdash; even after the target had already answered with a server error. <strong>Cancel</strong> now unlocks as soon as that failure shows up in the live log stream, instead of leaving you watching a job that has already failed with no way to bail out.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.12.5</div>
+          <div>
+            <div class="rel-date">August 2026</div>
+            <h4>Page state that survives a tab switch, and two migration fixes</h4>
+            <p><strong>Compare</strong>, <strong>Features</strong>, <strong>Jobs</strong>, and <strong>Data Model</strong> now remember what you had open when you switch away and back. Users &amp; roles migration no longer crashes on built-in identities &mdash; like Administrator &mdash; that already exist on the target under a different Id; it reconciles by name and remaps references instead. And the Applications dependency preview now leads with what's actually missing on the target, instead of the full ~200-item transitive dependency chain.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.12.4</div>
+          <div>
+            <div class="rel-date">August 2026</div>
+            <h4>Application deploy pulls in what it depends on</h4>
+            <p>Deploying an application now <strong>auto-migrates its package dependencies</strong>. A recursive query finds every package the app transitively depends on but doesn't own, diffs that against what the target already has, and pulls or pushes whatever's missing before deploy runs. The deploy dialog previews the full dependency list &mdash; name, version, maintainer, tagged missing or present on the target &mdash; before you confirm.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.12.3</div>
+          <div>
+            <div class="rel-date">August 2026</div>
+            <h4>A third Migration tab: Users &amp; roles</h4>
+            <p><strong>Users &amp; roles</strong> joins Lookups and Objects as a migration tab. Search and multi-select users or roles in a source environment, preview the full-column upsert (passwords redacted in the preview only), then migrate as an env-locked job with rollback-first discipline. Also fixes two write-path bugs shared with Objects migration: Postgres identity columns are no longer sent in INSERTs, and NOT NULL text columns keep <code>''</code> instead of being coerced to NULL.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.12.2</div>
+          <div>
+            <div class="rel-date">August 2026</div>
+            <h4>The SQL screen answers again</h4>
+            <p>Run had been sitting on "Running&hellip;" forever, against every environment. Not a query problem &mdash; Tauri 2.11 runs async commands on a tokio worker thread, and DevHub's own blocking call there panicked and silently killed the reply before it reached the frontend. Query results, package lock badges, and application details all come back now instead of hanging.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.12.1</div>
+          <div>
+            <div class="rel-date">August 2026</div>
+            <h4>A missing cliogate is recognised by shape, not by 404</h4>
+            <p>An environment without cliogate installed doesn't always answer with a 404 &mdash; some answer 200 with Creatio's own shell HTML page instead. DevHub only recognised the 404 case, so the SQL screen showed a blob of raw HTML as if the query had failed. The missing gateway is now recognised by shape &mdash; a body that isn't JSON &mdash; and returns the install hint directly.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.12.0</div>
           <div>
             <div class="rel-date">August 2026</div>
             <h4>Schemas becomes a workspace</h4>

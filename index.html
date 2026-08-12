@@ -264,7 +264,7 @@
       <a href="changelog.html">Changelog</a>
       <a href="#specs">Requirements</a>
       <a href="#feedback">Feedback</a>
-      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.0/creatio-devhub_0.12.0_x64-setup.exe">
+      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.6/creatio-devhub_0.12.6_x64-setup.exe">
         <svg class="ic"><use href="#i-dl"/></svg> Download
       </a>
     </nav>
@@ -279,12 +279,12 @@
         <h1>Ship Creatio work without living in the <em>terminal</em>.</h1>
         <p class="lede">A native desktop workbench for Creatio developers: environments, source-controlled workspaces, package &amp; app deployment, SQL, and GitHub — all driven from one app.</p>
         <div class="cta-row">
-          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.0/creatio-devhub_0.12.0_x64-setup.exe">
+          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.6/creatio-devhub_0.12.6_x64-setup.exe">
             <svg class="ic"><use href="#i-dl"/></svg> <span class="hero-dl-label">Download for Windows</span>
           </a>
         </div>
         <div class="meta">
-          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.12.0 · Windows 10/11 (x64)</span>
+          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.12.6 · Windows 10/11 (x64)</span>
           <span class="ok"><svg class="ic"><use href="#i-check"/></svg> signed installer &amp; auto-updates</span>
         </div>
       </div>
@@ -330,7 +330,7 @@
     <div class="wrap">
       <div class="stats">
         <div class="stat stat-live"><div class="stat-num" id="dl-count">—</div><div class="stat-cap">installer downloads</div></div>
-        <div class="stat"><div class="stat-num" id="dl-version">v0.12.0</div><div class="stat-cap">latest version</div></div>
+        <div class="stat"><div class="stat-num" id="dl-version">v0.12.6</div><div class="stat-cap">latest version</div></div>
         <div class="stat"><div class="stat-num" id="dl-releases">29</div><div class="stat-cap">releases shipped</div></div>
       </div>
       <div class="stats-note" id="stats-note">Download counts update live.</div>
@@ -441,19 +441,19 @@
       <div class="changelog">
 
         <div class="rel">
-          <div class="rel-tag">v0.12.0<span class="badge">latest</span></div>
+          <div class="rel-tag">v0.12.6<span class="badge">latest</span></div>
           <div>
             <div class="rel-date">August 2026</div>
-            <h4>Schemas becomes a workspace</h4>
-            <p>The Schemas screen is now a place to work rather than a viewer. Source opens in a <strong>full code editor</strong> &mdash; syntax colouring for JavaScript, C# and SQL, find and replace, undo, multi-cursor, and <kbd>Ctrl+S</kbd> to save. A <strong>package explorer</strong> replaces the flat list, several schemas stay <strong>open as tabs</strong> with their own edits, and <kbd>Ctrl+P</kbd> jumps straight to any schema by name. Suggestions understand Creatio: Freedom UI request names, handler and <strong>lookup-filter</strong> skeletons, ESQ and web-service snippets for C#, and real table names from your environment while writing SQL. Formatting is available for JavaScript and SQL.</p>
+            <h4>Cancel unlocks the moment Creatio says no</h4>
+            <p>A package install job stayed non-cancellable through its whole "modifying environment" phase &mdash; even after the target had already answered with a server error. <strong>Cancel</strong> now unlocks as soon as that failure shows up in the live log stream, instead of leaving you watching a job that has already failed with no way to bail out.</p>
           </div>
         </div>
         <div class="rel">
-          <div class="rel-tag">v0.11.0</div>
+          <div class="rel-tag">v0.12.5</div>
           <div>
             <div class="rel-date">August 2026</div>
-            <h4>Finish the job after a deploy &mdash; and see what's switched on</h4>
-            <p><strong>Apply changes</strong> runs compile, flush Redis and restart as one job, in that order, so a failed compile stops before anything is torn down. A new <strong>Features</strong> screen reads Creatio's feature toggles as they stand, switches them, and compares two environments side by side. <strong>Schemas</strong> arrived: open a server schema's source, see exactly what an edit would change, and save it back &mdash; with a refusal rather than an overwrite if someone else changed it meanwhile. <strong>SQL and ping</strong> moved to a direct connection: ping answers in about a tenth of a second and now reports whether Creatio reached its database and loaded its configuration. Adding a package a workspace already has now offers to pull it.</p>
+            <h4>Page state that survives a tab switch, and two migration fixes</h4>
+            <p><strong>Compare</strong>, <strong>Features</strong>, <strong>Jobs</strong>, and <strong>Data Model</strong> now remember what you had open when you switch away and back. Users &amp; roles migration no longer crashes on built-in identities &mdash; like Administrator &mdash; that already exist on the target under a different Id; it reconciles by name and remaps references instead. And the Applications dependency preview now leads with what's actually missing on the target, instead of the full ~200-item transitive dependency chain.</p>
           </div>
         </div>
       </div>
@@ -524,12 +524,12 @@
         <div class="dl-platform">
           <h3 class="dl-os"><svg class="ic"><use href="#i-check"/></svg> Windows</h3>
           <div class="dl-links">
-            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.0/creatio-devhub_0.12.0_x64-setup.exe">
+            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.6/creatio-devhub_0.12.6_x64-setup.exe">
               <svg class="ic"><use href="#i-dl"/></svg> Download installer (.exe)
             </a>
-            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.0/creatio-devhub_0.12.0_x64_en-US.msi">Get the .msi</a>
+            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.6/creatio-devhub_0.12.6_x64_en-US.msi">Get the .msi</a>
           </div>
-          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.12.0 · NSIS &amp; MSI · signed · auto-updates after install</div>
+          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.12.6 · NSIS &amp; MSI · signed · auto-updates after install</div>
         </div>
 
         <div class="dl-platform">
