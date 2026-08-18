@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>DevHub — Admin</title>
+<link rel="icon" type="image/png" href="../logo-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #08080C;
+    --surface:   #12121C;
+    --surface-2: #0C0C14;
+    --border:    #1F1F2B;
+    --border-2:  #33334A;
+    --fg:        #FFFFFF;
+    --fg-soft:   #A7A7B6;
+    --fg-faint:  #6E6E82;
+    --accent:    #6366F1;
+    --danger:    #FF453A;
+    --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+    --r: 12px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-sans); line-height: 1.5; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  a { color: var(--accent); }
+
+  .topbar { display: flex; align-items: center; gap: 12px; height: 64px; border-bottom: 1px solid var(--border);
+    background: rgba(8,8,12,.9); position: sticky; top: 0; }
+  .topbar .wrap { display: flex; align-items: center; gap: 12px; width: 100%; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .brand img { width: 28px; height: 28px; border-radius: 8px; }
+  .brand span.tag { font-family: var(--font-mono); font-size: 11px; color: var(--accent);
+    border: 1px solid rgba(99,102,241,.35); background: rgba(99,102,241,.12); padding: 2px 8px; border-radius: 999px; }
+  .who { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--fg-soft); }
+
+  .btn { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-family: var(--font-sans);
+    font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--border-2);
+    background: transparent; color: var(--fg); }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #818CF8; color: #fff; }
+
+  .gate { min-height: calc(100vh - 64px); display: grid; place-items: center; text-align: center; padding: 24px; }
+  .gate h1 { font-size: 22px; margin: 0 0 8px; }
+  .gate p { color: var(--fg-soft); max-width: 40ch; margin: 0 auto 22px; }
+
+  main { padding: 32px 0 80px; display: none; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; }
+  .stat b { display: block; font-size: 30px; font-variant-numeric: tabular-nums; }
+  .stat span { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--fg-faint); }
+
+  section.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+    margin-bottom: 20px; overflow: hidden; }
+  .panel-h { padding: 16px 18px; border-bottom: 1px solid var(--border); font-weight: 650; font-size: 14.5px;
+    display: flex; align-items: center; justify-content: space-between; }
+  .panel-h small { font-family: var(--font-mono); font-weight: 400; font-size: 11.5px; color: var(--fg-faint); }
+  .count-badge { font-family: var(--font-mono); font-weight: 500; font-size: 12px; color: var(--accent);
+    background: rgba(99,102,241,.12); border: 1px solid rgba(99,102,241,.3); border-radius: 999px;
+    padding: 2px 9px; margin-left: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 18px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { color: var(--fg-faint); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em;
+    text-transform: uppercase; font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  .empty { padding: 22px 18px; color: var(--fg-faint); font-size: 13px; }
+  .err { color: var(--danger); font-size: 13px; padding: 12px 18px; }
+  code { font-family: var(--font-mono); background: var(--surface-2); border: 1px solid var(--border);
+    padding: 1px 6px; border-radius: 5px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">
+      <img src="../logo-mark.png" alt="">
+      Devhub for Creatio <span class="tag">admin</span>
+    </div>
+    <div class="who" id="who" style="display:none;">
+      <span id="who-email"></span>
+      <button class="btn" id="signout">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<div class="gate" id="gate">
+  <div>
+    <h1>Sign in to view</h1>
+    <p>This page shows real install/download numbers and anyone who opted in to update emails. Restricted to one Google account.</p>
+    <button class="btn btn-primary" id="signin">Sign in with Google</button>
+    <p class="err" id="gate-err"></p>
+  </div>
+</div>
+
+<main id="main">
+  <div class="wrap">
+    <div class="grid">
+      <div class="stat"><b id="stat-downloads">—</b><span>Total downloads (GitHub)</span></div>
+      <div class="stat"><b id="stat-installs">—</b><span>Installs seen (all-time)</span></div>
+      <div class="stat"><b id="stat-optins">—</b><span>Opted in to updates</span></div>
+    </div>
+
+    <section class="panel">
+      <div class="panel-h">Release downloads <small>github.com/SmitSuthar8834/creatio-devhub/releases — real counts, no tracking</small></div>
+      <div id="downloads-body"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-h">
+        <span>Opted-in users <span id="optins-count" class="count-badge"></span></span>
+        <small>Firestore: optins</small>
+      </div>
+      <div id="optins-body"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-h">
+        <span>All installs <span id="installs-count" class="count-badge"></span></span>
+        <small>Firestore: installs — anonymous, no personal data</small>
+      </div>
+      <div id="installs-body"></div>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import {
+    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import {
+    getFirestore, collection, getDocs, getCountFromServer, query, orderBy, limit,
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  // Filled in once the Firebase project exists — see HANDOFF.md / README for setup steps.
+  const firebaseConfig = {
+    apiKey: "AIzaSyBqejrCAMwlWiwQfhcrFlWG6Ji_udHJZVw",
+    authDomain: "devhub-a81f7.firebaseapp.com",
+    projectId: "devhub-a81f7",
+    storageBucket: "devhub-a81f7.firebasestorage.app",
+    messagingSenderId: "63403818105",
+    appId: "1:63403818105:web:3d88ed1dfbacc7e4b268a8",
+  };
+  // Only this account can read anything — enforced by Firestore rules, not by this check
+  // (this check just avoids showing a confusing "0 rows" screen to the wrong Google account).
+  const ADMIN_EMAIL = "smitsuthar.techmihirnaik@gmail.com";
+  const GITHUB_REPO = "SmitSuthar8834/creatio-devhub";
+
+  const gate = document.getElementById("gate");
+  const gateErr = document.getElementById("gate-err");
+  const main = document.getElementById("main");
+  const who = document.getElementById("who");
+  const whoEmail = document.getElementById("who-email");
+  const signinBtn = document.getElementById("signin");
+
+  let auth, db;
+  try {
+    if (firebaseConfig.projectId === "REPLACE_ME") throw new Error("Firebase isn't configured yet.");
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } catch (e) {
+    gateErr.textContent = `${e.message} Fill in firebaseConfig in admin/index.html.`;
+    signinBtn.disabled = true;
+    signinBtn.style.opacity = "0.5";
+    signinBtn.style.cursor = "not-allowed";
+  }
+
+  if (auth) {
+  signinBtn.onclick = () => {
+    gateErr.textContent = "";
+    signInWithPopup(auth, new GoogleAuthProvider()).catch((e) => {
+      gateErr.textContent = e.message;
+    });
+  };
+  document.getElementById("signout").onclick = () => signOut(auth);
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      gate.style.display = "grid";
+      main.style.display = "none";
+      who.style.display = "none";
+      return;
+    }
+    if (user.email !== ADMIN_EMAIL) {
+      gateErr.textContent = `Signed in as ${user.email}, which isn't authorized. Firestore will also refuse to serve this account.`;
+      await signOut(auth);
+      return;
+    }
+    gate.style.display = "none";
+    main.style.display = "block";
+    who.style.display = "flex";
+    whoEmail.textContent = user.email;
+    loadDashboard().catch((e) => {
+      document.getElementById("installs-body").innerHTML = `<p class="err">${escapeHtml(String(e))}</p>`;
+    });
+  });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]));
+  }
+
+  function fmtDate(ms) {
+    if (!ms) return "—";
+    return new Date(Number(ms)).toLocaleString();
+  }
+
+  async function loadDashboard() {
+    await Promise.all([loadDownloads(), loadInstalls(), loadOptins()]);
+  }
+
+  async function loadDownloads() {
+    const body = document.getElementById("downloads-body");
+    try {
+      const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=15`, {
+        headers: { Accept: "application/vnd.github+json" },
+      });
+      if (!res.ok) throw new Error(`GitHub API: ${res.status}`);
+      const releases = await res.json();
+      let total = 0;
+      const rows = [];
+      for (const rel of releases) {
+        for (const asset of rel.assets ?? []) {
+          total += asset.download_count;
+          rows.push({ tag: rel.tag_name, name: asset.name, count: asset.download_count });
+        }
+      }
+      document.getElementById("stat-downloads").textContent = total.toLocaleString();
+      body.innerHTML = rows.length
+        ? `<table><thead><tr><th>Release</th><th>Asset</th><th>Downloads</th></tr></thead><tbody>` +
+          rows.map((r) => `<tr><td>${escapeHtml(r.tag)}</td><td>${escapeHtml(r.name)}</td><td>${r.count.toLocaleString()}</td></tr>`).join("") +
+          `</tbody></table>`
+        : `<p class="empty">No releases yet.</p>`;
+    } catch (e) {
+      body.innerHTML = `<p class="err">${escapeHtml(String(e))}</p>`;
+    }
+  }
+
+  async function loadInstalls() {
+    const body = document.getElementById("installs-body");
+    const col = collection(db, "installs");
+    const countSnap = await getCountFromServer(col);
+    const total = countSnap.data().count;
+    document.getElementById("stat-installs").textContent = total.toLocaleString();
+    document.getElementById("installs-count").textContent = total.toLocaleString();
+
+    const snap = await getDocs(query(col, orderBy("lastSeen", "desc"), limit(1000)));
+    if (snap.empty) {
+      body.innerHTML = `<p class="empty">No installs recorded yet.</p>`;
+      return;
+    }
+    const rows = snap.docs.map((d) => d.data());
+    body.innerHTML = `<table><thead><tr><th>#</th><th>Install ID</th><th>Version</th><th>OS</th><th>First seen</th><th>Last seen</th></tr></thead><tbody>` +
+      rows.map((r, i) => `<tr><td>${i + 1}</td><td><code>${escapeHtml(r.uuid ?? "—")}</code></td><td>${escapeHtml(r.version ?? "—")}</td><td>${escapeHtml(r.os ?? "—")}</td><td>${fmtDate(r.firstSeen)}</td><td>${fmtDate(r.lastSeen)}</td></tr>`).join("") +
+      `</tbody></table>`;
+  }
+
+  async function loadOptins() {
+    const body = document.getElementById("optins-body");
+    const col = collection(db, "optins");
+    const snap = await getDocs(query(col, orderBy("acceptedAt", "desc"), limit(1000)));
+    document.getElementById("stat-optins").textContent = snap.size.toLocaleString();
+    document.getElementById("optins-count").textContent = snap.size.toLocaleString();
+    if (snap.empty) {
+      body.innerHTML = `<p class="empty">No opt-ins yet.</p>`;
+      return;
+    }
+    const rows = snap.docs.map((d) => d.data());
+    body.innerHTML = `<table><thead><tr><th>#</th><th>Install ID</th><th>Name</th><th>Email</th><th>Accepted</th></tr></thead><tbody>` +
+      rows.map((r, i) => `<tr><td>${i + 1}</td><td><code>${escapeHtml(r.uuid ?? "—")}</code></td><td>${escapeHtml(r.name || "—")}</td><td>${escapeHtml(r.email ?? "—")}</td><td>${fmtDate(r.acceptedAt)}</td></tr>`).join("") +
+      `</tbody></table>`;
+  }
+</script>
+
+</body>
+</html>
