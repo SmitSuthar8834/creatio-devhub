@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#08080C">
-<meta name="description" content="Every Creatio DevHub release, newest first — what changed and why.">
-<meta property="og:title" content="Creatio DevHub">
+<meta name="description" content="Every Companion for Creatio release, newest first — what changed and why.">
+<meta property="og:title" content="Companion for Creatio">
 <meta property="og:description" content="Ship Creatio work without living in the terminal. Environments, workspaces, SQL, deployment and GitHub in one desktop app.">
 <link rel="icon" type="image/png" href="./logo-mark.png">
-<title>Changelog — Creatio DevHub</title>
+<title>Changelog — Companion for Creatio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -257,8 +257,8 @@
 <header class="topbar">
   <div class="wrap topbar-in">
     <a class="brand" href="#" style="text-decoration:none">
-      <span class="brand-mark"><img src="./logo-mark.png" alt="Creatio DevHub logo"></span>
-      <span>DevHub<small>for Creatio</small></span>
+      <span class="brand-mark"><img src="./logo-mark.png" alt="Companion for Creatio logo"></span>
+      <span>Companion<small>for Creatio</small></span>
     </a>
     <nav class="nav">
       <a href="index.html#features">Features</a>
@@ -277,7 +277,7 @@
     <div class="wrap">
       <span class="eyebrow">Changelog</span>
       <h1>Every release, newest first</h1>
-      <p class="lede">What changed in each version of DevHub, and why it mattered. Updates install
+      <p class="lede">What changed in each version of Companion for Creatio, and why it mattered. Updates install
       themselves once you are on a signed build.</p>
     </div>
   </section>
@@ -287,7 +287,39 @@
       <div class="changelog">
 
         <div class="rel">
-          <div class="rel-tag">v0.12.6<span class="badge">latest</span></div>
+          <div class="rel-tag">v0.12.10<span class="badge">latest</span></div>
+          <div>
+            <div class="rel-date">October 2026</div>
+            <h4>DevHub is now Companion for Creatio &mdash; and Cancel always finishes</h4>
+            <p>Same app, new name. It updates in place like any other release: your environments, workspaces, job history, saved queries and theme all carry over. <strong>Cancel</strong> now always settles: stopping a lookup, object or users &amp; roles migration, or an application deploy, between steps ends the job as <em>cancelled</em> instead of leaving it on &ldquo;Stopping&hellip;&rdquo; forever. Object dependencies in Migration and the Data Model diagram are read straight from PostgreSQL&rsquo;s catalog, so foreign keys no longer go missing when clio&rsquo;s database role doesn&rsquo;t own the tables. And the window shows a loading screen at startup instead of a blank frame.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.12.9</div>
+          <div>
+            <div class="rel-date">August 2026</div>
+            <h4>A Git branch workflow, package removal, and opt-in update emails</h4>
+            <p>Workspaces gain a feature-branch flow: start a branch, sync it with trunk (a rebase that backs out cleanly on conflict), get warned when another branch touches the same package, and open a pull request in one click through the GitHub CLI. A workspace can now drop a package and delete its local folder. An optional dialog lets you leave your name and email to hear about new versions. The Schemas editor gets a status bar (errors, warnings, cursor), and the environment picker moves into the sidebar.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.12.8</div>
+          <div>
+            <div class="rel-date">August 2026</div>
+            <h4>Cancel is always clickable, even mid-write</h4>
+            <p>Some phases &mdash; pushing commits, creating a GitHub repo, installing into an environment &mdash; used to grey out <strong>Cancel</strong> entirely. You can now always stop a job; during a phase where stopping could leave a change half-applied, the button says so and names the phase, so the risk is in front of you instead of the option being taken away.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.12.7</div>
+          <div>
+            <div class="rel-date">August 2026</div>
+            <h4>Cold-export timeouts retry themselves</h4>
+            <p>The first download from a cold environment can outlast clio&rsquo;s timeout because Creatio builds the whole export before sending anything &mdash; and the second attempt almost always works. Downloads that hit exactly that timeout now retry once on their own, instead of failing and waiting for you to click Retry.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.12.6</div>
           <div>
             <div class="rel-date">August 2026</div>
             <h4>Cancel unlocks the moment Creatio says no</h4>
@@ -598,12 +630,12 @@
 <footer>
   <div class="wrap foot">
     <span class="brand">
-      <span class="brand-mark"><img src="./logo-mark.png" alt="Creatio DevHub logo"></span>
-      <span>DevHub<small>for Creatio</small></span>
+      <span class="brand-mark"><img src="./logo-mark.png" alt="Companion for Creatio logo"></span>
+      <span>Companion<small>for Creatio</small></span>
     </span>
     <a href="docs.html">Docs</a>
     <a href="mailto:sutharsmit574@gmail.com">Support</a>
-    <div class="made">Developed by <b>Smit Suthar</b> &nbsp;·&nbsp; Found an issue or have feedback? Email <a href="mailto:sutharsmit574@gmail.com?subject=Creatio%20DevHub%20—%20issue%2Ffeedback">sutharsmit574@gmail.com</a></div>
+    <div class="made">Developed by <b>Smit Suthar</b> &nbsp;·&nbsp; Found an issue or have feedback? Email <a href="mailto:sutharsmit574@gmail.com?subject=Companion%20for%20Creatio%20—%20issue%2Ffeedback">sutharsmit574@gmail.com</a></div>
     <p class="disclaimer">An independent community tool for developers working with the Creatio platform. Not affiliated with, endorsed by, or an official product of Creatio.</p>
   </div>
 </footer>

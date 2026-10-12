@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#08080C">
-<meta name="description" content="The complete Creatio DevHub guide — every screen and feature, step by step, with screenshots.">
-<title>Creatio DevHub — Guide &amp; Documentation</title>
+<meta name="description" content="The complete Companion for Creatio guide — every screen and feature, step by step, with screenshots.">
+<title>Companion for Creatio — Guide &amp; Documentation</title>
 <link rel="icon" type="image/png" href="./logo-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -176,8 +176,8 @@
 <header class="topbar">
   <div class="topbar-in">
     <a class="brand" href="index.html">
-      <span class="brand-mark"><img src="./logo-mark.png" alt="Creatio DevHub logo"></span>
-      <span>DevHub <small>guide &amp; documentation</small></span>
+      <span class="brand-mark"><img src="./logo-mark.png" alt="Companion for Creatio logo"></span>
+      <span>Companion for Creatio <small>guide &amp; documentation</small></span>
     </a>
     <div class="top-links">
       <button class="btn btn-ghost toc-toggle" id="tocToggle" aria-label="Contents"><svg class="ic"><use href="#i-menu"/></svg> Contents</button>
@@ -218,8 +218,8 @@
   <main>
     <div class="hero-doc" id="overview">
       <span class="eyebrow">Documentation</span>
-      <h1>The complete DevHub guide.</h1>
-      <p class="lead">Every screen, every button — what it is, where it lives, and how to use it, with a screenshot for each. If you have never opened DevHub before, start at the top and read straight down.</p>
+      <h1>The complete Companion for Creatio guide.</h1>
+      <p class="lead">Every screen, every button — what it is, where it lives, and how to use it, with a screenshot for each. If you have never opened Companion for Creatio before, start at the top and read straight down.</p>
       <div class="hero-meta">
         <span class="chip"><svg class="ic"><use href="#i-check"/></svg> 15 screens covered</span>
         <span class="chip"><svg class="ic"><use href="#i-check"/></svg> Windows &amp; macOS</span>
@@ -228,10 +228,10 @@
     </div>
 
     <p style="margin-top:22px; color:var(--fg-soft)">
-      <b style="color:var(--fg)">What is DevHub?</b> It is a desktop app — think “GitHub Desktop for Creatio.” It puts a real
+      <b style="color:var(--fg)">What is Companion for Creatio?</b> It is a desktop app — think “GitHub Desktop for Creatio.” It puts a real
       interface over three command-line tools you would otherwise type by hand: <code>clio</code> (Creatio), <code>git</code>,
       and <code>gh</code> (GitHub). You manage environments, version-control packages, run SQL, compare and move data, and
-      deploy — without living in a terminal. DevHub stores no passwords; <code>clio</code> owns those.
+      deploy — without living in a terminal. Companion for Creatio stores no passwords; <code>clio</code> owns those.
     </p>
 
     <!-- GETTING STARTED -->
@@ -245,17 +245,17 @@
         </div>
       </div>
 
-      <h3><span class="num">1</span>Install DevHub</h3>
+      <h3><span class="num">1</span>Install Companion for Creatio</h3>
       <p>Download the signed installer from the <a href="index.html#download" style="color:var(--accent)">home page</a>.
       On <strong>Windows</strong>, run the <code>.exe</code> (or <code>.msi</code>). On <strong>macOS</strong>, open the
       universal <code>.dmg</code>; the first launch needs <strong>right-click → Open</strong> until the build is notarized.
       Updates are signed and arrive automatically — see <a href="#safety" style="color:var(--accent)">Safety &amp; updates</a>.</p>
 
-      <h3><span class="num">2</span>Install the command-line tools DevHub drives</h3>
-      <p>DevHub does not replace <code>clio</code>, <code>git</code>, and <code>gh</code> — it drives them. It searches your
+      <h3><span class="num">2</span>Install the command-line tools Companion for Creatio drives</h3>
+      <p>Companion for Creatio does not replace <code>clio</code>, <code>git</code>, and <code>gh</code> — it drives them. It searches your
       <code>PATH</code> and the usual install locations automatically. If any tool is missing or lives somewhere unusual, the
       <a href="#settings" style="color:var(--accent)">Settings</a> screen shows you exactly what it found and lets you install
-      or pin a path. <code>clio</code> itself can be installed, updated, or repaired from inside DevHub.</p>
+      or pin a path. <code>clio</code> itself can be installed, updated, or repaired from inside Companion for Creatio.</p>
 
       <h3><span class="num">3</span>Register your first environment</h3>
       <p>Open the <a href="#environments" style="color:var(--accent)">Environments</a> screen, click
@@ -264,7 +264,7 @@
 
       <div class="callout tip">
         <svg class="ic"><use href="#i-check"/></svg>
-        <p><b>The green dot, bottom-left of every screen, means “Local desktop.”</b> DevHub runs entirely on your machine
+        <p><b>The green dot, bottom-left of every screen, means “Local desktop.”</b> Companion for Creatio runs entirely on your machine
         and talks to your environments directly — nothing is proxied through a server.</p>
       </div>
     </section>
@@ -282,15 +282,15 @@
 
       <ul class="plain">
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Left sidebar</b> — the sidebar screens. It collapses to icons with the toggle at the top; hover a collapsed icon for its label. A red badge on <b>Errors</b> counts unread failures.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Header</b> — shows where you are (“<i>Screen</i> / DevHub”) and a <b>Help &amp; updates</b> shortcut to Settings.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Running-job toaster, bottom-right</b> — whenever DevHub is doing something (a capture, a deploy), a live indicator shows the phase and an <b>Open Jobs</b> link. It never blocks you.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Banners</b> — a slim bar appears under the header only when it matters: <code>clio</code> needs attention, or a new DevHub release is ready.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Header</b> — shows where you are (“<i>Screen</i> / Companion for Creatio”) and a <b>Help &amp; updates</b> shortcut to Settings.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Running-job toaster, bottom-right</b> — whenever Companion for Creatio is doing something (a capture, a deploy), a live indicator shows the phase and an <b>Open Jobs</b> link. It never blocks you.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Banners</b> — a slim bar appears under the header only when it matters: <code>clio</code> needs attention, or a new Companion for Creatio release is ready.</span></li>
       </ul>
 
       <figure>
         <div class="shot" data-full="assets/docs/environments.png">
-          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">DevHub — Environments</span></div>
-          <img src="assets/docs/environments.png" alt="DevHub window showing the sidebar, header, environment cards and the running-job toaster" loading="lazy">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Companion for Creatio — Environments</span></div>
+          <img src="assets/docs/environments.png" alt="Companion for Creatio window showing the sidebar, header, environment cards and the running-job toaster" loading="lazy">
         </div>
         <figcaption><b>The shared frame.</b> Sidebar (left), header (top), content (center), and the live job indicator (bottom-right). The <code>Errors</code> badge shows unread failures.</figcaption>
       </figure>
@@ -303,7 +303,7 @@
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></span>
         <div>
           <h2>Dashboard</h2>
-          <p>The screen DevHub opens on: what your workbench looks like right now, at a glance.</p>
+          <p>The screen Companion for Creatio opens on: what your workbench looks like right now, at a glance.</p>
         </div>
       </div>
 
@@ -339,7 +339,7 @@
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Remove</b> — unregister the environment from clio.</span></li>
       </ul>
       <p>Use <strong>Add environment</strong> (top-right) to register a new one. The card marked <strong>default</strong> is
-      the one DevHub pre-selects everywhere else — you set it here or in Settings.</p>
+      the one Companion for Creatio pre-selects everywhere else — you set it here or in Settings.</p>
 
             <p><strong>Apply changes</strong> finishes the job after a deploy. Installing a package is only half of getting code
       live: Creatio still has to compile the configuration, drop its cached schemas and restart. This runs all three as a
@@ -362,7 +362,7 @@
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Environments</span></div>
           <img src="assets/docs/environments.png" alt="Environments screen with four instance cards" loading="lazy">
         </div>
-        <figcaption><b>Environments.</b> One card per instance, with per-card actions. The <b>default</b> tag marks the active environment used across DevHub.</figcaption>
+        <figcaption><b>Environments.</b> One card per instance, with per-card actions. The <b>default</b> tag marks the active environment used across Companion for Creatio.</figcaption>
       </figure>
     </section>
 
@@ -575,7 +575,7 @@
       first, use <a href="#compare" style="color:var(--accent)">Compare → Lookups</a>.</p>
 
       <h3>Objects</h3>
-      <p>Inspect and copy a single object’s rows. Search for an object (Lead, Contact, QntProject…), and DevHub shows its
+      <p>Inspect and copy a single object’s rows. Search for an object (Lead, Contact, QntProject…), and Companion for Creatio shows its
       <strong>row counts on both sides</strong>, its <strong>columns</strong> with types, and its
       <strong>foreign-key dependency hierarchy</strong> — expand a row to walk further down; cycles are marked. Copy runs as a
       full-column upsert keyed on <code>Id</code>. <strong>Remap ownership to the target’s Supervisor</strong> rewrites
@@ -583,7 +583,7 @@
 
       <div class="callout warn">
         <svg class="ic"><use href="#i-alert"/></svg>
-        <p><b>Migrating writes to the target.</b> Unless you turn it off, DevHub first records a <b>runnable rollback script</b> (its path is logged in the job) so the change can be undone. One object at a time — related objects it depends on are <b>not</b> pulled along, so make sure the target already has them.</p>
+        <p><b>Migrating writes to the target.</b> Unless you turn it off, Companion for Creatio first records a <b>runnable rollback script</b> (its path is logged in the job) so the change can be undone. One object at a time — related objects it depends on are <b>not</b> pulled along, so make sure the target already has them.</p>
       </div>
 
       <div class="grid2">
@@ -616,7 +616,7 @@
         </div>
       </div>
 
-      <p>Pick an environment and DevHub reads its feature state as it stands right now — every feature, its
+      <p>Pick an environment and Companion for Creatio reads its feature state as it stands right now — every feature, its
       <strong>default</strong>, and how many groups override it in each direction. The switch on the right turns one on or
       off. Filter by code or name to find one among the hundreds a Creatio instance carries.</p>
 
@@ -715,20 +715,20 @@
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-term"/></svg></span>
         <div>
           <h2>Logs</h2>
-          <p>Creatio's own log, streaming live, without leaving DevHub.</p>
+          <p>Creatio's own log, streaming live, without leaving Companion for Creatio.</p>
         </div>
       </div>
 
       <p>Choose an environment, a <strong>level</strong> and a <strong>logger pattern</strong>, then press <strong>Start
       streaming</strong>. Lines arrive as they happen, colour-coded by level. Filter while you read, <strong>pause</strong>
       without losing your place — resuming tells you how many lines went by — <strong>clear</strong>, or <strong>save</strong>
-      what is on screen to a file. The stream keeps running while you work elsewhere in DevHub, and coming back to the
+      what is on screen to a file. The stream keeps running while you work elsewhere in Companion for Creatio, and coming back to the
       screen picks it up again.</p>
 
       <div class="callout warn">
         <svg class="ic"><use href="#i-alert"/></svg>
         <p><b>Creatio allows one log listener per instance.</b> Starting a stream stops anyone else watching that
-        environment, and the server stops broadcasting after <b>three hours</b>. DevHub releases the listener when you press
+        environment, and the server stops broadcasting after <b>three hours</b>. Companion for Creatio releases the listener when you press
         Stop or quit the app — closing the window only hides it to the tray, and the stream carries on. Streaming needs
         <em>cliogate</em>, and an environment registered with a user name and password (Creatio's log socket authenticates
         by session cookie).</p>
@@ -741,13 +741,13 @@
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-list"/></svg></span>
         <div>
           <h2>Jobs</h2>
-          <p>Everything DevHub runs in the background — captures, deploys, pushes — with live logs and safe cancellation.</p>
+          <p>Everything Companion for Creatio runs in the background — captures, deploys, pushes — with live logs and safe cancellation.</p>
         </div>
       </div>
 
       <p>Long-running work becomes a <strong>job</strong> so the UI never freezes. The list shows each job’s kind,
       environment, and duration. Select one to watch its <strong>phase</strong> and stream its <strong>log</strong> line by
-      line. A running job can be <strong>cancelled</strong> safely — DevHub stops the underlying process and its children,
+      line. A running job can be <strong>cancelled</strong> safely — Companion for Creatio stops the underlying process and its children,
       leaving no orphans. <strong>Clear history</strong> tidies finished jobs; the running one stays.</p>
 
       <figure>
@@ -766,7 +766,7 @@
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-alert"/></svg></span>
         <div>
           <h2>Errors</h2>
-          <p>Every failure across DevHub, collected in one place — each with its cause and how to fix it.</p>
+          <p>Every failure across Companion for Creatio, collected in one place — each with its cause and how to fix it.</p>
         </div>
       </div>
 
@@ -791,16 +791,16 @@
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-cog"/></svg></span>
         <div>
           <h2>Settings</h2>
-          <p>Your environments, identity, appearance, and the CLI tools DevHub drives.</p>
+          <p>Your environments, identity, appearance, and the CLI tools Companion for Creatio drives.</p>
         </div>
       </div>
 
       <ul class="plain">
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>DevHub updates</b> — DevHub checks for signed releases automatically; <b>Check for updates</b> forces it now.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Companion for Creatio updates</b> — Companion for Creatio checks for signed releases automatically; <b>Check for updates</b> forces it now.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Appearance</b> — <b>System</b>, <b>Light</b>, or <b>Dark</b>. System follows your OS setting.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Default environment</b> — the instance DevHub pre-selects across every screen.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>GitHub &amp; Git identity</b> — which account pushes over HTTPS (browser or a <b>personal access token</b>), plus the author name/email recorded in new commits. Tokens go straight to the GitHub CLI — DevHub never stores or logs them.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Command-line tools</b> — where DevHub resolved <code>clio</code>, <code>git</code>, and <code>gh</code>. <b>Locate…</b> pins a custom path; <b>Re-scan</b> searches again.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Default environment</b> — the instance Companion for Creatio pre-selects across every screen.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>GitHub &amp; Git identity</b> — which account pushes over HTTPS (browser or a <b>personal access token</b>), plus the author name/email recorded in new commits. Tokens go straight to the GitHub CLI — Companion for Creatio never stores or logs them.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Command-line tools</b> — where Companion for Creatio resolved <code>clio</code>, <code>git</code>, and <code>gh</code>. <b>Locate…</b> pins a custom path; <b>Re-scan</b> searches again.</span></li>
       </ul>
 
       <figure>
@@ -819,15 +819,15 @@
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-shield"/></svg></span>
         <div>
           <h2>Safety &amp; updates</h2>
-          <p>The habits DevHub builds in so a bad click doesn’t become a bad day.</p>
+          <p>The habits Companion for Creatio builds in so a bad click doesn’t become a bad day.</p>
         </div>
       </div>
 
       <ul class="plain">
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Signed auto-updates.</b> DevHub only installs releases signed with the project key. A new version shows as a header banner; you choose when to install.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Signed auto-updates.</b> Companion for Creatio only installs releases signed with the project key. A new version shows as a header banner; you choose when to install.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Backups before writes.</b> Deployments and migrations record a rollback/backup first (its path is logged in the job) unless you explicitly skip it.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Typed confirmation.</b> Destructive or cross-environment actions make you type the target’s name — so the intended instance is never a guess.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>No stored credentials.</b> DevHub keeps no passwords; <code>clio</code> owns them, and DevHub never surfaces raw credential values.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>No stored credentials.</b> Companion for Creatio keeps no passwords; <code>clio</code> owns them, and Companion for Creatio never surfaces raw credential values.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Nothing is proxied.</b> It is a local desktop app — it talks to your environments and GitHub directly.</span></li>
       </ul>
 
@@ -843,7 +843,7 @@
 
 <footer>
   <div class="foot-in">
-    <span>Creatio DevHub — the desktop workbench for Creatio developers.</span>
+    <span>Companion for Creatio — the desktop workbench for Creatio developers.</span>
     <span style="margin-left:auto"><a href="index.html">Home</a> · <a href="index.html#download">Download</a></span>
   </div>
 </footer>
