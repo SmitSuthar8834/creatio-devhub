@@ -1,10 +1,12 @@
-# Creatio DevHub
+# Companion for Creatio
+
+*Formerly **Creatio DevHub** — renamed in v0.12.10. Same app; existing installs update in place.*
 
 A cross-platform (Windows & macOS) desktop workbench for Creatio developers — a
 visual, job-based interface over [clio](https://github.com/Advance-Technologies-Foundation/clio)
 and Git for managing environments, packages, applications, and source-controlled
-workspaces. DevHub does not connect directly to Creatio APIs and does not store
-Creatio passwords; environment registration and credentials remain owned by clio.
+workspaces. Companion for Creatio does not connect directly to Creatio APIs and
+does not store Creatio passwords; environment registration and credentials remain owned by clio.
 
 ## Source code
 
