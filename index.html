@@ -264,7 +264,7 @@
       <a href="changelog.html">Changelog</a>
       <a href="#specs">Requirements</a>
       <a href="#feedback">Feedback</a>
-      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.10/creatio-devhub_0.12.10_x64-setup.exe">
+      <a class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.11/creatio-devhub_0.12.11_x64-setup.exe">
         <svg class="ic"><use href="#i-dl"/></svg> Download
       </a>
     </nav>
@@ -279,12 +279,12 @@
         <h1>Ship Creatio work without living in the <em>terminal</em>.</h1>
         <p class="lede">A native desktop workbench for Creatio developers: environments, source-controlled workspaces, package &amp; app deployment, SQL, and GitHub — all driven from one app.</p>
         <div class="cta-row">
-          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.10/creatio-devhub_0.12.10_x64-setup.exe">
+          <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.11/creatio-devhub_0.12.11_x64-setup.exe">
             <svg class="ic"><use href="#i-dl"/></svg> <span class="hero-dl-label">Download for Windows</span>
           </a>
         </div>
         <div class="meta">
-          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.12.10 · Windows 10/11 (x64)</span>
+          <span id="hero-meta" data-ver="%s · Windows 10/11 (x64)">v0.12.11 · Windows 10/11 (x64)</span>
           <span class="ok"><svg class="ic"><use href="#i-check"/></svg> signed installer &amp; auto-updates</span>
         </div>
       </div>
@@ -330,7 +330,7 @@
     <div class="wrap">
       <div class="stats">
         <div class="stat stat-live"><div class="stat-num" id="dl-count">—</div><div class="stat-cap">installer downloads</div></div>
-        <div class="stat"><div class="stat-num" id="dl-version">v0.12.10</div><div class="stat-cap">latest version</div></div>
+        <div class="stat"><div class="stat-num" id="dl-version">v0.12.11</div><div class="stat-cap">latest version</div></div>
         <div class="stat"><div class="stat-num" id="dl-releases">29</div><div class="stat-cap">releases shipped</div></div>
       </div>
       <div class="stats-note" id="stats-note">Download counts update live.</div>
@@ -441,19 +441,19 @@
       <div class="changelog">
 
         <div class="rel">
-          <div class="rel-tag">v0.12.10<span class="badge">latest</span></div>
+          <div class="rel-tag">v0.12.11<span class="badge">latest</span></div>
+          <div>
+            <div class="rel-date">October 2026</div>
+            <h4>Ping checks your password, and the Start menu says Companion for Creatio</h4>
+            <p><strong>Ping</strong> now signs in with the credentials clio holds, so an environment whose password was changed in Creatio but not in clio shows <em>sign-in failed</em> instead of <em>online</em>. The automatic check at startup only asks whether the environment is up &mdash; it shows <em>reachable</em> &mdash; so a stale password doesn&rsquo;t cost a failed sign-in, and risk a locked account, every time the app opens. The Start menu shortcut, taskbar and Windows Apps list now say <strong>Companion for Creatio</strong> too; if you pinned the app to the taskbar, unpin and pin it again to pick up the name.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.12.10</div>
           <div>
             <div class="rel-date">October 2026</div>
             <h4>DevHub is now Companion for Creatio &mdash; and Cancel always finishes</h4>
             <p>Same app, new name. It updates in place like any other release: your environments, workspaces, job history, saved queries and theme all carry over. <strong>Cancel</strong> now always settles: stopping a lookup, object or users &amp; roles migration, or an application deploy, between steps ends the job as <em>cancelled</em> instead of leaving it on &ldquo;Stopping&hellip;&rdquo; forever. Object dependencies in Migration and the Data Model diagram are read straight from PostgreSQL&rsquo;s catalog, so foreign keys no longer go missing when clio&rsquo;s database role doesn&rsquo;t own the tables. And the window shows a loading screen at startup instead of a blank frame.</p>
-          </div>
-        </div>
-        <div class="rel">
-          <div class="rel-tag">v0.12.9</div>
-          <div>
-            <div class="rel-date">August 2026</div>
-            <h4>A Git branch workflow, package removal, and opt-in update emails</h4>
-            <p>Workspaces gain a feature-branch flow: start a branch, sync it with trunk (a rebase that backs out cleanly on conflict), get warned when another branch touches the same package, and open a pull request in one click through the GitHub CLI. A workspace can now drop a package and delete its local folder. An optional dialog lets you leave your name and email to hear about new versions. The Schemas editor gets a status bar (errors, warnings, cursor), and the environment picker moves into the sidebar.</p>
           </div>
         </div>
       </div>
@@ -524,12 +524,12 @@
         <div class="dl-platform">
           <h3 class="dl-os"><svg class="ic"><use href="#i-check"/></svg> Windows</h3>
           <div class="dl-links">
-            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.10/creatio-devhub_0.12.10_x64-setup.exe">
+            <a class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.11/creatio-devhub_0.12.11_x64-setup.exe">
               <svg class="ic"><use href="#i-dl"/></svg> Download installer (.exe)
             </a>
-            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.10/creatio-devhub_0.12.10_x64_en-US.msi">Get the .msi</a>
+            <a class="btn btn-ghost btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.12.11/creatio-devhub_0.12.11_x64_en-US.msi">Get the .msi</a>
           </div>
-          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.12.10 · NSIS &amp; MSI · signed · auto-updates after install</div>
+          <div class="dl-note" data-ver="%s · NSIS &amp; MSI · signed · auto-updates after install">v0.12.11 · NSIS &amp; MSI · signed · auto-updates after install</div>
         </div>
 
         <div class="dl-platform">

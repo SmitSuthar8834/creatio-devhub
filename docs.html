@@ -357,6 +357,17 @@
       <strong>database</strong> and loaded its <strong>configuration assembly</strong>. An environment that is running but
       broken no longer reads as simply online.</p>
 
+      <p>Clicking <strong>Ping</strong> or <strong>Check all</strong> also signs in with the credentials clio holds, so the
+      badge tells you whether Companion for Creatio can actually work there:</p>
+      <ul class="plain">
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>online</b> — the environment is up and clio's credentials signed in.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>reachable</b> — the environment is up; credentials not checked yet. This is what the automatic check at startup shows.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>sign-in failed</b> — the environment is up but refused the credentials, usually because the password was changed in Creatio and not here. Fix it under <b>Settings</b>.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>unreachable</b> — no answer, or Creatio reported its database or configuration as broken.</span></li>
+      </ul>
+      <p>The startup check deliberately doesn't sign in: Creatio locks a user after repeated failed sign-ins, and a stale
+      password shouldn't count against you every time the app opens.</p>
+
       <figure>
         <div class="shot" data-full="assets/docs/environments.png">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Environments</span></div>
