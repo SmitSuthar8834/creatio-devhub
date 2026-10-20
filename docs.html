@@ -193,9 +193,8 @@
     <h4>Start here</h4>
     <a href="#overview"><svg class="ic"><use href="#i-book"/></svg> Overview</a>
     <a href="#getting-started"><svg class="ic"><use href="#i-rocket"/></svg> Getting started</a>
-    <a href="#layout"><svg class="ic"><use href="#i-home"/></svg> The window, tour</a>
+    <a href="#cora"><svg class="ic"><use href="#i-home"/></svg> Getting around with Cora</a>
     <h4>Every screen</h4>
-    <a href="#dashboard"><svg class="ic"><use href="#i-home"/></svg> Dashboard</a>
     <a href="#environments"><svg class="ic"><use href="#i-db"/></svg> Environments</a>
     <a href="#workspaces"><svg class="ic"><use href="#i-branch"/></svg> Workspaces &amp; Git</a>
     <a href="#packages"><svg class="ic"><use href="#i-pkg"/></svg> Packages</a>
@@ -221,7 +220,7 @@
       <h1>The complete Companion for Creatio guide.</h1>
       <p class="lead">Every screen, every button — what it is, where it lives, and how to use it, with a screenshot for each. If you have never opened Companion for Creatio before, start at the top and read straight down.</p>
       <div class="hero-meta">
-        <span class="chip"><svg class="ic"><use href="#i-check"/></svg> 15 screens covered</span>
+        <span class="chip"><svg class="ic"><use href="#i-check"/></svg> 14 screens covered</span>
         <span class="chip"><svg class="ic"><use href="#i-check"/></svg> Windows &amp; macOS</span>
         <span class="chip"><svg class="ic"><use href="#i-check"/></svg> Click any image to zoom</span>
       </div>
@@ -264,63 +263,75 @@
 
       <div class="callout tip">
         <svg class="ic"><use href="#i-check"/></svg>
-        <p><b>The green dot, bottom-left of every screen, means “Local desktop.”</b> Companion for Creatio runs entirely on your machine
-        and talks to your environments directly — nothing is proxied through a server.</p>
+        <p><b>Everything runs on your machine.</b> Companion for Creatio talks to your environments directly — nothing is
+        proxied through a server.</p>
       </div>
     </section>
 
-    <!-- LAYOUT TOUR -->
-    <section class="doc" id="layout">
+    <!-- CORA -->
+    <section class="doc" id="cora">
       <span class="eyebrow">Orientation</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></span>
         <div>
-          <h2>The window, in one tour</h2>
-          <p>Every screen shares the same frame. Learn it once and you can find anything.</p>
+          <h2>Getting around with Cora</h2>
+          <p>Companion for Creatio opens on Cora, a small robot companion. Every screen sits around her, and she tells you what is going on.</p>
         </div>
       </div>
 
+      <p>Since v0.13.0 there is no sidebar and no Dashboard. The home view is Cora in the middle of the window, the
+      screens on two orbits around her, a speech bubble above her and a command bar below. Along the top, a slim header
+      shows the <code>clio</code> version with a health dot, a light/dark theme toggle, and the <strong>Settings</strong> gear.</p>
+
+      <h3>Two orbits of screens</h3>
       <ul class="plain">
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Left sidebar</b> — the sidebar screens. It collapses to icons with the toggle at the top; hover a collapsed icon for its label. A red badge on <b>Errors</b> counts unread failures.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Header</b> — shows where you are (“<i>Screen</i> / Companion for Creatio”) and a <b>Help &amp; updates</b> shortcut to Settings.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Running-job toaster, bottom-right</b> — whenever Companion for Creatio is doing something (a capture, a deploy), a live indicator shows the phase and an <b>Open Jobs</b> link. It never blocks you.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Banners</b> — a slim bar appears under the header only when it matters: <code>clio</code> needs attention, or a new Companion for Creatio release is ready.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Inner orbit, everyday work</b> — <a href="#environments" style="color:var(--accent)">Environments</a>, <a href="#workspaces" style="color:var(--accent)">Workspaces</a>, <a href="#packages" style="color:var(--accent)">Packages</a>, <a href="#applications" style="color:var(--accent)">Applications</a>, <a href="#jobs" style="color:var(--accent)">Jobs</a> and <a href="#logs" style="color:var(--accent)">Logs</a>.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Outer orbit, power tools</b> — <a href="#schemas" style="color:var(--accent)">Schemas</a>, <a href="#sql" style="color:var(--accent)">SQL</a>, <a href="#datamodel" style="color:var(--accent)">Data Model</a>, <a href="#compare" style="color:var(--accent)">Compare</a>, <a href="#migration" style="color:var(--accent)">Migration</a> and <a href="#features-screen" style="color:var(--accent)">Features</a>.</span></li>
+      </ul>
+      <p>Hover a screen and Cora looks at it and says in one line what it does; click it to open it. A badge on
+      <strong>Workspaces</strong> counts workspaces with uncommitted changes, and one on <strong>Jobs</strong> counts jobs
+      still running. <a href="#errors" style="color:var(--accent)">Errors</a>, Support and
+      <a href="#settings" style="color:var(--accent)">Settings</a> are not on an orbit: open Settings from the gear, Errors
+      and Support from the buttons in Settings, or any of the three from the command bar.</p>
+
+      <h3>The speech bubble</h3>
+      <p>Cora's bubble is where everything that used to be a banner, a toaster or a Dashboard card now shows up, each
+      with buttons to act on it:</p>
+      <ul class="plain">
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Greeting</b> — whether your default environment is healthy and its ping, plus what changed while you were away: jobs that finished and workspaces with uncommitted changes.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Job progress</b> — the command, the environment and the current phase of the newest running job, with <b>Cancel</b> and <b>Open Jobs</b>. When it finishes she says so.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Failures</b> — when a job fails she reads out its diagnosis: what went wrong, the likely cause and the first step to fix it, with <b>Open Jobs</b>, <b>Retry on</b> <i>environment</i> and <b>Got it</b>. Other failures get a <b>View errors</b> button.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>clio</b> — if <code>clio</code> is missing or damaged she offers <b>Install clio</b> or <b>Repair clio</b>; when a newer <code>clio</code> is out, <b>Update clio</b> or <b>Later</b>.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>App updates</b> — a new Companion for Creatio release offers <b>Install and restart</b>, <b>What's new</b> and <b>Later</b>, then shows the download progress.</span></li>
       </ul>
 
-      <figure>
-        <div class="shot" data-full="assets/docs/environments.png">
-          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Companion for Creatio — Environments</span></div>
-          <img src="assets/docs/environments.png" alt="Companion for Creatio window showing the sidebar, header, environment cards and the running-job toaster" loading="lazy">
-        </div>
-        <figcaption><b>The shared frame.</b> Sidebar (left), header (top), content (center), and the live job indicator (bottom-right). The <code>Errors</code> badge shows unread failures.</figcaption>
-      </figure>
-    </section>
+      <h3>The command bar</h3>
+      <p>Press <kbd>/</kbd> anywhere (outside a text field) to jump to the command bar under Cora, and type what you
+      need: <em>open sql</em>, an environment name, <em>take a nap</em>. It opens any of the 15 screens, switches the
+      default environment, installs, repairs or updates <code>clio</code> when that is needed, and opens a workspace that
+      has uncommitted changes. Use the arrow keys and <kbd>Enter</kbd> to pick a suggestion.</p>
 
-    <!-- DASHBOARD -->
-    <section class="doc" id="dashboard">
-      <span class="eyebrow">Screen 1</span>
-      <div class="lead-row">
-        <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></span>
-        <div>
-          <h2>Dashboard</h2>
-          <p>The screen Companion for Creatio opens on: what your workbench looks like right now, at a glance.</p>
-        </div>
+      <h3>Screens open in a panel</h3>
+      <p>Opening a screen slides it into a panel and docks Cora at its side, so her bubble, job progress included, stays
+      in view while you work. <strong>Back to Cora</strong>, a click on Cora, or <kbd>Esc</kbd> takes you home again.</p>
+
+      <h3>The environment pill</h3>
+      <p>Under Cora, a pill shows your <strong>default environment</strong>: its name, how it signs in, and a dot for its
+      health. Click it to see every registered environment with its ping and pick another. That sets the default
+      environment, the same one as in <a href="#settings" style="color:var(--accent)">Settings</a>, which the other screens
+      pre-select.</p>
+
+      <div class="callout tip">
+        <svg class="ic"><use href="#i-check"/></svg>
+        <p><b>Prefer less motion?</b> <b>Settings → Cora → Animations</b> has <b>Full</b> and <b>Calm</b>. Calm keeps Cora
+        still apart from blinking and shows her messages without typing them out. It is also on whenever your operating
+        system asks for reduced motion.</p>
       </div>
-
-      <p>Four cards count your <strong>environments</strong> (and which is the default), your
-      <strong>workspaces</strong> (and how many have local changes), <strong>active jobs</strong>, and anything that
-      <strong>needs attention</strong> — failed jobs plus workspaces with uncommitted work. Below them, <strong>Recent
-      activity</strong> lists the last few jobs and updates itself live as they run, so you can watch a deploy without
-      leaving the page. A <strong>Workspace readiness</strong> meter scores six checks — environments registered, a default
-      chosen, workspaces created and present on disk, nothing dirty, nothing failed — and the quick actions jump straight
-      to whichever screen fills the gap.</p>
-
-      <p>Nothing here changes an environment; it is a read-only summary you can safely leave open.</p>
     </section>
 
     <!-- ENVIRONMENTS -->
     <section class="doc" id="environments">
-      <span class="eyebrow">Screen 2</span>
+      <span class="eyebrow">Screen 1</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-db"/></svg></span>
         <div>
@@ -339,7 +350,8 @@
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Remove</b> — unregister the environment from clio.</span></li>
       </ul>
       <p>Use <strong>Add environment</strong> (top-right) to register a new one. The card marked <strong>default</strong> is
-      the one Companion for Creatio pre-selects everywhere else — you set it here or in Settings.</p>
+      the one Companion for Creatio pre-selects everywhere else — you set it here, in Settings, or from the
+      <a href="#cora" style="color:var(--accent)">environment pill</a> under Cora.</p>
 
             <p><strong>Apply changes</strong> finishes the job after a deploy. Installing a package is only half of getting code
       live: Creatio still has to compile the configuration, drop its cached schemas and restart. This runs all three as a
@@ -379,7 +391,7 @@
 
     <!-- WORKSPACES -->
     <section class="doc" id="workspaces">
-      <span class="eyebrow">Screen 3</span>
+      <span class="eyebrow">Screen 2</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-branch"/></svg></span>
         <div>
@@ -431,7 +443,7 @@
 
     <!-- PACKAGES -->
     <section class="doc" id="packages">
-      <span class="eyebrow">Screen 4</span>
+      <span class="eyebrow">Screen 3</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-pkg"/></svg></span>
         <div>
@@ -461,7 +473,7 @@
 
     <!-- APPLICATIONS -->
     <section class="doc" id="applications">
-      <span class="eyebrow">Screen 5</span>
+      <span class="eyebrow">Screen 4</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-layers"/></svg></span>
         <div>
@@ -497,7 +509,7 @@
 
     <!-- COMPARE -->
     <section class="doc" id="compare">
-      <span class="eyebrow">Screen 6</span>
+      <span class="eyebrow">Screen 5</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-compare"/></svg></span>
         <div>
@@ -544,7 +556,7 @@
 
     <!-- DATA MODEL -->
     <section class="doc" id="datamodel">
-      <span class="eyebrow">Screen 7</span>
+      <span class="eyebrow">Screen 6</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-net"/></svg></span>
         <div>
@@ -569,7 +581,7 @@
 
     <!-- MIGRATION -->
     <section class="doc" id="migration">
-      <span class="eyebrow">Screen 8</span>
+      <span class="eyebrow">Screen 7</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-swap"/></svg></span>
         <div>
@@ -618,7 +630,7 @@
     <!-- SQL -->
         <!-- FEATURES -->
     <section class="doc" id="features-screen">
-      <span class="eyebrow">Screen 9</span>
+      <span class="eyebrow">Screen 8</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></span>
         <div>
@@ -646,7 +658,7 @@
 
     <!-- SCHEMAS -->
     <section class="doc" id="schemas">
-      <span class="eyebrow">Screen 10</span>
+      <span class="eyebrow">Screen 9</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-code"/></svg></span>
         <div>
@@ -689,7 +701,7 @@
     </section>
 
 <section class="doc" id="sql">
-      <span class="eyebrow">Screen 11</span>
+      <span class="eyebrow">Screen 10</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-term"/></svg></span>
         <div>
@@ -721,7 +733,7 @@
     <!-- JOBS -->
         <!-- LOGS -->
     <section class="doc" id="logs">
-      <span class="eyebrow">Screen 12</span>
+      <span class="eyebrow">Screen 11</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-term"/></svg></span>
         <div>
@@ -747,7 +759,7 @@
     </section>
 
 <section class="doc" id="jobs">
-      <span class="eyebrow">Screen 13</span>
+      <span class="eyebrow">Screen 12</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-list"/></svg></span>
         <div>
@@ -759,7 +771,9 @@
       <p>Long-running work becomes a <strong>job</strong> so the UI never freezes. The list shows each job’s kind,
       environment, and duration. Select one to watch its <strong>phase</strong> and stream its <strong>log</strong> line by
       line. A running job can be <strong>cancelled</strong> safely — Companion for Creatio stops the underlying process and its children,
-      leaving no orphans. <strong>Clear history</strong> tidies finished jobs; the running one stays.</p>
+      leaving no orphans. <strong>Clear history</strong> tidies finished jobs; the running one stays. You don't have to
+      keep this screen open to follow a job: Cora's speech bubble shows the newest running job's phase, and its diagnosis
+      if it fails.</p>
 
       <figure>
         <div class="shot" data-full="assets/docs/jobs.png">
@@ -772,7 +786,7 @@
 
     <!-- ERRORS -->
     <section class="doc" id="errors">
-      <span class="eyebrow">Screen 14</span>
+      <span class="eyebrow">Screen 13</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-alert"/></svg></span>
         <div>
@@ -784,7 +798,9 @@
       <p>When a run or action fails, it lands here (most recent first) instead of vanishing in a toast. Filter by the screen
       that produced it — <strong>Migration</strong>, <strong>SQL</strong>, and so on. Each entry shows the environment, a
       timestamp, the underlying message (often with its SQLSTATE, e.g. <code>23503</code> for a foreign-key violation), and the
-      offending input. <strong>Dismiss</strong> one or <strong>Clear all</strong>. Entries are stored on your device.</p>
+      offending input. <strong>Dismiss</strong> one or <strong>Clear all</strong>. Entries are stored on your device.
+      Errors is not on Cora's orbits: open it with <strong>View errors</strong> in Cora's speech bubble or in Settings, or
+      type <em>errors</em> in the command bar.</p>
 
       <figure>
         <div class="shot" data-full="assets/docs/errors.png">
@@ -797,19 +813,20 @@
 
     <!-- SETTINGS -->
     <section class="doc" id="settings">
-      <span class="eyebrow">Screen 15</span>
+      <span class="eyebrow">Screen 14</span>
       <div class="lead-row">
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-cog"/></svg></span>
         <div>
           <h2>Settings</h2>
-          <p>Your environments, identity, appearance, and the CLI tools Companion for Creatio drives.</p>
+          <p>Your environments, identity, appearance, Cora's animations, and the CLI tools Companion for Creatio drives. Open it from the gear at the top right.</p>
         </div>
       </div>
 
       <ul class="plain">
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Companion for Creatio updates</b> — Companion for Creatio checks for signed releases automatically; <b>Check for updates</b> forces it now.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Appearance</b> — <b>System</b>, <b>Light</b>, or <b>Dark</b>. System follows your OS setting.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Default environment</b> — the instance Companion for Creatio pre-selects across every screen.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Cora</b> — <b>Animations</b>: <b>Full</b>, or <b>Calm</b> to keep Cora still apart from blinking and show her messages without typing them out. The <b>Support</b> and <b>View errors</b> buttons live here too.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Default environment</b> — the instance Companion for Creatio pre-selects across every screen. The environment pill under Cora changes the same setting.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>GitHub &amp; Git identity</b> — which account pushes over HTTPS (browser or a <b>personal access token</b>), plus the author name/email recorded in new commits. Tokens go straight to the GitHub CLI — Companion for Creatio never stores or logs them.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Command-line tools</b> — where Companion for Creatio resolved <code>clio</code>, <code>git</code>, and <code>gh</code>. <b>Locate…</b> pins a custom path; <b>Re-scan</b> searches again.</span></li>
       </ul>
@@ -835,7 +852,7 @@
       </div>
 
       <ul class="plain">
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Signed auto-updates.</b> Companion for Creatio only installs releases signed with the project key. A new version shows as a header banner; you choose when to install.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Signed auto-updates.</b> Companion for Creatio only installs releases signed with the project key. Cora tells you when a new version is ready; you choose when to install.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Backups before writes.</b> Deployments and migrations record a rollback/backup first (its path is logged in the job) unless you explicitly skip it.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Typed confirmation.</b> Destructive or cross-environment actions make you type the target’s name — so the intended instance is never a guess.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>No stored credentials.</b> Companion for Creatio keeps no passwords; <code>clio</code> owns them, and Companion for Creatio never surfaces raw credential values.</span></li>
