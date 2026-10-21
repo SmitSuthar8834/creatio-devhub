@@ -598,6 +598,14 @@
         <svg class="ic"><use href="#i-check"/></svg>
         <p>Relationships come from the database's own foreign-key constraints and columns come from <code>information_schema</code>, so the diagram reflects the environment exactly as deployed — no metadata service required.</p>
       </div>
+
+      <figure>
+        <div class="shot" data-full="assets/docs/datamodel.png">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Data Model · ERD</span></div>
+          <img src="assets/docs/datamodel.png" alt="Data Model ERD tab with three objects and the foreign key between them" loading="lazy">
+        </div>
+        <figcaption><b>ERD Diagram.</b> Selected objects, their columns with PK/FK and required markers, and the real foreign keys between them. Zoom, pan, or export as SVG/PNG.</figcaption>
+      </figure>
     </section>
 
     <!-- MIGRATION -->
@@ -675,6 +683,14 @@
         <code>clio set-feature</code>. It is not a system-wide default, and a group override can still win for other users.
         Reading the list needs <em>cliogate</em>.</p>
       </div>
+
+      <figure>
+        <div class="shot" data-full="assets/docs/features.png">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Features</span></div>
+          <img src="assets/docs/features.png" alt="Features screen listing feature toggles with defaults, overrides and switches" loading="lazy">
+        </div>
+        <figcaption><b>Features.</b> Every feature with its default, group overrides on and off, and a switch. <b>Compare with</b> turns it into a difference list.</figcaption>
+      </figure>
     </section>
 
     <!-- SCHEMAS -->
@@ -719,6 +735,14 @@
         <b>Environments → Apply changes</b>. If the server's copy no longer matches what you opened, the save is
         <b>refused</b> rather than overwriting someone else's work. Schemas in locked packages are read-only and say so.</p>
       </div>
+
+      <figure>
+        <div class="shot" data-full="assets/docs/schemas.png">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Schemas</span></div>
+          <img src="assets/docs/schemas.png" alt="Schemas screen with the package explorer and two schemas open as tabs in the code editor" loading="lazy">
+        </div>
+        <figcaption><b>Schemas.</b> Package explorer on the left, schemas open as tabs, and the editor with Format, Diff and Save.</figcaption>
+      </figure>
     </section>
 
 <section class="doc" id="sql">
@@ -777,6 +801,14 @@
         <em>cliogate</em>, and an environment registered with a user name and password (Creatio's log socket authenticates
         by session cookie).</p>
       </div>
+
+      <figure>
+        <div class="shot" data-full="assets/docs/logs.png">
+          <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Logs</span></div>
+          <img src="assets/docs/logs.png" alt="Logs screen streaming Creatio log lines colour-coded by level" loading="lazy">
+        </div>
+        <figcaption><b>Logs.</b> A live stream colour-coded by level, with filter, pause, clear and save, plus the server's CPU and RAM.</figcaption>
+      </figure>
     </section>
 
 <section class="doc" id="jobs">
