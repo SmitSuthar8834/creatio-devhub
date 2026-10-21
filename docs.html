@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#08080C">
 <meta name="description" content="The complete Companion for Creatio guide — every screen and feature, step by step, with screenshots.">
@@ -9,7 +10,7 @@
 <link rel="icon" type="image/png" href="./logo-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg:#08080C; --surface:#12121C; --surface-2:#0C0C14; --muted:#1A1A26;
@@ -30,12 +31,12 @@
   .eyebrow { font-family:var(--font-mono); font-size:12px; font-weight:500;
     letter-spacing:.1em; text-transform:uppercase; color:var(--accent); }
   code, kbd { font-family:var(--font-mono); font-size:.88em; }
-  code { background:var(--muted); padding:.12em .42em; border-radius:6px; color:#DCE6F5; border:1px solid var(--border); }
+  code { background:var(--muted); padding:.12em .42em; border-radius:6px; color:var(--fg); border:1px solid var(--border); }
   kbd { background:var(--surface); border:1px solid var(--border-2); border-bottom-width:2px;
     padding:.1em .4em; border-radius:6px; font-size:.8em; color:var(--fg-soft); }
 
   /* topbar */
-  .topbar { position:sticky; top:0; z-index:60; background:rgba(8,8,12,.86);
+  .topbar { position:sticky; top:0; z-index:60; background:color-mix(in srgb, var(--bg) 88%, transparent);
     backdrop-filter:blur(14px); border-bottom:1px solid var(--border); }
   .topbar-in { display:flex; align-items:center; gap:20px; height:var(--nav-h);
     max-width:1280px; margin:0 auto; padding:0 24px; }
@@ -47,10 +48,12 @@
   .top-links { margin-left:auto; display:flex; align-items:center; gap:8px; }
   .top-links a { padding:8px 12px; border-radius:9px; color:var(--fg-soft); font-size:14px; font-weight:500; }
   .top-links a:hover { color:var(--fg); background:var(--muted); }
+  .top-links a.btn-primary, .top-links a.btn-primary:hover { color:var(--on-accent); background:var(--accent); }
+  .top-links a.btn-primary:hover { background:var(--accent-dim); }
   .btn { display:inline-flex; align-items:center; gap:8px; border-radius:10px; font-weight:600;
     font-size:14px; padding:9px 15px; border:1px solid transparent; cursor:pointer; }
   .btn-primary { background:var(--accent); color:var(--on-accent); }
-  .btn-primary:hover { background:#818CF8; }
+  .btn-primary:hover { background:var(--accent-dim); }
   .btn-ghost { border-color:var(--border-2); color:var(--fg); }
   .btn-ghost:hover { background:var(--muted); }
 
@@ -146,6 +149,24 @@
     align-items:center; justify-content:center; padding:32px; cursor:zoom-out; }
   .lb.open { display:flex; }
   .lb img { max-width:100%; max-height:100%; border-radius:10px; box-shadow:var(--shadow); }
+
+  /* Site palette (shared with index.html): light by default, dark with the system setting. */
+  :root {
+    --bg:#f7f8fa; --surface:#ffffff; --surface-2:#f1f3f6; --muted:#eef0f4;
+    --border:#e3e6ec; --border-2:#d3d7df; --fg:#12141a; --fg-soft:#555b69; --fg-faint:#7d8393;
+    --accent:#4f46e5; --accent-dim:#4338ca; --on-accent:#ffffff; --danger:#be123c; --info:#4f46e5;
+    --font-sans:Geist,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    --font-mono:"Geist Mono",ui-monospace,"Cascadia Code","SF Mono",Consolas,monospace;
+    --shadow:0 1px 2px rgba(18,20,26,.05), 0 24px 48px -24px rgba(30,34,52,.28);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0b0c10; --surface:#121319; --surface-2:#0f1015; --muted:#17181f;
+      --border:#22242c; --border-2:#2e313b; --fg:#ecedf2; --fg-soft:#a3a8b6; --fg-faint:#7a8091;
+      --accent:#6366f1; --accent-dim:#4f46e5; --danger:#fb7185; --info:#818cf8;
+      --shadow:0 24px 48px -24px rgba(0,0,0,.7);
+    }
+  }
 </style>
 </head>
 <body>
@@ -275,12 +296,12 @@
         <span class="lead-ic"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></span>
         <div>
           <h2>Getting around with Cora</h2>
-          <p>Companion for Creatio opens on Cora, a small robot companion. Every screen sits around her, and she tells you what is going on.</p>
+          <p>Companion for Creatio opens on Cora, a small robot companion. Every screen sits around him, and he tells you what is going on.</p>
         </div>
       </div>
 
       <p>Since v0.13.0 there is no sidebar and no Dashboard. The home view is Cora in the middle of the window, the
-      screens on two orbits around her, a speech bubble above her and a command bar below. Along the top, a slim header
+      screens on two orbits around him, a speech bubble above him and a command bar below. Along the top, a slim header
       shows the <code>clio</code> version with a health dot, a light/dark theme toggle, and the <strong>Settings</strong> gear.</p>
 
       <h3>Two orbits of screens</h3>
@@ -299,9 +320,9 @@
       with buttons to act on it:</p>
       <ul class="plain">
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Greeting</b> — whether your default environment is healthy and its ping, plus what changed while you were away: jobs that finished and workspaces with uncommitted changes.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Job progress</b> — the command, the environment and the current phase of the newest running job, with <b>Cancel</b> and <b>Open Jobs</b>. When it finishes she says so.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Failures</b> — when a job fails she reads out its diagnosis: what went wrong, the likely cause and the first step to fix it, with <b>Open Jobs</b>, <b>Retry on</b> <i>environment</i> and <b>Got it</b>. Other failures get a <b>View errors</b> button.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>clio</b> — if <code>clio</code> is missing or damaged she offers <b>Install clio</b> or <b>Repair clio</b>; when a newer <code>clio</code> is out, <b>Update clio</b> or <b>Later</b>.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Job progress</b> — the command, the environment and the current phase of the newest running job, with <b>Cancel</b> and <b>Open Jobs</b>. When it finishes he says so.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Failures</b> — when a job fails he reads out its diagnosis: what went wrong, the likely cause and the first step to fix it, with <b>Open Jobs</b>, <b>Retry on</b> <i>environment</i> and <b>Got it</b>. Other failures get a <b>View errors</b> button.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>clio</b> — if <code>clio</code> is missing or damaged he offers <b>Install clio</b> or <b>Repair clio</b>; when a newer <code>clio</code> is out, <b>Update clio</b> or <b>Later</b>.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>App updates</b> — a new Companion for Creatio release offers <b>Install and restart</b>, <b>What's new</b> and <b>Later</b>, then shows the download progress.</span></li>
       </ul>
 
@@ -312,7 +333,7 @@
       has uncommitted changes. Use the arrow keys and <kbd>Enter</kbd> to pick a suggestion.</p>
 
       <h3>Screens open in a panel</h3>
-      <p>Opening a screen slides it into a panel and docks Cora at its side, so her bubble, job progress included, stays
+      <p>Opening a screen slides it into a panel and docks Cora at its side, so his bubble, job progress included, stays
       in view while you work. <strong>Back to Cora</strong>, a click on Cora, or <kbd>Esc</kbd> takes you home again.</p>
 
       <h3>The environment pill</h3>
@@ -324,7 +345,7 @@
       <div class="callout tip">
         <svg class="ic"><use href="#i-check"/></svg>
         <p><b>Prefer less motion?</b> <b>Settings → Cora → Animations</b> has <b>Full</b> and <b>Calm</b>. Calm keeps Cora
-        still apart from blinking and shows her messages without typing them out. It is also on whenever your operating
+        still apart from blinking and shows his messages without typing them out. It is also on whenever your operating
         system asks for reduced motion.</p>
       </div>
     </section>
@@ -825,7 +846,7 @@
       <ul class="plain">
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Companion for Creatio updates</b> — Companion for Creatio checks for signed releases automatically; <b>Check for updates</b> forces it now.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Appearance</b> — <b>System</b>, <b>Light</b>, or <b>Dark</b>. System follows your OS setting.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Cora</b> — <b>Animations</b>: <b>Full</b>, or <b>Calm</b> to keep Cora still apart from blinking and show her messages without typing them out. The <b>Support</b> and <b>View errors</b> buttons live here too.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Cora</b> — <b>Animations</b>: <b>Full</b>, or <b>Calm</b> to keep Cora still apart from blinking and show his messages without typing them out. The <b>Support</b> and <b>View errors</b> buttons live here too.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Default environment</b> — the instance Companion for Creatio pre-selects across every screen. The environment pill under Cora changes the same setting.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>GitHub &amp; Git identity</b> — which account pushes over HTTPS (browser or a <b>personal access token</b>), plus the author name/email recorded in new commits. Tokens go straight to the GitHub CLI — Companion for Creatio never stores or logs them.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Command-line tools</b> — where Companion for Creatio resolved <code>clio</code>, <code>git</code>, and <code>gh</code>. <b>Locate…</b> pins a custom path; <b>Re-scan</b> searches again.</span></li>

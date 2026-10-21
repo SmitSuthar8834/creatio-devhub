@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#08080C">
 <meta name="description" content="Every Companion for Creatio release, newest first — what changed and why.">
@@ -11,10 +12,10 @@
 <title>Changelog — Companion for Creatio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   /* Design system: Dark Mode (OLED) — "code dark + run green".
-     Committed single-theme: this page is dark-only by design. */
+     Light and dark follow the system setting (tokens at the end of this block). */
   :root {
     --bg:        #08080C;
     --surface:   #12121C;
@@ -50,7 +51,7 @@
   }
 
   /* ---------- nav ---------- */
-  .topbar { position: sticky; top: 0; z-index: 60; background: rgba(8,8,12,.86);
+  .topbar { position: sticky; top: 0; z-index: 60; background: color-mix(in srgb, var(--bg) 88%, transparent);
     backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); }
   .topbar-in { display: flex; align-items: center; gap: 22px; height: 64px; }
   .brand { display: flex; align-items: center; gap: 11px; font-weight: 700; letter-spacing: -.01em; }
@@ -69,7 +70,7 @@
     padding: 11px 18px; border-radius: 10px; border: 1px solid transparent;
     transition: background .2s ease, border-color .2s ease, transform .18s ease, box-shadow .2s ease; }
   .btn-primary { background: var(--accent); color: var(--on-accent); }
-  .btn-primary:hover { background: #818CF8; transform: translateY(-1px); box-shadow: 0 12px 28px -12px var(--accent); }
+  .btn-primary:hover { background: var(--accent-dim); }
   .btn-ghost { border-color: var(--border-2); color: var(--fg); background: transparent; }
   .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
   .btn-lg { padding: 14px 24px; font-size: 15.5px; }
@@ -79,7 +80,7 @@
   .hero-grid { display: grid; grid-template-columns: 1.04fr .96fr; gap: 56px; align-items: center; }
   h1 { font-size: clamp(36px, 5.2vw, 58px); line-height: 1.05; letter-spacing: -.03em; font-weight: 800;
     margin: 18px 0 0; text-wrap: balance; }
-  h1 em { font-style: normal; color: var(--accent); text-shadow: 0 0 22px rgba(99,102,241,.35); }
+  h1 em { font-style: normal; color: var(--accent); }
   .lede { font-size: 18px; color: var(--fg-soft); margin: 20px 0 0; max-width: 40ch; }
   .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
   .meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px 20px;
@@ -123,7 +124,7 @@
   .stat + .stat { border-left: 1px solid var(--border); }
   .stat-num { font-size: clamp(28px, 4.2vw, 42px); font-weight: 800; letter-spacing: -.025em;
     font-variant-numeric: tabular-nums; line-height: 1; }
-  .stat-live .stat-num { color: var(--accent); text-shadow: 0 0 20px rgba(99,102,241,.28); }
+  .stat-live .stat-num { color: var(--accent); }
   .stat-cap { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .09em;
     text-transform: uppercase; color: var(--fg-faint); margin-top: 10px; }
   .stats-note { text-align: center; font-family: var(--font-mono); font-size: 11px;
@@ -235,6 +236,24 @@
   #whats-new .wrap { padding-top: 30px; padding-bottom: 60px; }
   kbd { font-family: var(--font-mono); font-size: .85em; padding: 1px 5px; border-radius: 5px;
         border: 1px solid var(--border-2); color: var(--fg-soft); }
+
+  /* Site palette (shared with index.html): light by default, dark with the system setting. */
+  :root {
+    --bg:#f7f8fa; --surface:#ffffff; --surface-2:#f1f3f6; --muted:#eef0f4;
+    --border:#e3e6ec; --border-2:#d3d7df; --fg:#12141a; --fg-soft:#555b69; --fg-faint:#7d8393;
+    --accent:#4f46e5; --accent-dim:#4338ca; --on-accent:#ffffff; --danger:#be123c; --info:#4f46e5;
+    --font-sans:Geist,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    --font-mono:"Geist Mono",ui-monospace,"Cascadia Code","SF Mono",Consolas,monospace;
+    --shadow:0 1px 2px rgba(18,20,26,.05), 0 24px 48px -24px rgba(30,34,52,.28);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0b0c10; --surface:#121319; --surface-2:#0f1015; --muted:#17181f;
+      --border:#22242c; --border-2:#2e313b; --fg:#ecedf2; --fg-soft:#a3a8b6; --fg-faint:#7a8091;
+      --accent:#6366f1; --accent-dim:#4f46e5; --danger:#fb7185; --info:#818cf8;
+      --shadow:0 24px 48px -24px rgba(0,0,0,.7);
+    }
+  }
 </style>
 </head>
 <body>
@@ -291,7 +310,7 @@
           <div>
             <div class="rel-date">October 2026</div>
             <h4>Meet Cora &mdash; a companion in place of the sidebar</h4>
-            <p>The sidebar and Dashboard are gone. <strong>Cora</strong>, an animated robot, sits in the middle of the window with every screen on two orbits around her: everyday work on the inner ring, power tools like SQL, Compare and Migration on the outer one. Her speech bubble tells you what&rsquo;s going on &mdash; a job&rsquo;s progress, a failure together with its diagnosis and a Retry button, and when a new clio or app version is ready. Press <kbd>/</kbd> for a command bar that opens any screen or switches environment. Screens open in a panel with Cora docked beside them, and the environment pill under her changes your default environment. If the motion is too much, set her animations to <strong>Calm</strong> in Settings and she keeps still apart from blinking.</p>
+            <p>The sidebar and Dashboard are gone. <strong>Cora</strong>, an animated robot, sits in the middle of the window with every screen on two orbits around him: everyday work on the inner ring, power tools like SQL, Compare and Migration on the outer one. His speech bubble tells you what&rsquo;s going on &mdash; a job&rsquo;s progress, a failure together with its diagnosis and a Retry button, and when a new clio or app version is ready. Press <kbd>/</kbd> for a command bar that opens any screen or switches environment. Screens open in a panel with Cora docked beside them, and the environment pill under him changes your default environment. If the motion is too much, set his animations to <strong>Calm</strong> in Settings and he keeps still apart from blinking.</p>
           </div>
         </div>
         <div class="rel">
