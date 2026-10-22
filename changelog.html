@@ -306,7 +306,16 @@
       <div class="changelog">
 
         <div class="rel">
-          <div class="rel-tag">v0.13.0<span class="badge">latest</span></div>
+          <div class="rel-tag">v0.14.0<span class="badge">latest</span></div>
+          <div>
+            <div class="rel-date">October 2026</div>
+            <h4>Install and remove Creatio on your machine, and Ctrl+Alt+C</h4>
+            <p><strong>Install Creatio</strong> on Environments deploys a Creatio build to this PC through clio. Pick the zip (the database type and runtime are read from its name when it says), a site name, an optional port and a database server &mdash; any PostgreSQL or MS SQL server set up in clio, or Rancher / Kubernetes &mdash; and the app checks administrator rights, the build, that the site name and port are free, the database server (including <code>pg_restore</code>) and Redis before anything is created. It never overwrites an existing database, and when it finishes the new environment appears with Info and Open working. The first sign-in to a fresh instance can take a few minutes while Creatio starts. <strong>Uninstall Creatio</strong> removes a local instance &mdash; IIS site, database and files &mdash; after you type its name.</p>
+            <p><strong>Import from IIS</strong> registers the Creatio sites already on your machine, and <strong>Info</strong> on an environment card shows its version, database, runtime and licence. New clio versions are now checked against NuGet directly, every eight hours, and also shown in the tray tooltip. When a clio update is blocked because clio is still running, Cora names the processes holding it open &mdash; for example the MCP servers your AI tools started &mdash; and offers to close only those and retry. Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd> anywhere to bring the window up with the command bar ready; a new <strong>Restart</strong> command restarts your default environment.</p>
+          </div>
+        </div>
+        <div class="rel">
+          <div class="rel-tag">v0.13.0</div>
           <div>
             <div class="rel-date">October 2026</div>
             <h4>Meet Cora &mdash; a companion in place of the sidebar</h4>
