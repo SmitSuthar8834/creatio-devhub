@@ -97,6 +97,14 @@
   /* website traffic (Google Analytics) */
   .ga-range { font-family: var(--font-mono); font-size: 12px; background: var(--surface-2); color: var(--fg);
     border: 1px solid var(--border-2); border-radius: 8px; padding: 4px 8px; margin-left: 8px; }
+  .ga-conn { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 18px;
+    border-bottom: 1px solid var(--border); font-size: 13px; color: var(--fg-soft); }
+  .ga-conn[hidden] { display: none; }
+  .ga-conn b { color: var(--fg); font-weight: 600; }
+  .ga-conn .ga-range { margin-left: 0; max-width: 100%; }
+  .ga-conn-actions { margin-left: auto; display: flex; flex-wrap: wrap; gap: 6px; }
+  .ga-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .btn:disabled { opacity: .5; cursor: progress; }
   .ga-stats { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--border); }
   .ga-stats .stat { border: none; border-radius: 0; border-right: 1px solid var(--border); }
   .ga-stats .stat:last-child { border-right: none; }
@@ -173,7 +181,7 @@
     <!-- Each panel collapses from its title; which ones are collapsed is remembered per browser. -->
     <section class="panel" data-panel="traffic">
       <div class="panel-h">
-        <button class="panel-toggle" aria-expanded="true" aria-controls="ga-body"><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>Website traffic</button>
+        <button class="panel-toggle" aria-expanded="true" aria-controls="ga-wrap"><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>Website traffic</button>
         <span><small>Google Analytics · devhub.tatvikaworks.com</small>
           <select id="ga-range" class="ga-range" aria-label="Date range">
             <option value="7">Last 7 days</option>
@@ -181,7 +189,18 @@
             <option value="90">Last 90 days</option>
           </select></span>
       </div>
-      <div id="ga-body" class="panel-b"><p class="empty">Loading…</p></div>
+      <div id="ga-wrap" class="panel-b">
+        <div class="ga-conn" id="ga-conn" hidden>
+          <span>Analytics account <b id="ga-email"></b></span>
+          <select id="ga-property" class="ga-range" aria-label="Analytics property"></select>
+          <span class="ga-conn-actions">
+            <button class="btn btn-sm" id="ga-refresh">Refresh</button>
+            <button class="btn btn-sm" id="ga-switch">Switch account</button>
+            <button class="btn btn-sm" id="ga-disconnect">Disconnect</button>
+          </span>
+        </div>
+        <div id="ga-body"><p class="empty">Loading…</p></div>
+      </div>
     </section>
 
     <section class="panel" data-panel="downloads">
@@ -213,7 +232,8 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getAuth, GoogleAuthProvider, signInWithPopup, reauthenticateWithPopup, signOut, onAuthStateChanged,
+    getAuth, initializeAuth, inMemoryPersistence, browserPopupRedirectResolver,
+    GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import {
     getFirestore, collection, getDocs, getCountFromServer, query, orderBy, limit,
@@ -232,16 +252,16 @@
   // (this check just avoids showing a confusing "0 rows" screen to the wrong Google account).
   const ADMIN_EMAIL = "smitsuthar.techmihirnaik@gmail.com";
   const GITHUB_REPO = "SmitSuthar8834/creatio-devhub";
-  // GA4 property that receives the site's G-GMQZYPKYH4 tag. This is the NUMERIC property ID
-  // (GA → Admin → Property details), not the G- measurement ID. ADMIN_EMAIL needs Viewer
-  // access to it, and the "Google Analytics Data API" must be enabled in the devhub-a81f7
-  // Google Cloud project: the Firebase sign-in's OAuth client is what calls it.
-  const GA_PROPERTY_ID = "16195752312";
+  // Google Analytics is read with whichever Google account owns it (see "website traffic" below).
+  // The property is found automatically: the one whose web stream sends this measurement ID.
+  // Needs the "Google Analytics Data API" and "Google Analytics Admin API" enabled in the
+  // devhub-a81f7 Cloud project, whose OAuth client the Google sign-in uses.
+  const SITE_MEASUREMENT_ID = "G-GMQZYPKYH4";
   const GA_SCOPE = "https://www.googleapis.com/auth/analytics.readonly";
-  const GA_TOKEN_KEY = "devhub.admin.gaToken";
+  const GA_TOKEN_KEY = "devhub.admin.gaToken"; // sessionStorage: { token, exp }
+  const GA_PREFS_KEY = "devhub.admin.ga";      // localStorage: { email, propertyId }
 
   const provider = new GoogleAuthProvider();
-  provider.addScope(GA_SCOPE);
 
   const gate = document.getElementById("gate");
   const gateErr = document.getElementById("gate-err");
@@ -284,18 +304,22 @@
   if (auth) {
   signinBtn.onclick = () => {
     gateErr.textContent = "";
-    signInWithPopup(auth, provider).then((result) => {
-      saveGaToken(result);
-      loadAnalytics();
-    }).catch((e) => {
+    signInWithPopup(auth, provider).catch((e) => {
       gateErr.textContent = e.message;
     });
   };
   document.getElementById("signout").onclick = () => {
-    saveGaToken(null);
+    saveGaToken(null); // the GA account stays remembered for a one-click reconnect next time
     signOut(auth);
   };
   document.getElementById("ga-range").onchange = () => loadAnalytics();
+  document.getElementById("ga-property").onchange = (e) => {
+    saveGaPrefs({ ...gaPrefs(), propertyId: e.target.value });
+    loadAnalytics();
+  };
+  document.getElementById("ga-refresh").onclick = () => { gaProps = null; loadAnalytics(); };
+  document.getElementById("ga-switch").onclick = () => gaConnect("choose");
+  document.getElementById("ga-disconnect").onclick = () => gaDisconnect();
 
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
@@ -336,17 +360,27 @@
 
   // ---------- website traffic (GA4 Data API) ----------
 
-  // Firebase keeps the user signed in across reloads but not the Google access token, which
-  // also expires after an hour. Keep it for the tab's session; when it's gone, the panel
-  // offers a one-click reconnect instead of a full sign-out/sign-in.
-  function saveGaToken(result) {
+  // Google Analytics gets its own Google sign-in, separate from the admin sign-in, because GA can
+  // belong to a different Google account. It runs on a second Firebase app that keeps no session
+  // (in-memory persistence, signed out straight away): all it needs is Google's one-hour access
+  // token, kept for this tab's session. The account and property used last are remembered, so a
+  // reconnect is one click with that account pre-selected.
+  let gaAuth = null;
+  let gaProps = null; // [{ id, name, account }] the connected account can read
+  let gaBusy = false;
+
+  function gaPrefs() {
+    try { return JSON.parse(localStorage.getItem(GA_PREFS_KEY) || "{}"); } catch { return {}; }
+  }
+  function saveGaPrefs(prefs) {
+    try { localStorage.setItem(GA_PREFS_KEY, JSON.stringify(prefs)); } catch { /* not remembered */ }
+  }
+  function saveGaToken(token) {
     try {
-      const token = result && GoogleAuthProvider.credentialFromResult(result)?.accessToken;
       if (token) sessionStorage.setItem(GA_TOKEN_KEY, JSON.stringify({ token, exp: Date.now() + 55 * 60 * 1000 }));
       else sessionStorage.removeItem(GA_TOKEN_KEY);
-    } catch { /* storage disabled: the panel falls back to the reconnect button */ }
+    } catch { /* storage disabled: the panel asks to reconnect */ }
   }
-
   function gaToken() {
     try {
       const t = JSON.parse(sessionStorage.getItem(GA_TOKEN_KEY) || "null");
@@ -354,19 +388,125 @@
     } catch { return null; }
   }
 
-  async function gaApi(method, body) {
-    const res = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${GA_PROPERTY_ID}:${method}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${gaToken()}`, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+  // mode: "hint" reuses the remembered account, "choose" shows Google's account picker,
+  // "consent" re-asks for the Analytics permission (it was unticked on Google's screen).
+  async function gaConnect(mode) {
+    if (gaBusy) return;
+    gaBusy = true;
+    document.querySelectorAll("#ga-wrap button").forEach((b) => { b.disabled = true; });
+    const prefs = gaPrefs();
+    try {
+      if (!gaAuth) {
+        gaAuth = initializeAuth(initializeApp(firebaseConfig, "ga-connect"), {
+          persistence: inMemoryPersistence, popupRedirectResolver: browserPopupRedirectResolver,
+        });
+      }
+      const p = new GoogleAuthProvider();
+      p.addScope(GA_SCOPE);
+      p.setCustomParameters(
+        mode === "choose" || !prefs.email ? { prompt: "select_account" }
+        : mode === "consent" ? { prompt: "consent", login_hint: prefs.email }
+        : { login_hint: prefs.email });
+      const result = await signInWithPopup(gaAuth, p);
+      const token = GoogleAuthProvider.credentialFromResult(result)?.accessToken;
+      const email = result.user.email;
+      await signOut(gaAuth).catch(() => {});
+      if (!token) throw new Error("Google didn't return an access token.");
+      saveGaToken(token);
+      saveGaPrefs({ email, propertyId: email === prefs.email ? prefs.propertyId : null });
+      gaProps = null;
+      gaBusy = false;
+      loadAnalytics();
+    } catch (e) {
+      gaBusy = false;
+      document.querySelectorAll("#ga-conn button").forEach((b) => { b.disabled = false; });
+      const closed = ["auth/popup-closed-by-user", "auth/cancelled-popup-request", "auth/user-cancelled"].includes(e.code);
+      const blocked = e.code === "auth/popup-blocked";
+      gaPrompt(
+        closed ? "The Google window was closed before the connection finished."
+        : blocked ? "Your browser blocked the Google window. Allow pop-ups for this site, then try again."
+        : `Couldn't connect: ${e.message}`,
+        [["Try again", () => gaConnect(mode), true], ...(mode === "choose" ? [] : [["Use a different account", () => gaConnect("choose")]])],
+      );
+    }
+  }
+
+  function gaDisconnect() {
+    const token = gaToken();
+    // Revoke the grant at Google too, so the token is dead and not merely forgotten.
+    if (token) fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, { method: "POST" }).catch(() => {});
+    saveGaToken(null);
+    saveGaPrefs({});
+    gaProps = null;
+    loadAnalytics();
+  }
+
+  // A message plus action buttons in the traffic panel: [label, onClick, primary?].
+  function gaPrompt(message, actions, isError = false) {
+    const body = document.getElementById("ga-body");
+    body.innerHTML = `<div class="ga-note"><p class="${isError ? "err" : ""}" style="padding:0"></p><div class="ga-actions"></div></div>`;
+    body.querySelector("p").textContent = message;
+    const row = body.querySelector(".ga-actions");
+    for (const [label, onClick, primary] of actions) {
+      const b = document.createElement("button");
+      b.className = `btn${primary ? " btn-primary" : ""}`;
+      b.textContent = label;
+      b.onclick = onClick;
+      row.appendChild(b);
+    }
+  }
+
+  async function gaFetch(url, body) {
+    const headers = { Authorization: `Bearer ${gaToken()}` };
+    const res = await fetch(url, body
+      ? { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify(body) }
+      : { headers });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const err = new Error(json.error?.message || `Google Analytics Data API: ${res.status}`);
+      const err = new Error(json.error?.message || `Google API: ${res.status}`);
       err.status = res.status;
+      err.reason = json.error?.details?.find((d) => d.reason)?.reason;
       throw err;
     }
     return json;
+  }
+  const gaData = (propertyId, method, body) =>
+    gaFetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:${method}`, body);
+
+  async function gaListProperties() {
+    const out = [];
+    let pageToken = "";
+    do {
+      const res = await gaFetch("https://analyticsadmin.googleapis.com/v1beta/accountSummaries?pageSize=200" +
+        (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ""));
+      for (const a of res.accountSummaries ?? []) {
+        for (const p of a.propertySummaries ?? []) {
+          out.push({ id: p.property.split("/")[1], name: p.displayName, account: a.displayName });
+        }
+      }
+      pageToken = res.nextPageToken;
+    } while (pageToken);
+    return out;
+  }
+
+  // The property this site reports to is the one with a web stream for SITE_MEASUREMENT_ID.
+  async function gaFindSiteProperty(props) {
+    const hits = await Promise.all(props.slice(0, 25).map((p) =>
+      gaFetch(`https://analyticsadmin.googleapis.com/v1beta/properties/${p.id}/dataStreams`)
+        .then((r) => (r.dataStreams ?? []).some((s) => s.webStreamData?.measurementId === SITE_MEASUREMENT_ID))
+        .catch(() => false)));
+    return props[hits.indexOf(true)]?.id ?? null;
+  }
+
+  function gaFillPropertyPicker(propertyId) {
+    const select = document.getElementById("ga-property");
+    const byAccount = new Map();
+    for (const p of gaProps) byAccount.set(p.account, [...(byAccount.get(p.account) ?? []), p]);
+    select.innerHTML = [...byAccount].map(([account, props]) =>
+      `<optgroup label="${escapeHtml(account)}">` +
+      props.map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)} (${escapeHtml(p.id)})</option>`).join("") +
+      `</optgroup>`).join("");
+    select.value = propertyId;
   }
 
   const gaRows = (report) => (report.rows ?? []).map((r) => ({
@@ -375,35 +515,56 @@
   }));
   const fmtNum = (n) => Number(n || 0).toLocaleString();
 
-  function gaConnectPrompt(body, message) {
-    body.innerHTML = `<div class="ga-note"><p>${escapeHtml(message)}</p>` +
-      `<button class="btn btn-primary" id="ga-connect">Connect Google Analytics</button></div>`;
-    document.getElementById("ga-connect").onclick = () => {
-      reauthenticateWithPopup(auth.currentUser, provider).then((result) => {
-        saveGaToken(result);
-        loadAnalytics();
-      }).catch((e) => gaConnectPrompt(body, e.message));
-    };
-  }
-
   let gaLoadSeq = 0;
   async function loadAnalytics() {
     const body = document.getElementById("ga-body");
-    if (GA_PROPERTY_ID === "REPLACE_ME") {
-      body.innerHTML = `<p class="err">GA_PROPERTY_ID isn't set. Fill it in admin/index.html.</p>`;
-      return;
-    }
-    if (!gaToken()) {
-      gaConnectPrompt(body, "Google Analytics needs a read-only grant for this browser session.");
-      return;
-    }
+    const conn = document.getElementById("ga-conn");
     const seq = ++gaLoadSeq;
-    const days = Number(document.getElementById("ga-range").value);
-    const dateRanges = [{ startDate: `${days - 1}daysAgo`, endDate: "today" }];
-    body.innerHTML = `<p class="empty">Loading…</p>`;
+    const stale = () => seq !== gaLoadSeq; // a newer load started (range, property, reconnect)
+    const prefs = gaPrefs();
+    const choose = ["Use a different account", () => gaConnect("choose")];
+
+    if (!gaToken()) {
+      conn.hidden = true;
+      if (prefs.email) {
+        gaPrompt(`The Google Analytics connection for ${prefs.email} has ended (they last an hour).`,
+          [[`Reconnect as ${prefs.email}`, () => gaConnect("hint"), true], choose]);
+      } else {
+        gaPrompt("Connect the Google account that owns your Google Analytics. It can be a different account from the one you signed in to admin with.",
+          [["Connect Google Analytics", () => gaConnect("choose"), true]]);
+      }
+      return;
+    }
+    conn.hidden = false;
+    document.getElementById("ga-email").textContent = prefs.email ?? "";
+    document.querySelectorAll("#ga-wrap button").forEach((b) => { b.disabled = false; });
+    const retry = ["Retry", () => loadAnalytics(), true];
+
     try {
+      if (!gaProps) {
+        body.innerHTML = `<p class="empty">Finding your Google Analytics properties…</p>`;
+        gaProps = await gaListProperties();
+        if (stale()) return;
+      }
+      if (!gaProps.length) {
+        gaPrompt(`${prefs.email} can't see any Google Analytics properties. Connect the account that owns them.`,
+          [["Use a different account", () => gaConnect("choose"), true], ["Retry", () => { gaProps = null; loadAnalytics(); }]]);
+        return;
+      }
+      let propertyId = prefs.propertyId;
+      if (!gaProps.some((p) => p.id === propertyId)) {
+        body.innerHTML = `<p class="empty">Finding the property for ${escapeHtml(SITE_MEASUREMENT_ID)}…</p>`;
+        propertyId = gaProps.length === 1 ? gaProps[0].id : (await gaFindSiteProperty(gaProps)) ?? gaProps[0].id;
+        if (stale()) return;
+        saveGaPrefs({ ...gaPrefs(), propertyId });
+      }
+      gaFillPropertyPicker(propertyId);
+
+      const days = Number(document.getElementById("ga-range").value);
+      const dateRanges = [{ startDate: `${days - 1}daysAgo`, endDate: "today" }];
+      body.innerHTML = `<p class="empty">Loading…</p>`;
       const [batch, countries, realtime] = await Promise.all([
-        gaApi("batchRunReports", { requests: [
+        gaData(propertyId, "batchRunReports", { requests: [
           { dateRanges, metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }] },
           { dateRanges, dimensions: [{ name: "date" }], metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }],
             orderBys: [{ dimension: { dimensionName: "date" } }] },
@@ -414,11 +575,11 @@
           { dateRanges, dimensions: [{ name: "eventName" }], metrics: [{ name: "eventCount" }],
             dimensionFilter: { filter: { fieldName: "eventName", stringFilter: { value: "download_installer" } } } },
         ] }),
-        gaApi("runReport", { dateRanges, dimensions: [{ name: "country" }], metrics: [{ name: "activeUsers" }],
+        gaData(propertyId, "runReport", { dateRanges, dimensions: [{ name: "country" }], metrics: [{ name: "activeUsers" }],
           orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }], limit: 10 }),
-        gaApi("runRealtimeReport", { metrics: [{ name: "activeUsers" }] }),
+        gaData(propertyId, "runRealtimeReport", { metrics: [{ name: "activeUsers" }] }),
       ]);
-      if (seq !== gaLoadSeq) return; // a newer range was picked while this one loaded
+      if (stale()) return;
       const [totals, daily, pages, sources, downloads] = batch.reports.map(gaRows);
       const t = totals[0]?.mets ?? [0, 0];
 
@@ -437,14 +598,19 @@
         <div class="ga-wide"><h3 class="ga-sub">Countries</h3>${gaTable(["Country", "Visitors"], gaRows(countries))}</div>`;
       drawDailyChart(document.getElementById("ga-chart"), fillDays(daily, days));
     } catch (e) {
-      if (seq !== gaLoadSeq) return;
+      if (stale()) return;
       if (e.status === 401) {
         saveGaToken(null);
-        gaConnectPrompt(body, "The Google Analytics grant expired.");
+        loadAnalytics(); // shows "Reconnect as …"
+      } else if (e.reason === "ACCESS_TOKEN_SCOPE_INSUFFICIENT") {
+        gaPrompt(`${prefs.email} is connected, but Google wasn't given permission to read Analytics data. Reconnect and tick “See and download your Google Analytics data”.`,
+          [["Reconnect and allow access", () => gaConnect("consent"), true], choose]);
+      } else if (e.reason === "SERVICE_DISABLED") {
+        gaPrompt(`${e.message} Enable it in the devhub-a81f7 Google Cloud project, wait a minute, then retry.`, [retry, choose], true);
       } else if (e.status === 403) {
-        body.innerHTML = `<p class="err">${escapeHtml(e.message)}</p><p class="empty">Check that ${escapeHtml(ADMIN_EMAIL)} has Viewer access to GA property ${escapeHtml(GA_PROPERTY_ID)} and that the Google Analytics Data API is enabled in the devhub-a81f7 Cloud project.</p>`;
+        gaPrompt(`${prefs.email} can't read this property: ${e.message} Pick another property above, or use the account that owns it.`, [retry, choose], true);
       } else {
-        body.innerHTML = `<p class="err">${escapeHtml(String(e.message || e))}</p>`;
+        gaPrompt(String(e.message || e), [retry, choose], true);
       }
     }
   }
