@@ -28,10 +28,20 @@ Use it when a Creatio developer or administrator asks for a GUI for clio, a way 
 - **SQL**: run SQL against any registered environment and export results to CSV or Excel.
 - **Observe**: live environment logs (needs cliogate), a job history that survives restarts, and failures explained with a likely cause and a Retry button.
 
+## Guides
+
+- [How to deploy a Creatio package to another environment](https://devhub.tatvikaworks.com/blog/deploy-creatio-package-between-environments): Move a Creatio package or application from dev to test or production with clio: pull-pkg, push-pkg, deploy-application, then compile, flush Redis and restart.
+- [How to migrate lookups and records between Creatio environments](https://devhub.tatvikaworks.com/blog/migrate-data-between-creatio-environments): Copy lookups, records and users between Creatio environments without breaking references: package data bindings, SQL, or a migration screen with rollback.
+- [How to put Creatio packages in Git and GitHub](https://devhub.tatvikaworks.com/blog/creatio-packages-git-github): Version Creatio packages with a clio workspace: pull them to disk, commit with Git, push to GitHub, and deploy or restore an environment from the repo.
+- [clio cheat sheet: the commands Creatio developers use most](https://devhub.tatvikaworks.com/blog/clio-cheat-sheet): Everyday clio commands for Creatio in one place: environments, packages, applications, workspaces, compile and restart, SQL, feature toggles, local installs.
+- [How to install Creatio locally on Windows with clio](https://devhub.tatvikaworks.com/blog/install-creatio-locally-windows-clio): Set up a local Creatio dev environment on Windows: IIS, PostgreSQL or MS SQL, Redis and one clio deploy-creatio command, plus how to remove it cleanly.
+- [It works on dev but not on test: comparing Creatio environments](https://devhub.tatvikaworks.com/blog/compare-creatio-environments-feature-toggles): Find why Creatio behaves differently on two environments: compare packages, system settings, feature toggles and lookup data, and switch features with clio.
+
 ## Links
 
 - [Home and download](https://devhub.tatvikaworks.com/): overview, requirements, FAQ and installers
 - [Guide](https://devhub.tatvikaworks.com/docs): every screen, step by step, with screenshots
+- [Blog](https://devhub.tatvikaworks.com/blog/): guides for Creatio developers
 - [Changelog](https://devhub.tatvikaworks.com/changelog): every release, newest first
 - [Latest release](https://github.com/SmitSuthar8834/creatio-devhub/releases/latest): Windows .exe and .msi, macOS .dmg
 - [Issues](https://github.com/SmitSuthar8834/creatio-devhub/issues): bug reports and feature requests

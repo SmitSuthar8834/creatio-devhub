@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f8fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0c10" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Set up a local Creatio dev environment on Windows: IIS, PostgreSQL or MS SQL, Redis and one clio deploy-creatio command, plus how to remove it cleanly.">
+<link rel="icon" type="image/png" href="../logo-mark.png">
+<title>How to install Creatio locally on Windows with clio</title>
+<link rel="canonical" href="https://devhub.tatvikaworks.com/blog/install-creatio-locally-windows-clio">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Companion for Creatio">
+<meta property="og:url" content="https://devhub.tatvikaworks.com/blog/install-creatio-locally-windows-clio">
+<meta property="og:title" content="How to install Creatio locally on Windows with clio">
+<meta property="og:description" content="Set up a local Creatio dev environment on Windows: IIS, PostgreSQL or MS SQL, Redis and one clio deploy-creatio command, plus how to remove it cleanly.">
+<meta property="og:image" content="https://devhub.tatvikaworks.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="article:published_time" content="2026-10-24">
+<meta property="article:author" content="Smit Suthar">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to install Creatio locally on Windows with clio">
+<meta name="twitter:description" content="Set up a local Creatio dev environment on Windows: IIS, PostgreSQL or MS SQL, Redis and one clio deploy-creatio command, plus how to remove it cleanly.">
+<meta name="twitter:image" content="https://devhub.tatvikaworks.com/og-image.png">
+<link rel="alternate" type="application/rss+xml" title="Companion for Creatio blog" href="https://devhub.tatvikaworks.com/blog/feed.xml">
+<script src="../analytics.js" defer></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://devhub.tatvikaworks.com/blog/install-creatio-locally-windows-clio#post",
+      "headline": "How to install Creatio locally on Windows with clio",
+      "description": "Set up a local Creatio dev environment on Windows: IIS, PostgreSQL or MS SQL, Redis and one clio deploy-creatio command, plus how to remove it cleanly.",
+      "datePublished": "2026-10-24",
+      "dateModified": "2026-10-24",
+      "inLanguage": "en",
+      "author": {
+        "@type": "Person",
+        "name": "Smit Suthar"
+      },
+      "publisher": {
+        "@type": "Person",
+        "name": "Smit Suthar"
+      },
+      "mainEntityOfPage": "https://devhub.tatvikaworks.com/blog/install-creatio-locally-windows-clio",
+      "image": "https://devhub.tatvikaworks.com/og-image.png",
+      "keywords": "install Creatio locally, Creatio local development environment, clio deploy-creatio, Creatio on IIS, uninstall Creatio",
+      "about": [
+        {
+          "@type": "Thing",
+          "name": "Creatio"
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "clio"
+        }
+      ],
+      "mentions": {
+        "@id": "https://devhub.tatvikaworks.com/#app"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Companion for Creatio",
+          "item": "https://devhub.tatvikaworks.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Blog",
+          "item": "https://devhub.tatvikaworks.com/blog/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "How to install Creatio locally on Windows with clio",
+          "item": "https://devhub.tatvikaworks.com/blog/install-creatio-locally-windows-clio"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f8fa; --surface: #ffffff; --sunk: #eef0f4;
+    --text: #12141a; --muted: #555b69; --faint: #7d8393;
+    --line: #e3e6ec; --line-2: #d3d7df;
+    --brand: #4f46e5; --brand-hover: #4338ca; --on-brand: #ffffff;
+    --code-bg: #0f1117; --code-text: #e6e8ef;
+    --font: Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --mono: "Geist Mono", ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0c10; --surface: #121319; --sunk: #17181f;
+      --text: #ecedf2; --muted: #a3a8b6; --faint: #7a8091;
+      --line: #22242c; --line-2: #2e313b;
+      --brand: #6366f1; --brand-hover: #7c7ff5;
+      --code-bg: #07080b; --code-text: #e6e8ef;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 17px; line-height: 1.7;
+    -webkit-font-smoothing: antialiased; }
+  a { color: var(--brand); }
+  img { max-width: 100%; height: auto; display: block; }
+  .wrap { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+  :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; border-radius: 6px; }
+
+  .topbar { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px); border-bottom: 1px solid var(--line); }
+  .topbar-in { display: flex; align-items: center; gap: 28px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font-weight: 650; letter-spacing: -.01em; white-space: nowrap; }
+  .brand img { width: 30px; height: 30px; border-radius: 8px; }
+  .nav { margin-left: auto; display: flex; align-items: center; gap: 26px; }
+  .nav a:not(.btn) { text-decoration: none; color: var(--muted); font-size: 14.5px; font-weight: 500; }
+  .nav a:not(.btn):hover, .nav a[aria-current] { color: var(--text); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; text-decoration: none;
+    font: 600 14.5px/1 var(--font); padding: 11px 16px; border-radius: 10px; border: 1px solid transparent; }
+  .btn-primary { background: var(--brand); color: var(--on-brand); }
+  .btn-primary:hover { background: var(--brand-hover); }
+  .btn-quiet { border-color: var(--line-2); color: var(--text); background: var(--surface); }
+
+  .crumbs { font-size: 14px; color: var(--faint); margin: 40px 0 14px; }
+  .crumbs a { color: var(--muted); text-decoration: none; }
+  .crumbs a:hover { color: var(--text); }
+  h1, h2, h3 { letter-spacing: -.02em; line-height: 1.2; font-weight: 650; }
+  h1 { font-size: clamp(30px, 4.4vw, 44px); margin: 0 0 14px; }
+  .meta { color: var(--faint); font-size: 14px; margin-bottom: 30px; }
+
+  .article { max-width: 760px; padding-bottom: 40px; }
+  .article h2 { font-size: 26px; margin: 48px 0 12px; }
+  .article h3 { font-size: 19px; margin: 32px 0 8px; }
+  .article p, .article li { color: var(--text); }
+  .article ul, .article ol { padding-left: 22px; }
+  .article li { margin: 6px 0; }
+  .article code { font-family: var(--mono); font-size: .88em; background: var(--sunk); border: 1px solid var(--line);
+    padding: 1px 6px; border-radius: 6px; }
+  .article pre { background: var(--code-bg); color: var(--code-text); border-radius: 12px; padding: 16px 18px; overflow-x: auto;
+    font-size: 14px; line-height: 1.6; margin: 14px 0 20px; }
+  .article pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; }
+  .answer { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: 12px;
+    padding: 18px 20px; margin: 0 0 8px; }
+  .answer b:first-child { display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--brand); margin-bottom: 4px; }
+  .answer p { margin: 0; }
+  .note { background: var(--sunk); border-radius: 12px; padding: 14px 18px; margin: 18px 0; font-size: 15.5px; }
+  .note p { margin: 0; }
+  .table-wrap { overflow-x: auto; margin: 14px 0 22px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--faint); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  td code { white-space: nowrap; }
+  figure { margin: 22px 0; }
+  figure img { border-radius: 12px; border: 1px solid var(--line); }
+  figcaption { color: var(--faint); font-size: 14px; margin-top: 8px; }
+
+  .cta { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px; margin: 44px 0 0;
+    display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; }
+  .cta p { margin: 0; max-width: 46ch; color: var(--muted); }
+  .cta b { color: var(--text); display: block; font-size: 18px; margin-bottom: 2px; }
+  .related { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 8px; }
+  .related h2 { font-size: 20px; margin: 24px 0 10px; }
+  .related ul { list-style: none; padding: 0; margin: 0; }
+  .related li { margin: 0; border-bottom: 1px solid var(--line); }
+  .related a { display: block; padding: 12px 0; text-decoration: none; color: var(--text); font-weight: 550; }
+  .related a:hover { color: var(--brand); }
+
+  .posts { list-style: none; padding: 0; margin: 0 0 64px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .posts li { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+  .posts a { display: block; padding: 22px 22px 24px; text-decoration: none; color: var(--text); height: 100%; }
+  .posts a:hover h2 { color: var(--brand); }
+  .posts h2 { font-size: 20px; margin: 0 0 8px; }
+  .posts p { color: var(--muted); margin: 0 0 12px; font-size: 15.5px; line-height: 1.6; }
+  .posts .meta { margin: 0; font-size: 13px; }
+  .lead { color: var(--muted); font-size: 18px; max-width: 60ch; margin: 0 0 36px; }
+
+  footer { border-top: 1px solid var(--line); padding: 40px 0 48px; margin-top: 40px; }
+  .foot { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; }
+  .foot a:not(.brand) { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .disclaimer { flex-basis: 100%; color: var(--faint); font-size: 13px; margin: 0; max-width: 72ch; }
+  @media (max-width: 760px) {
+    .nav a:not(.btn) { display: none; }
+    .topbar-in { gap: 12px; }
+    .brand { min-width: 0; font-size: 15px; }
+    .nav .btn { padding: 9px 12px; font-size: 14px; }
+    .posts { grid-template-columns: 1fr; }
+    body { font-size: 16px; }
+    /* command tables stack: command on top, what it does underneath */
+    table, tbody, tr, td { display: block; width: 100%; }
+    tr:first-child { display: none; }
+    tr { border-bottom: 1px solid var(--line); padding: 10px 0; }
+    td { border: 0; padding: 2px 0; }
+    td code { white-space: normal; word-break: break-word; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="../"><img src="../logo-mark.png" alt="">Companion for Creatio</a>
+    <nav class="nav" aria-label="Main">
+      <a href="../#features">Features</a>
+      <a href="../docs">Guide</a>
+      <a href="./" >Blog</a>
+      <a href="../changelog">Changelog</a>
+      <a class="btn btn-primary" href="../#download"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Download</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="../">Home</a> › <a href="./">Blog</a> › <span>Install Creatio locally</span></nav>
+  <article class="article">
+    <h1>How to install Creatio locally on Windows with clio</h1>
+    <div class="meta">By Smit Suthar · <time datetime="2026-10-24">October 24, 2026</time> · 3 min read</div>
+    <div class="answer"><b>Short answer</b><p>Prepare IIS (<code>clio check-windows-features</code>), a PostgreSQL or MS SQL server that clio knows about, and Redis. Then run <code>clio deploy-creatio --zip-file C:\Builds\creatio.zip --site-name creatio-dev --db pg --db-server-name my-pg</code> from an administrator prompt. clio extracts the build, restores the database, creates the IIS site and picks a free port. <code>clio uninstall-creatio -e creatio-dev</code> removes it again.</p></div>
+
+    <p>A local Creatio instance is the fastest place to develop: no shared environment to break, no waiting for someone else's restart, and file system mode for your IDE. Setting one up by hand means IIS, a database restore, connection strings and Redis. clio's <code>deploy-creatio</code> command does most of that in one step.</p>
+
+    <h2>What you need</h2>
+    <ul>
+      <li><b>A Creatio distribution zip</b> for the product and database type you want, from your Creatio account or partner channel.</li>
+      <li><b>Windows with IIS.</b> Check the required features with <code>clio check-windows-features</code>, and install missing ones with <code>clio manage-windows-features</code>.</li>
+      <li><b>A database server</b>: PostgreSQL or MS SQL, registered in clio's settings (open them with <code>clio open-settings</code>). For PostgreSQL, <code>pg_restore</code> must be available on the machine running clio. clio can also restore into a Kubernetes setup such as Rancher Desktop.</li>
+      <li><b>Redis</b>, running locally.</li>
+      <li><b>An administrator prompt</b>, because clio creates IIS sites.</li>
+    </ul>
+
+    <h2>Install</h2>
+    <pre><code>clio deploy-creatio --zip-file C:\Builds\creatio.zip --site-name creatio-dev --db pg --db-server-name my-pg</code></pre>
+    <p>What the options do:</p>
+    <ul>
+      <li><code>--zip-file</code>: the distribution zip, or an already-extracted folder to skip unzipping.</li>
+      <li><code>--site-name</code>: the IIS site name.</li>
+      <li><code>--db</code>: <code>pg</code> for PostgreSQL (the default) or <code>mssql</code>.</li>
+      <li><code>--db-server-name</code>: the database server configured in clio's settings. Without it, clio uses its Kubernetes restore flow.</li>
+      <li><code>--site-port</code>: optional. Otherwise clio takes the first free port in its range, 40100 to 40199 by default.</li>
+      <li><code>--use-https</code>: optional, if a matching local certificate is installed.</li>
+    </ul>
+    <p>clio also finds an empty Redis database by itself unless you pass <code>--redis-db</code>. When it finishes, open the site; the first sign-in to a fresh instance can take a few minutes while Creatio starts.</p>
+
+    <h2>Remove it cleanly</h2>
+    <pre><code>clio uninstall-creatio -e creatio-dev</code></pre>
+    <p>Use the name the environment is registered under in clio. This removes the IIS site or application, the database and the application files. There is no undo, so double-check the name. You can point it at the installation folder instead, with <code>-d C:\inetpub\wwwroot\creatio-dev</code>.</p>
+
+    <h2>When it fails</h2>
+    <ul>
+      <li><b>Port in use</b>: an explicit <code>--site-port</code> that is taken fails; leave it out to let clio pick a free one.</li>
+      <li><b>pg_restore not found</b>: install the PostgreSQL client tools and make sure they are on <code>PATH</code>.</li>
+      <li><b>Redis not running</b>: start it before deploying; Creatio will not start without it.</li>
+      <li><b>Access denied</b>: run the prompt as administrator.</li>
+      <li><b>Database already exists</b>: pick a different site name rather than overwriting a database you may still need.</li>
+    </ul>
+
+    <h2>Next steps</h2>
+    <p>Register the new environment if it isn't already (<code>clio reg-web-app</code>), install cliogate with <code>clio install-gate -e creatio-dev</code>, and turn on file system mode with <code>clio turn-fsm -e creatio-dev on</code> if you want to edit packages from your IDE. Then put your packages in Git: <a href="creatio-packages-git-github">here is how</a>.</p>
+
+    <h2>The one-window way</h2>
+    <p>On Windows, <a href="../">Companion for Creatio</a> has <b>Install Creatio</b> on its Environments screen. Pick the zip (the database type and runtime are read from its name when it says), a site name, an optional port and a database server set up in clio, or Rancher / Kubernetes. Before anything is created it checks administrator rights, the build, that the site name and port are free, the database server including <code>pg_restore</code>, and Redis, and it never overwrites an existing database. <b>Uninstall Creatio</b> asks you to type the name first, and <b>Import from IIS</b> registers Creatio sites already on your machine.</p>
+
+    <div class="cta">
+      <div><b>Do it from one window</b><p>Companion for Creatio is a free desktop app for Windows and macOS that runs these clio steps for you, as jobs you can watch and cancel.</p></div>
+      <a class="btn btn-primary" href="../#download"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Download free</a>
+    </div>
+    <section class="related" aria-labelledby="related-h">
+      <h2 id="related-h">Related guides</h2>
+      <ul><li><a href="clio-cheat-sheet">clio cheat sheet: the commands Creatio developers use most</a></li><li><a href="creatio-packages-git-github">How to put Creatio packages in Git and GitHub</a></li><li><a href="deploy-creatio-package-between-environments">How to deploy a Creatio package to another environment</a></li></ul>
+    </section>
+  </article>
+</main>
+<footer>
+  <div class="wrap foot">
+    <a class="brand" href="../"><img src="../logo-mark.png" alt="">Companion for Creatio</a>
+    <a href="../docs">Guide</a>
+    <a href="./">Blog</a>
+    <a href="../changelog">Changelog</a>
+    <a href="mailto:sutharsmit574@gmail.com">Support</a>
+    <p class="disclaimer">An independent community tool for developers working with the Creatio platform. Not affiliated with, endorsed by, or an official product of Creatio.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+  <title>Companion for Creatio blog</title>
+  <link>https://devhub.tatvikaworks.com/blog/</link>
+  <description>Practical guides for Creatio developers.</description>
+  <language>en</language>
+  <item>
+    <title>How to deploy a Creatio package to another environment</title>
+    <link>https://devhub.tatvikaworks.com/blog/deploy-creatio-package-between-environments</link>
+    <guid>https://devhub.tatvikaworks.com/blog/deploy-creatio-package-between-environments</guid>
+    <pubDate>Sat, 24 Oct 2026 09:00:00 +0000</pubDate>
+    <description>Move a Creatio package or application from dev to test or production with clio: pull-pkg, push-pkg, deploy-application, then compile, flush Redis and restart.</description>
+  </item>
+  <item>
+    <title>How to migrate lookups and records between Creatio environments</title>
+    <link>https://devhub.tatvikaworks.com/blog/migrate-data-between-creatio-environments</link>
+    <guid>https://devhub.tatvikaworks.com/blog/migrate-data-between-creatio-environments</guid>
+    <pubDate>Sat, 24 Oct 2026 09:00:00 +0000</pubDate>
+    <description>Copy lookups, records and users between Creatio environments without breaking references: package data bindings, SQL, or a migration screen with rollback.</description>
+  </item>
+  <item>
+    <title>How to put Creatio packages in Git and GitHub</title>
+    <link>https://devhub.tatvikaworks.com/blog/creatio-packages-git-github</link>
+    <guid>https://devhub.tatvikaworks.com/blog/creatio-packages-git-github</guid>
+    <pubDate>Sat, 24 Oct 2026 09:00:00 +0000</pubDate>
+    <description>Version Creatio packages with a clio workspace: pull them to disk, commit with Git, push to GitHub, and deploy or restore an environment from the repo.</description>
+  </item>
+  <item>
+    <title>clio cheat sheet: the commands Creatio developers use most</title>
+    <link>https://devhub.tatvikaworks.com/blog/clio-cheat-sheet</link>
+    <guid>https://devhub.tatvikaworks.com/blog/clio-cheat-sheet</guid>
+    <pubDate>Sat, 24 Oct 2026 09:00:00 +0000</pubDate>
+    <description>Everyday clio commands for Creatio in one place: environments, packages, applications, workspaces, compile and restart, SQL, feature toggles, local installs.</description>
+  </item>
+  <item>
+    <title>How to install Creatio locally on Windows with clio</title>
+    <link>https://devhub.tatvikaworks.com/blog/install-creatio-locally-windows-clio</link>
+    <guid>https://devhub.tatvikaworks.com/blog/install-creatio-locally-windows-clio</guid>
+    <pubDate>Sat, 24 Oct 2026 09:00:00 +0000</pubDate>
+    <description>Set up a local Creatio dev environment on Windows: IIS, PostgreSQL or MS SQL, Redis and one clio deploy-creatio command, plus how to remove it cleanly.</description>
+  </item>
+  <item>
+    <title>It works on dev but not on test: comparing Creatio environments</title>
+    <link>https://devhub.tatvikaworks.com/blog/compare-creatio-environments-feature-toggles</link>
+    <guid>https://devhub.tatvikaworks.com/blog/compare-creatio-environments-feature-toggles</guid>
+    <pubDate>Sat, 24 Oct 2026 09:00:00 +0000</pubDate>
+    <description>Find why Creatio behaves differently on two environments: compare packages, system settings, feature toggles and lookup data, and switch features with clio.</description>
+  </item>
+</channel>
+</rss>

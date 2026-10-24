@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f8fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0c10" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Practical guides for Creatio developers: deploying packages, migrating data between environments, Git and GitHub, clio commands and local installs.">
+<link rel="icon" type="image/png" href="../logo-mark.png">
+<title>Creatio developer guides: deployment, migration, Git and clio</title>
+<link rel="canonical" href="https://devhub.tatvikaworks.com/blog/">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Companion for Creatio">
+<meta property="og:url" content="https://devhub.tatvikaworks.com/blog/">
+<meta property="og:title" content="Creatio developer guides: deployment, migration, Git and clio">
+<meta property="og:description" content="Practical guides for Creatio developers: deploying packages, migrating data between environments, Git and GitHub, clio commands and local installs.">
+<meta property="og:image" content="https://devhub.tatvikaworks.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Creatio developer guides: deployment, migration, Git and clio">
+<meta name="twitter:description" content="Practical guides for Creatio developers: deploying packages, migrating data between environments, Git and GitHub, clio commands and local installs.">
+<meta name="twitter:image" content="https://devhub.tatvikaworks.com/og-image.png">
+<link rel="alternate" type="application/rss+xml" title="Companion for Creatio blog" href="https://devhub.tatvikaworks.com/blog/feed.xml">
+<script src="../analytics.js" defer></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Blog",
+      "@id": "https://devhub.tatvikaworks.com/blog/#blog",
+      "name": "Companion for Creatio blog",
+      "url": "https://devhub.tatvikaworks.com/blog/",
+      "description": "Practical guides for Creatio developers: deployment, data migration, Git, clio and local installs.",
+      "author": {
+        "@type": "Person",
+        "name": "Smit Suthar"
+      },
+      "blogPost": [
+        {
+          "@type": "BlogPosting",
+          "headline": "How to deploy a Creatio package to another environment",
+          "url": "https://devhub.tatvikaworks.com/blog/deploy-creatio-package-between-environments",
+          "datePublished": "2026-10-24"
+        },
+        {
+          "@type": "BlogPosting",
+          "headline": "How to migrate lookups and records between Creatio environments",
+          "url": "https://devhub.tatvikaworks.com/blog/migrate-data-between-creatio-environments",
+          "datePublished": "2026-10-24"
+        },
+        {
+          "@type": "BlogPosting",
+          "headline": "How to put Creatio packages in Git and GitHub",
+          "url": "https://devhub.tatvikaworks.com/blog/creatio-packages-git-github",
+          "datePublished": "2026-10-24"
+        },
+        {
+          "@type": "BlogPosting",
+          "headline": "clio cheat sheet: the commands Creatio developers use most",
+          "url": "https://devhub.tatvikaworks.com/blog/clio-cheat-sheet",
+          "datePublished": "2026-10-24"
+        },
+        {
+          "@type": "BlogPosting",
+          "headline": "How to install Creatio locally on Windows with clio",
+          "url": "https://devhub.tatvikaworks.com/blog/install-creatio-locally-windows-clio",
+          "datePublished": "2026-10-24"
+        },
+        {
+          "@type": "BlogPosting",
+          "headline": "It works on dev but not on test: comparing Creatio environments",
+          "url": "https://devhub.tatvikaworks.com/blog/compare-creatio-environments-feature-toggles",
+          "datePublished": "2026-10-24"
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Companion for Creatio",
+          "item": "https://devhub.tatvikaworks.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Blog",
+          "item": "https://devhub.tatvikaworks.com/blog/"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f8fa; --surface: #ffffff; --sunk: #eef0f4;
+    --text: #12141a; --muted: #555b69; --faint: #7d8393;
+    --line: #e3e6ec; --line-2: #d3d7df;
+    --brand: #4f46e5; --brand-hover: #4338ca; --on-brand: #ffffff;
+    --code-bg: #0f1117; --code-text: #e6e8ef;
+    --font: Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --mono: "Geist Mono", ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0c10; --surface: #121319; --sunk: #17181f;
+      --text: #ecedf2; --muted: #a3a8b6; --faint: #7a8091;
+      --line: #22242c; --line-2: #2e313b;
+      --brand: #6366f1; --brand-hover: #7c7ff5;
+      --code-bg: #07080b; --code-text: #e6e8ef;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 17px; line-height: 1.7;
+    -webkit-font-smoothing: antialiased; }
+  a { color: var(--brand); }
+  img { max-width: 100%; height: auto; display: block; }
+  .wrap { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+  :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; border-radius: 6px; }
+
+  .topbar { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px); border-bottom: 1px solid var(--line); }
+  .topbar-in { display: flex; align-items: center; gap: 28px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font-weight: 650; letter-spacing: -.01em; white-space: nowrap; }
+  .brand img { width: 30px; height: 30px; border-radius: 8px; }
+  .nav { margin-left: auto; display: flex; align-items: center; gap: 26px; }
+  .nav a:not(.btn) { text-decoration: none; color: var(--muted); font-size: 14.5px; font-weight: 500; }
+  .nav a:not(.btn):hover, .nav a[aria-current] { color: var(--text); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; text-decoration: none;
+    font: 600 14.5px/1 var(--font); padding: 11px 16px; border-radius: 10px; border: 1px solid transparent; }
+  .btn-primary { background: var(--brand); color: var(--on-brand); }
+  .btn-primary:hover { background: var(--brand-hover); }
+  .btn-quiet { border-color: var(--line-2); color: var(--text); background: var(--surface); }
+
+  .crumbs { font-size: 14px; color: var(--faint); margin: 40px 0 14px; }
+  .crumbs a { color: var(--muted); text-decoration: none; }
+  .crumbs a:hover { color: var(--text); }
+  h1, h2, h3 { letter-spacing: -.02em; line-height: 1.2; font-weight: 650; }
+  h1 { font-size: clamp(30px, 4.4vw, 44px); margin: 0 0 14px; }
+  .meta { color: var(--faint); font-size: 14px; margin-bottom: 30px; }
+
+  .article { max-width: 760px; padding-bottom: 40px; }
+  .article h2 { font-size: 26px; margin: 48px 0 12px; }
+  .article h3 { font-size: 19px; margin: 32px 0 8px; }
+  .article p, .article li { color: var(--text); }
+  .article ul, .article ol { padding-left: 22px; }
+  .article li { margin: 6px 0; }
+  .article code { font-family: var(--mono); font-size: .88em; background: var(--sunk); border: 1px solid var(--line);
+    padding: 1px 6px; border-radius: 6px; }
+  .article pre { background: var(--code-bg); color: var(--code-text); border-radius: 12px; padding: 16px 18px; overflow-x: auto;
+    font-size: 14px; line-height: 1.6; margin: 14px 0 20px; }
+  .article pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; }
+  .answer { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: 12px;
+    padding: 18px 20px; margin: 0 0 8px; }
+  .answer b:first-child { display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--brand); margin-bottom: 4px; }
+  .answer p { margin: 0; }
+  .note { background: var(--sunk); border-radius: 12px; padding: 14px 18px; margin: 18px 0; font-size: 15.5px; }
+  .note p { margin: 0; }
+  .table-wrap { overflow-x: auto; margin: 14px 0 22px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--faint); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  td code { white-space: nowrap; }
+  figure { margin: 22px 0; }
+  figure img { border-radius: 12px; border: 1px solid var(--line); }
+  figcaption { color: var(--faint); font-size: 14px; margin-top: 8px; }
+
+  .cta { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px; margin: 44px 0 0;
+    display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; }
+  .cta p { margin: 0; max-width: 46ch; color: var(--muted); }
+  .cta b { color: var(--text); display: block; font-size: 18px; margin-bottom: 2px; }
+  .related { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 8px; }
+  .related h2 { font-size: 20px; margin: 24px 0 10px; }
+  .related ul { list-style: none; padding: 0; margin: 0; }
+  .related li { margin: 0; border-bottom: 1px solid var(--line); }
+  .related a { display: block; padding: 12px 0; text-decoration: none; color: var(--text); font-weight: 550; }
+  .related a:hover { color: var(--brand); }
+
+  .posts { list-style: none; padding: 0; margin: 0 0 64px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .posts li { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+  .posts a { display: block; padding: 22px 22px 24px; text-decoration: none; color: var(--text); height: 100%; }
+  .posts a:hover h2 { color: var(--brand); }
+  .posts h2 { font-size: 20px; margin: 0 0 8px; }
+  .posts p { color: var(--muted); margin: 0 0 12px; font-size: 15.5px; line-height: 1.6; }
+  .posts .meta { margin: 0; font-size: 13px; }
+  .lead { color: var(--muted); font-size: 18px; max-width: 60ch; margin: 0 0 36px; }
+
+  footer { border-top: 1px solid var(--line); padding: 40px 0 48px; margin-top: 40px; }
+  .foot { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; }
+  .foot a:not(.brand) { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .disclaimer { flex-basis: 100%; color: var(--faint); font-size: 13px; margin: 0; max-width: 72ch; }
+  @media (max-width: 760px) {
+    .nav a:not(.btn) { display: none; }
+    .topbar-in { gap: 12px; }
+    .brand { min-width: 0; font-size: 15px; }
+    .nav .btn { padding: 9px 12px; font-size: 14px; }
+    .posts { grid-template-columns: 1fr; }
+    body { font-size: 16px; }
+    /* command tables stack: command on top, what it does underneath */
+    table, tbody, tr, td { display: block; width: 100%; }
+    tr:first-child { display: none; }
+    tr { border-bottom: 1px solid var(--line); padding: 10px 0; }
+    td { border: 0; padding: 2px 0; }
+    td code { white-space: normal; word-break: break-word; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="../"><img src="../logo-mark.png" alt="">Companion for Creatio</a>
+    <nav class="nav" aria-label="Main">
+      <a href="../#features">Features</a>
+      <a href="../docs">Guide</a>
+      <a href="./" aria-current="page">Blog</a>
+      <a href="../changelog">Changelog</a>
+      <a class="btn btn-primary" href="../#download"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Download</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="../">Home</a> › <span>Blog</span></nav>
+  <h1>Guides for Creatio developers</h1>
+  <p class="lead">Step-by-step answers to the jobs that eat a Creatio developer's day: moving packages and data between environments, source control, clio, and local installs. Each guide shows the clio commands, and the one-window way with Companion for Creatio.</p>
+  <ul class="posts">
+    <li><a href="deploy-creatio-package-between-environments">
+      <h2>How to deploy a Creatio package to another environment</h2>
+      <p>Move a Creatio package or application from dev to test or production with clio: pull-pkg, push-pkg, deploy-application, then compile, flush Redis and restart.</p>
+      <div class="meta"><time datetime="2026-10-24">October 24, 2026</time></div>
+    </a></li>
+    <li><a href="migrate-data-between-creatio-environments">
+      <h2>How to migrate lookups and records between Creatio environments</h2>
+      <p>Copy lookups, records and users between Creatio environments without breaking references: package data bindings, SQL, or a migration screen with rollback.</p>
+      <div class="meta"><time datetime="2026-10-24">October 24, 2026</time></div>
+    </a></li>
+    <li><a href="creatio-packages-git-github">
+      <h2>How to put Creatio packages in Git and GitHub</h2>
+      <p>Version Creatio packages with a clio workspace: pull them to disk, commit with Git, push to GitHub, and deploy or restore an environment from the repo.</p>
+      <div class="meta"><time datetime="2026-10-24">October 24, 2026</time></div>
+    </a></li>
+    <li><a href="clio-cheat-sheet">
+      <h2>clio cheat sheet: the commands Creatio developers use most</h2>
+      <p>Everyday clio commands for Creatio in one place: environments, packages, applications, workspaces, compile and restart, SQL, feature toggles, local installs.</p>
+      <div class="meta"><time datetime="2026-10-24">October 24, 2026</time></div>
+    </a></li>
+    <li><a href="install-creatio-locally-windows-clio">
+      <h2>How to install Creatio locally on Windows with clio</h2>
+      <p>Set up a local Creatio dev environment on Windows: IIS, PostgreSQL or MS SQL, Redis and one clio deploy-creatio command, plus how to remove it cleanly.</p>
+      <div class="meta"><time datetime="2026-10-24">October 24, 2026</time></div>
+    </a></li>
+    <li><a href="compare-creatio-environments-feature-toggles">
+      <h2>It works on dev but not on test: comparing Creatio environments</h2>
+      <p>Find why Creatio behaves differently on two environments: compare packages, system settings, feature toggles and lookup data, and switch features with clio.</p>
+      <div class="meta"><time datetime="2026-10-24">October 24, 2026</time></div>
+    </a></li>
+  </ul>
+</main>
+<footer>
+  <div class="wrap foot">
+    <a class="brand" href="../"><img src="../logo-mark.png" alt="">Companion for Creatio</a>
+    <a href="../docs">Guide</a>
+    <a href="./">Blog</a>
+    <a href="../changelog">Changelog</a>
+    <a href="mailto:sutharsmit574@gmail.com">Support</a>
+    <p class="disclaimer">An independent community tool for developers working with the Creatio platform. Not affiliated with, endorsed by, or an official product of Creatio.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f8fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0c10" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Copy lookups, records and users between Creatio environments without breaking references: package data bindings, SQL, or a migration screen with rollback.">
+<link rel="icon" type="image/png" href="../logo-mark.png">
+<title>How to migrate data between Creatio environments</title>
+<link rel="canonical" href="https://devhub.tatvikaworks.com/blog/migrate-data-between-creatio-environments">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Companion for Creatio">
+<meta property="og:url" content="https://devhub.tatvikaworks.com/blog/migrate-data-between-creatio-environments">
+<meta property="og:title" content="How to migrate data between Creatio environments">
+<meta property="og:description" content="Copy lookups, records and users between Creatio environments without breaking references: package data bindings, SQL, or a migration screen with rollback.">
+<meta property="og:image" content="https://devhub.tatvikaworks.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="article:published_time" content="2026-10-24">
+<meta property="article:author" content="Smit Suthar">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to migrate data between Creatio environments">
+<meta name="twitter:description" content="Copy lookups, records and users between Creatio environments without breaking references: package data bindings, SQL, or a migration screen with rollback.">
+<meta name="twitter:image" content="https://devhub.tatvikaworks.com/og-image.png">
+<link rel="alternate" type="application/rss+xml" title="Companion for Creatio blog" href="https://devhub.tatvikaworks.com/blog/feed.xml">
+<script src="../analytics.js" defer></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://devhub.tatvikaworks.com/blog/migrate-data-between-creatio-environments#post",
+      "headline": "How to migrate lookups and records between Creatio environments",
+      "description": "Copy lookups, records and users between Creatio environments without breaking references: package data bindings, SQL, or a migration screen with rollback.",
+      "datePublished": "2026-10-24",
+      "dateModified": "2026-10-24",
+      "inLanguage": "en",
+      "author": {
+        "@type": "Person",
+        "name": "Smit Suthar"
+      },
+      "publisher": {
+        "@type": "Person",
+        "name": "Smit Suthar"
+      },
+      "mainEntityOfPage": "https://devhub.tatvikaworks.com/blog/migrate-data-between-creatio-environments",
+      "image": "https://devhub.tatvikaworks.com/og-image.png",
+      "keywords": "Creatio data migration, copy lookups between Creatio environments, Creatio data binding, migrate records Creatio, clio create-data-binding",
+      "about": [
+        {
+          "@type": "Thing",
+          "name": "Creatio"
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "clio"
+        }
+      ],
+      "mentions": {
+        "@id": "https://devhub.tatvikaworks.com/#app"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Companion for Creatio",
+          "item": "https://devhub.tatvikaworks.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Blog",
+          "item": "https://devhub.tatvikaworks.com/blog/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "How to migrate lookups and records between Creatio environments",
+          "item": "https://devhub.tatvikaworks.com/blog/migrate-data-between-creatio-environments"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f8fa; --surface: #ffffff; --sunk: #eef0f4;
+    --text: #12141a; --muted: #555b69; --faint: #7d8393;
+    --line: #e3e6ec; --line-2: #d3d7df;
+    --brand: #4f46e5; --brand-hover: #4338ca; --on-brand: #ffffff;
+    --code-bg: #0f1117; --code-text: #e6e8ef;
+    --font: Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --mono: "Geist Mono", ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0c10; --surface: #121319; --sunk: #17181f;
+      --text: #ecedf2; --muted: #a3a8b6; --faint: #7a8091;
+      --line: #22242c; --line-2: #2e313b;
+      --brand: #6366f1; --brand-hover: #7c7ff5;
+      --code-bg: #07080b; --code-text: #e6e8ef;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 17px; line-height: 1.7;
+    -webkit-font-smoothing: antialiased; }
+  a { color: var(--brand); }
+  img { max-width: 100%; height: auto; display: block; }
+  .wrap { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+  :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; border-radius: 6px; }
+
+  .topbar { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px); border-bottom: 1px solid var(--line); }
+  .topbar-in { display: flex; align-items: center; gap: 28px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font-weight: 650; letter-spacing: -.01em; white-space: nowrap; }
+  .brand img { width: 30px; height: 30px; border-radius: 8px; }
+  .nav { margin-left: auto; display: flex; align-items: center; gap: 26px; }
+  .nav a:not(.btn) { text-decoration: none; color: var(--muted); font-size: 14.5px; font-weight: 500; }
+  .nav a:not(.btn):hover, .nav a[aria-current] { color: var(--text); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; text-decoration: none;
+    font: 600 14.5px/1 var(--font); padding: 11px 16px; border-radius: 10px; border: 1px solid transparent; }
+  .btn-primary { background: var(--brand); color: var(--on-brand); }
+  .btn-primary:hover { background: var(--brand-hover); }
+  .btn-quiet { border-color: var(--line-2); color: var(--text); background: var(--surface); }
+
+  .crumbs { font-size: 14px; color: var(--faint); margin: 40px 0 14px; }
+  .crumbs a { color: var(--muted); text-decoration: none; }
+  .crumbs a:hover { color: var(--text); }
+  h1, h2, h3 { letter-spacing: -.02em; line-height: 1.2; font-weight: 650; }
+  h1 { font-size: clamp(30px, 4.4vw, 44px); margin: 0 0 14px; }
+  .meta { color: var(--faint); font-size: 14px; margin-bottom: 30px; }
+
+  .article { max-width: 760px; padding-bottom: 40px; }
+  .article h2 { font-size: 26px; margin: 48px 0 12px; }
+  .article h3 { font-size: 19px; margin: 32px 0 8px; }
+  .article p, .article li { color: var(--text); }
+  .article ul, .article ol { padding-left: 22px; }
+  .article li { margin: 6px 0; }
+  .article code { font-family: var(--mono); font-size: .88em; background: var(--sunk); border: 1px solid var(--line);
+    padding: 1px 6px; border-radius: 6px; }
+  .article pre { background: var(--code-bg); color: var(--code-text); border-radius: 12px; padding: 16px 18px; overflow-x: auto;
+    font-size: 14px; line-height: 1.6; margin: 14px 0 20px; }
+  .article pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; }
+  .answer { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: 12px;
+    padding: 18px 20px; margin: 0 0 8px; }
+  .answer b:first-child { display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--brand); margin-bottom: 4px; }
+  .answer p { margin: 0; }
+  .note { background: var(--sunk); border-radius: 12px; padding: 14px 18px; margin: 18px 0; font-size: 15.5px; }
+  .note p { margin: 0; }
+  .table-wrap { overflow-x: auto; margin: 14px 0 22px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--faint); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  td code { white-space: nowrap; }
+  figure { margin: 22px 0; }
+  figure img { border-radius: 12px; border: 1px solid var(--line); }
+  figcaption { color: var(--faint); font-size: 14px; margin-top: 8px; }
+
+  .cta { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px; margin: 44px 0 0;
+    display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; }
+  .cta p { margin: 0; max-width: 46ch; color: var(--muted); }
+  .cta b { color: var(--text); display: block; font-size: 18px; margin-bottom: 2px; }
+  .related { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 8px; }
+  .related h2 { font-size: 20px; margin: 24px 0 10px; }
+  .related ul { list-style: none; padding: 0; margin: 0; }
+  .related li { margin: 0; border-bottom: 1px solid var(--line); }
+  .related a { display: block; padding: 12px 0; text-decoration: none; color: var(--text); font-weight: 550; }
+  .related a:hover { color: var(--brand); }
+
+  .posts { list-style: none; padding: 0; margin: 0 0 64px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .posts li { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+  .posts a { display: block; padding: 22px 22px 24px; text-decoration: none; color: var(--text); height: 100%; }
+  .posts a:hover h2 { color: var(--brand); }
+  .posts h2 { font-size: 20px; margin: 0 0 8px; }
+  .posts p { color: var(--muted); margin: 0 0 12px; font-size: 15.5px; line-height: 1.6; }
+  .posts .meta { margin: 0; font-size: 13px; }
+  .lead { color: var(--muted); font-size: 18px; max-width: 60ch; margin: 0 0 36px; }
+
+  footer { border-top: 1px solid var(--line); padding: 40px 0 48px; margin-top: 40px; }
+  .foot { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; }
+  .foot a:not(.brand) { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .disclaimer { flex-basis: 100%; color: var(--faint); font-size: 13px; margin: 0; max-width: 72ch; }
+  @media (max-width: 760px) {
+    .nav a:not(.btn) { display: none; }
+    .topbar-in { gap: 12px; }
+    .brand { min-width: 0; font-size: 15px; }
+    .nav .btn { padding: 9px 12px; font-size: 14px; }
+    .posts { grid-template-columns: 1fr; }
+    body { font-size: 16px; }
+    /* command tables stack: command on top, what it does underneath */
+    table, tbody, tr, td { display: block; width: 100%; }
+    tr:first-child { display: none; }
+    tr { border-bottom: 1px solid var(--line); padding: 10px 0; }
+    td { border: 0; padding: 2px 0; }
+    td code { white-space: normal; word-break: break-word; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="../"><img src="../logo-mark.png" alt="">Companion for Creatio</a>
+    <nav class="nav" aria-label="Main">
+      <a href="../#features">Features</a>
+      <a href="../docs">Guide</a>
+      <a href="./" >Blog</a>
+      <a href="../changelog">Changelog</a>
+      <a class="btn btn-primary" href="../#download"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Download</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="../">Home</a> › <a href="./">Blog</a> › <span>Migrate data</span></nav>
+  <article class="article">
+    <h1>How to migrate lookups and records between Creatio environments</h1>
+    <div class="meta">By Smit Suthar · <time datetime="2026-10-24">October 24, 2026</time> · 3 min read</div>
+    <div class="answer"><b>Short answer</b><p>Package deployment moves configuration, not data. For reference data that belongs with your app, bind it to the package (in clio: <code>create-data-binding</code> and <code>add-data-binding-row</code>) so it travels with every deploy. For one-off copies of lookups, records or users, copy rows keyed on their <code>Id</code> so references keep working, and write a rollback script first.</p></div>
+
+    <p>You deploy a package to test and the new section opens, but its dropdowns are empty. That is expected: Creatio packages carry <em>configuration</em>, such as objects, pages, processes and code, while the <em>data</em> in lookups and sections stays where it was created. This guide covers the three ways to move it and when to use each.</p>
+
+    <h2>The rule that matters: keep the Id</h2>
+    <p>Creatio records point at each other by <code>Id</code>, a GUID. An Order points at its Status by the Status record's Id, not by its name. If you recreate a lookup value on the target with a new Id, every record that points at the old one breaks. So whatever method you use, copy rows <b>with their original Id</b>, and update rows that already exist instead of inserting duplicates.</p>
+
+    <h2>Method 1: bind the data to a package</h2>
+    <p>For reference data your application needs everywhere, such as order statuses, delivery types or default settings, the clean answer is a <b>package data binding</b>. The rows are stored inside the package and installed with it, on every environment, every time. You can bind data from Creatio's configuration section, or from a clio workspace:</p>
+    <pre><code>clio create-data-binding --package UsrOrders --schema UsrDeliveryType</code></pre>
+    <p>This creates a binding folder under <code>packages/UsrOrders/Data/</code> with <code>descriptor.json</code>, <code>data.json</code> and <code>filter.json</code>. Add or replace rows with <code>add-data-binding-row</code>; if you leave out the Id column, clio generates one:</p>
+    <pre><code>clio add-data-binding-row --package UsrOrders --binding-name UsrDeliveryType --values &#x27;{&quot;Name&quot;: &quot;Express&quot;}&#x27;</code></pre>
+    <p>Use the binding folder's name for <code>--binding-name</code>. Then install the workspace as usual, for example with <code>clio push-workspace -e test</code>.</p>
+    <div class="note"><p><b>Use bindings for data you own.</b> Binding transactional data, such as real orders or contacts, to a package is a bad idea: it ships to every environment and overwrites what is there.</p></div>
+
+    <h2>Method 2: SQL, carefully</h2>
+    <p><code>clio execute-sql-script</code> runs SQL against an environment's database and can save the result as CSV or Excel. It needs cliogate 2.0.0.41 or newer on the environment (<code>clio install-gate -e dev</code>).</p>
+    <pre><code>clio execute-sql-script -f delivery-types.sql -e dev -v csv -d delivery-types.csv</code></pre>
+    <p>Put the query in <code>delivery-types.sql</code>, which avoids quoting trouble on the command line. Reading this way is safe and useful for checking what differs. Writing with SQL is where it gets risky: it bypasses Creatio's business logic, the syntax differs between PostgreSQL and MS SQL, there is no undo, and foreign keys have to be satisfied in the right order. If you do write, back up the target first and keep a script that reverses every change.</p>
+
+    <h2>Method 3: a migration screen with rollback</h2>
+    <p><a href="../">Companion for Creatio</a> has a <b>Migration</b> screen built for one-off copies between environments:</p>
+    <ul>
+      <li><b>Lookups</b>: tick the lookups to copy from a source to a target. Rows are matched on their Id, so existing rows are updated and missing ones added. <b>Preview SQL</b> shows the exact upsert before <b>Migrate</b> runs it. <b>Compare → Lookups</b> shows which values differ first.</li>
+      <li><b>Objects</b>: search any object, such as Lead, Contact or your own, to see its row counts on both sides, its columns and its foreign-key hierarchy, then copy its rows keyed on Id. <b>Remap ownership to the target's Supervisor</b> rewrites owner and created-by columns so they don't point at users who don't exist on the target.</li>
+      <li><b>Users &amp; roles</b>: search and select users or roles on the source, preview the upsert with passwords redacted, and migrate.</li>
+    </ul>
+    <p>Before anything is written, a runnable rollback script is recorded so the change can be undone.</p>
+    <figure><img src="../assets/docs/migration-lookups.webp" width="1600" height="1052" alt="Migration screen in Companion for Creatio with lookups ticked for copying between two environments" loading="lazy"><figcaption>Migration → Lookups: tick the reference data to copy, preview the SQL, then migrate.</figcaption></figure>
+
+    <h2>A checklist that avoids most problems</h2>
+    <ol>
+      <li>Deploy the packages first, so the target has the objects and columns the data needs.</li>
+      <li>Back up the target, or make sure a rollback script exists.</li>
+      <li>Migrate lookups before the records that point at them, and parent records before children.</li>
+      <li>Check owners: records owned by users who only exist on the source need remapping.</li>
+      <li>Verify on the target: counts match, dropdowns are filled, and a few records open without errors.</li>
+    </ol>
+
+    <div class="cta">
+      <div><b>Do it from one window</b><p>Companion for Creatio is a free desktop app for Windows and macOS that runs these clio steps for you, as jobs you can watch and cancel.</p></div>
+      <a class="btn btn-primary" href="../#download"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Download free</a>
+    </div>
+    <section class="related" aria-labelledby="related-h">
+      <h2 id="related-h">Related guides</h2>
+      <ul><li><a href="deploy-creatio-package-between-environments">How to deploy a Creatio package to another environment</a></li><li><a href="compare-creatio-environments-feature-toggles">It works on dev but not on test: comparing Creatio environments</a></li><li><a href="clio-cheat-sheet">clio cheat sheet: the commands Creatio developers use most</a></li></ul>
+    </section>
+  </article>
+</main>
+<footer>
+  <div class="wrap foot">
+    <a class="brand" href="../"><img src="../logo-mark.png" alt="">Companion for Creatio</a>
+    <a href="../docs">Guide</a>
+    <a href="./">Blog</a>
+    <a href="../changelog">Changelog</a>
+    <a href="mailto:sutharsmit574@gmail.com">Support</a>
+    <p class="disclaimer">An independent community tool for developers working with the Creatio platform. Not affiliated with, endorsed by, or an official product of Creatio.</p>
+  </div>
+</footer>
+</body>
+</html>

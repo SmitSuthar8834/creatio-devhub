@@ -12,4 +12,32 @@
     <loc>https://devhub.tatvikaworks.com/changelog</loc>
     <lastmod>2026-10-24</lastmod>
   </url>
+  <url>
+    <loc>https://devhub.tatvikaworks.com/blog/</loc>
+    <lastmod>2026-10-24</lastmod>
+  </url>
+  <url>
+    <loc>https://devhub.tatvikaworks.com/blog/deploy-creatio-package-between-environments</loc>
+    <lastmod>2026-10-24</lastmod>
+  </url>
+  <url>
+    <loc>https://devhub.tatvikaworks.com/blog/migrate-data-between-creatio-environments</loc>
+    <lastmod>2026-10-24</lastmod>
+  </url>
+  <url>
+    <loc>https://devhub.tatvikaworks.com/blog/creatio-packages-git-github</loc>
+    <lastmod>2026-10-24</lastmod>
+  </url>
+  <url>
+    <loc>https://devhub.tatvikaworks.com/blog/clio-cheat-sheet</loc>
+    <lastmod>2026-10-24</lastmod>
+  </url>
+  <url>
+    <loc>https://devhub.tatvikaworks.com/blog/install-creatio-locally-windows-clio</loc>
+    <lastmod>2026-10-24</lastmod>
+  </url>
+  <url>
+    <loc>https://devhub.tatvikaworks.com/blog/compare-creatio-environments-feature-toggles</loc>
+    <lastmod>2026-10-24</lastmod>
+  </url>
 </urlset>
