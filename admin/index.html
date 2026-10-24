@@ -192,7 +192,8 @@
       <div id="ga-wrap" class="panel-b">
         <div class="ga-conn" id="ga-conn" hidden>
           <span>Analytics account <b id="ga-email"></b></span>
-          <select id="ga-property" class="ga-range" aria-label="Analytics property"></select>
+          <select id="ga-property" class="ga-range" aria-label="Analytics property" hidden></select>
+          <select id="ga-stream" class="ga-range" aria-label="Website (data stream)" hidden></select>
           <span class="ga-conn-actions">
             <button class="btn btn-sm" id="ga-refresh">Refresh</button>
             <button class="btn btn-sm" id="ga-switch">Switch account</button>
@@ -314,10 +315,14 @@
   };
   document.getElementById("ga-range").onchange = () => loadAnalytics();
   document.getElementById("ga-property").onchange = (e) => {
-    saveGaPrefs({ ...gaPrefs(), propertyId: e.target.value });
+    saveGaPrefs({ ...gaPrefs(), propertyId: e.target.value, streamId: undefined });
     loadAnalytics();
   };
-  document.getElementById("ga-refresh").onclick = () => { gaProps = null; loadAnalytics(); };
+  document.getElementById("ga-stream").onchange = (e) => {
+    saveGaPrefs({ ...gaPrefs(), streamId: e.target.value });
+    loadAnalytics();
+  };
+  document.getElementById("ga-refresh").onclick = () => { gaProps = null; gaStreamCache.clear(); loadAnalytics(); };
   document.getElementById("ga-switch").onclick = () => gaConnect("choose");
   document.getElementById("ga-disconnect").onclick = () => gaDisconnect();
 
@@ -367,6 +372,7 @@
   // reconnect is one click with that account pre-selected.
   let gaAuth = null;
   let gaProps = null; // [{ id, name, account }] the connected account can read
+  const gaStreamCache = new Map(); // propertyId → [{ id, name, measurementId }]
   let gaBusy = false;
 
   function gaPrefs() {
@@ -415,6 +421,7 @@
       saveGaToken(token);
       saveGaPrefs({ email, propertyId: email === prefs.email ? prefs.propertyId : null });
       gaProps = null;
+      gaStreamCache.clear();
       gaBusy = false;
       loadAnalytics();
     } catch (e) {
@@ -438,6 +445,7 @@
     saveGaToken(null);
     saveGaPrefs({});
     gaProps = null;
+    gaStreamCache.clear();
     loadAnalytics();
   }
 
@@ -489,13 +497,34 @@
     return out;
   }
 
+  // A property can hold several websites/apps ("data streams"); its reports add them all up.
+  async function gaStreams(propertyId) {
+    if (!gaStreamCache.has(propertyId)) {
+      const res = await gaFetch(`https://analyticsadmin.googleapis.com/v1beta/properties/${propertyId}/dataStreams?pageSize=200`);
+      gaStreamCache.set(propertyId, (res.dataStreams ?? []).map((s) => ({
+        id: s.name.split("/").pop(),
+        name: s.displayName || s.webStreamData?.defaultUri || s.name,
+        measurementId: s.webStreamData?.measurementId,
+      })));
+    }
+    return gaStreamCache.get(propertyId);
+  }
+
   // The property this site reports to is the one with a web stream for SITE_MEASUREMENT_ID.
   async function gaFindSiteProperty(props) {
     const hits = await Promise.all(props.slice(0, 25).map((p) =>
-      gaFetch(`https://analyticsadmin.googleapis.com/v1beta/properties/${p.id}/dataStreams`)
-        .then((r) => (r.dataStreams ?? []).some((s) => s.webStreamData?.measurementId === SITE_MEASUREMENT_ID))
-        .catch(() => false)));
+      gaStreams(p.id).then((streams) => streams.some((s) => s.measurementId === SITE_MEASUREMENT_ID)).catch(() => false)));
     return props[hits.indexOf(true)]?.id ?? null;
+  }
+
+  // Default to this site's own stream so other sites sharing the property don't inflate the
+  // numbers; "" is "all streams", which the picker offers whenever there is more than one.
+  function gaFillStreamPicker(streams, streamId) {
+    const select = document.getElementById("ga-stream");
+    select.hidden = streams.length < 2;
+    select.innerHTML = `<option value="">All ${streams.length} streams in this property</option>` +
+      streams.map((s) => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join("");
+    select.value = streamId;
   }
 
   function gaFillPropertyPicker(propertyId) {
@@ -507,6 +536,7 @@
       props.map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)} (${escapeHtml(p.id)})</option>`).join("") +
       `</optgroup>`).join("");
     select.value = propertyId;
+    select.hidden = false;
   }
 
   const gaRows = (report) => (report.rows ?? []).map((r) => ({
@@ -556,9 +586,21 @@
         body.innerHTML = `<p class="empty">Finding the property for ${escapeHtml(SITE_MEASUREMENT_ID)}…</p>`;
         propertyId = gaProps.length === 1 ? gaProps[0].id : (await gaFindSiteProperty(gaProps)) ?? gaProps[0].id;
         if (stale()) return;
-        saveGaPrefs({ ...gaPrefs(), propertyId });
+        saveGaPrefs({ ...gaPrefs(), propertyId, streamId: undefined });
       }
       gaFillPropertyPicker(propertyId);
+
+      const streams = await gaStreams(propertyId);
+      if (stale()) return;
+      let streamId = gaPrefs().streamId;
+      if (streamId !== "" && !streams.some((s) => s.id === streamId)) {
+        streamId = streams.find((s) => s.measurementId === SITE_MEASUREMENT_ID)?.id ?? "";
+        saveGaPrefs({ ...gaPrefs(), streamId });
+      }
+      gaFillStreamPicker(streams, streamId);
+      const byStream = { filter: { fieldName: "streamId", stringFilter: { value: streamId } } };
+      const scoped = (req) => !streamId ? req : { ...req, dimensionFilter: req.dimensionFilter
+        ? { andGroup: { expressions: [req.dimensionFilter, byStream] } } : byStream };
 
       const days = Number(document.getElementById("ga-range").value);
       const dateRanges = [{ startDate: `${days - 1}daysAgo`, endDate: "today" }];
@@ -574,10 +616,10 @@
             orderBys: [{ metric: { metricName: "sessions" }, desc: true }], limit: 10 },
           { dateRanges, dimensions: [{ name: "eventName" }], metrics: [{ name: "eventCount" }],
             dimensionFilter: { filter: { fieldName: "eventName", stringFilter: { value: "download_installer" } } } },
-        ] }),
-        gaData(propertyId, "runReport", { dateRanges, dimensions: [{ name: "country" }], metrics: [{ name: "activeUsers" }],
-          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }], limit: 10 }),
-        gaData(propertyId, "runRealtimeReport", { metrics: [{ name: "activeUsers" }] }),
+        ].map(scoped) }),
+        gaData(propertyId, "runReport", scoped({ dateRanges, dimensions: [{ name: "country" }], metrics: [{ name: "activeUsers" }],
+          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }], limit: 10 })),
+        gaData(propertyId, "runRealtimeReport", scoped({ metrics: [{ name: "activeUsers" }] })),
       ]);
       if (stale()) return;
       const [totals, daily, pages, sources, downloads] = batch.reports.map(gaRows);
