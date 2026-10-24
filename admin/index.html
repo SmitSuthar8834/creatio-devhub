@@ -72,6 +72,68 @@
   tr:last-child td { border-bottom: none; }
   .empty { padding: 22px 18px; color: var(--fg-faint); font-size: 13px; }
   .err { color: var(--danger); font-size: 13px; padding: 12px 18px; }
+  /* collapsible panels */
+  .panel-toggle { display: flex; align-items: center; gap: 8px; background: none; border: 0; padding: 0; margin: 0;
+    color: inherit; font: inherit; cursor: pointer; text-align: left; }
+  .panel-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+  .chev { width: 16px; height: 16px; flex: none; fill: none; stroke: var(--fg-faint); stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+  section.panel.collapsed .chev { transform: rotate(-90deg); }
+  section.panel.collapsed .panel-h { border-bottom: none; }
+  section.panel.collapsed .panel-b { display: none; }
+
+  /* list filters */
+  .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 18px;
+    border-bottom: 1px solid var(--border); }
+  .f-search, .f-select { font-family: var(--font-sans); font-size: 13px; background: var(--surface-2); color: var(--fg);
+    border: 1px solid var(--border-2); border-radius: 8px; padding: 7px 10px; }
+  .f-search { flex: 1 1 220px; min-width: 0; }
+  .f-search:focus-visible, .f-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .f-count { margin-left: auto; font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-faint); white-space: nowrap; }
+  .btn-sm { padding: 6px 10px; font-size: 12.5px; border-radius: 8px; }
+  .btn[hidden] { display: none; }
+  .f-table { overflow-x: auto; }
+
+  /* website traffic (Google Analytics) */
+  .ga-range { font-family: var(--font-mono); font-size: 12px; background: var(--surface-2); color: var(--fg);
+    border: 1px solid var(--border-2); border-radius: 8px; padding: 4px 8px; margin-left: 8px; }
+  .ga-stats { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--border); }
+  .ga-stats .stat { border: none; border-radius: 0; border-right: 1px solid var(--border); }
+  .ga-stats .stat:last-child { border-right: none; }
+  .ga-chart { position: relative; padding: 18px 18px 10px; border-bottom: 1px solid var(--border); }
+  .ga-chart h3 { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--fg-soft); }
+  .ga-chart svg { display: block; width: 100%; height: 200px; overflow: visible; }
+  .ga-chart .grid-line { stroke: var(--border); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .ga-chart .axis-label { fill: var(--fg-faint); font-family: var(--font-mono); font-size: 10.5px; }
+  .ga-chart .bar { fill: var(--accent); }
+  .ga-chart .bar.on { fill: #818CF8; }
+  .ga-chart .hit { fill: transparent; }
+  .ga-tip { position: absolute; pointer-events: none; display: none; background: var(--surface-2);
+    border: 1px solid var(--border-2); border-radius: 8px; padding: 8px 10px; font-size: 12px; white-space: nowrap;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45); transform: translate(-50%, calc(-100% - 10px)); }
+  .ga-tip b { display: block; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .ga-tip span { color: var(--fg-faint); }
+  .ga-chart details { margin-top: 8px; font-size: 12.5px; color: var(--fg-soft); }
+  .ga-chart details summary { cursor: pointer; }
+  .ga-chart details table { margin-top: 8px; }
+  .ga-chart details th, .ga-chart details td { padding: 6px 10px; }
+  .ga-cols { display: grid; grid-template-columns: 1fr 1fr; }
+  .ga-cols > div { min-width: 0; }
+  .ga-cols > div + div { border-left: 1px solid var(--border); }
+  .ga-cols h3, .ga-sub { margin: 0; padding: 14px 18px 4px; font-size: 13px; font-weight: 600; color: var(--fg-soft); }
+  td.clip { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+  .ga-wide { border-top: 1px solid var(--border); }
+  .ga-note { padding: 18px; font-size: 13px; color: var(--fg-soft); }
+  .ga-note p { margin: 0 0 12px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  @media (max-width: 760px) {
+    .grid, .ga-stats { grid-template-columns: 1fr 1fr; }
+    .ga-stats .stat:nth-child(2n) { border-right: none; }
+    .ga-cols { grid-template-columns: 1fr; }
+    .ga-cols > div + div { border-left: none; border-top: 1px solid var(--border); }
+    .panel-h { flex-wrap: wrap; gap: 8px; }
+    section.panel { overflow-x: auto; }
+  }
   code { font-family: var(--font-mono); background: var(--surface-2); border: 1px solid var(--border);
     padding: 1px 6px; border-radius: 5px; font-size: 12px; }
 </style>
@@ -108,25 +170,42 @@
       <div class="stat"><b id="stat-optins">—</b><span>Opted in to updates</span></div>
     </div>
 
-    <section class="panel">
-      <div class="panel-h">Release downloads <small>github.com/SmitSuthar8834/creatio-devhub/releases — real counts, no tracking</small></div>
-      <div id="downloads-body"></div>
+    <!-- Each panel collapses from its title; which ones are collapsed is remembered per browser. -->
+    <section class="panel" data-panel="traffic">
+      <div class="panel-h">
+        <button class="panel-toggle" aria-expanded="true" aria-controls="ga-body"><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>Website traffic</button>
+        <span><small>Google Analytics · devhub.tatvikaworks.com</small>
+          <select id="ga-range" class="ga-range" aria-label="Date range">
+            <option value="7">Last 7 days</option>
+            <option value="28" selected>Last 28 days</option>
+            <option value="90">Last 90 days</option>
+          </select></span>
+      </div>
+      <div id="ga-body" class="panel-b"><p class="empty">Loading…</p></div>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-panel="downloads">
       <div class="panel-h">
-        <span>Opted-in users <span id="optins-count" class="count-badge"></span></span>
+        <button class="panel-toggle" aria-expanded="true" aria-controls="downloads-body"><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>Release downloads</button>
+        <small>github.com/SmitSuthar8834/creatio-devhub/releases — real counts, no tracking</small>
+      </div>
+      <div id="downloads-body" class="panel-b"></div>
+    </section>
+
+    <section class="panel" data-panel="optins">
+      <div class="panel-h">
+        <button class="panel-toggle" aria-expanded="true" aria-controls="optins-body"><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>Opted-in users <span id="optins-count" class="count-badge"></span></button>
         <small>Firestore: optins</small>
       </div>
-      <div id="optins-body"></div>
+      <div id="optins-body" class="panel-b"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-panel="installs">
       <div class="panel-h">
-        <span>All installs <span id="installs-count" class="count-badge"></span></span>
+        <button class="panel-toggle" aria-expanded="true" aria-controls="installs-body"><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>All installs <span id="installs-count" class="count-badge"></span></button>
         <small>Firestore: installs — anonymous, no personal data</small>
       </div>
-      <div id="installs-body"></div>
+      <div id="installs-body" class="panel-b"></div>
     </section>
   </div>
 </main>
@@ -134,7 +213,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
+    getAuth, GoogleAuthProvider, signInWithPopup, reauthenticateWithPopup, signOut, onAuthStateChanged,
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import {
     getFirestore, collection, getDocs, getCountFromServer, query, orderBy, limit,
@@ -153,6 +232,16 @@
   // (this check just avoids showing a confusing "0 rows" screen to the wrong Google account).
   const ADMIN_EMAIL = "smitsuthar.techmihirnaik@gmail.com";
   const GITHUB_REPO = "SmitSuthar8834/creatio-devhub";
+  // GA4 property that receives the site's G-GMQZYPKYH4 tag. This is the NUMERIC property ID
+  // (GA → Admin → Property details), not the G- measurement ID. ADMIN_EMAIL needs Viewer
+  // access to it, and the "Google Analytics Data API" must be enabled in the devhub-a81f7
+  // Google Cloud project: the Firebase sign-in's OAuth client is what calls it.
+  const GA_PROPERTY_ID = "16195752312";
+  const GA_SCOPE = "https://www.googleapis.com/auth/analytics.readonly";
+  const GA_TOKEN_KEY = "devhub.admin.gaToken";
+
+  const provider = new GoogleAuthProvider();
+  provider.addScope(GA_SCOPE);
 
   const gate = document.getElementById("gate");
   const gateErr = document.getElementById("gate-err");
@@ -160,6 +249,24 @@
   const who = document.getElementById("who");
   const whoEmail = document.getElementById("who-email");
   const signinBtn = document.getElementById("signin");
+
+  const COLLAPSED_KEY = "devhub.admin.collapsed";
+  let collapsed = new Set();
+  try { collapsed = new Set(JSON.parse(localStorage.getItem(COLLAPSED_KEY) || "[]")); } catch { /* storage disabled */ }
+  for (const panel of document.querySelectorAll("section.panel[data-panel]")) {
+    const toggle = panel.querySelector(".panel-toggle");
+    const set = (isCollapsed) => {
+      panel.classList.toggle("collapsed", isCollapsed);
+      toggle.setAttribute("aria-expanded", String(!isCollapsed));
+    };
+    set(collapsed.has(panel.dataset.panel));
+    toggle.onclick = () => {
+      const isCollapsed = !panel.classList.contains("collapsed");
+      set(isCollapsed);
+      isCollapsed ? collapsed.add(panel.dataset.panel) : collapsed.delete(panel.dataset.panel);
+      try { localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...collapsed])); } catch { /* not remembered */ }
+    };
+  }
 
   let auth, db;
   try {
@@ -177,11 +284,18 @@
   if (auth) {
   signinBtn.onclick = () => {
     gateErr.textContent = "";
-    signInWithPopup(auth, new GoogleAuthProvider()).catch((e) => {
+    signInWithPopup(auth, provider).then((result) => {
+      saveGaToken(result);
+      loadAnalytics();
+    }).catch((e) => {
       gateErr.textContent = e.message;
     });
   };
-  document.getElementById("signout").onclick = () => signOut(auth);
+  document.getElementById("signout").onclick = () => {
+    saveGaToken(null);
+    signOut(auth);
+  };
+  document.getElementById("ga-range").onchange = () => loadAnalytics();
 
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
@@ -217,7 +331,210 @@
   }
 
   async function loadDashboard() {
-    await Promise.all([loadDownloads(), loadInstalls(), loadOptins()]);
+    await Promise.all([loadAnalytics(), loadDownloads(), loadInstalls(), loadOptins()]);
+  }
+
+  // ---------- website traffic (GA4 Data API) ----------
+
+  // Firebase keeps the user signed in across reloads but not the Google access token, which
+  // also expires after an hour. Keep it for the tab's session; when it's gone, the panel
+  // offers a one-click reconnect instead of a full sign-out/sign-in.
+  function saveGaToken(result) {
+    try {
+      const token = result && GoogleAuthProvider.credentialFromResult(result)?.accessToken;
+      if (token) sessionStorage.setItem(GA_TOKEN_KEY, JSON.stringify({ token, exp: Date.now() + 55 * 60 * 1000 }));
+      else sessionStorage.removeItem(GA_TOKEN_KEY);
+    } catch { /* storage disabled: the panel falls back to the reconnect button */ }
+  }
+
+  function gaToken() {
+    try {
+      const t = JSON.parse(sessionStorage.getItem(GA_TOKEN_KEY) || "null");
+      return t && t.exp > Date.now() ? t.token : null;
+    } catch { return null; }
+  }
+
+  async function gaApi(method, body) {
+    const res = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${GA_PROPERTY_ID}:${method}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${gaToken()}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err = new Error(json.error?.message || `Google Analytics Data API: ${res.status}`);
+      err.status = res.status;
+      throw err;
+    }
+    return json;
+  }
+
+  const gaRows = (report) => (report.rows ?? []).map((r) => ({
+    dims: (r.dimensionValues ?? []).map((v) => v.value),
+    mets: (r.metricValues ?? []).map((v) => Number(v.value)),
+  }));
+  const fmtNum = (n) => Number(n || 0).toLocaleString();
+
+  function gaConnectPrompt(body, message) {
+    body.innerHTML = `<div class="ga-note"><p>${escapeHtml(message)}</p>` +
+      `<button class="btn btn-primary" id="ga-connect">Connect Google Analytics</button></div>`;
+    document.getElementById("ga-connect").onclick = () => {
+      reauthenticateWithPopup(auth.currentUser, provider).then((result) => {
+        saveGaToken(result);
+        loadAnalytics();
+      }).catch((e) => gaConnectPrompt(body, e.message));
+    };
+  }
+
+  let gaLoadSeq = 0;
+  async function loadAnalytics() {
+    const body = document.getElementById("ga-body");
+    if (GA_PROPERTY_ID === "REPLACE_ME") {
+      body.innerHTML = `<p class="err">GA_PROPERTY_ID isn't set. Fill it in admin/index.html.</p>`;
+      return;
+    }
+    if (!gaToken()) {
+      gaConnectPrompt(body, "Google Analytics needs a read-only grant for this browser session.");
+      return;
+    }
+    const seq = ++gaLoadSeq;
+    const days = Number(document.getElementById("ga-range").value);
+    const dateRanges = [{ startDate: `${days - 1}daysAgo`, endDate: "today" }];
+    body.innerHTML = `<p class="empty">Loading…</p>`;
+    try {
+      const [batch, countries, realtime] = await Promise.all([
+        gaApi("batchRunReports", { requests: [
+          { dateRanges, metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }] },
+          { dateRanges, dimensions: [{ name: "date" }], metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }],
+            orderBys: [{ dimension: { dimensionName: "date" } }] },
+          { dateRanges, dimensions: [{ name: "pagePath" }], metrics: [{ name: "screenPageViews" }, { name: "activeUsers" }],
+            orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }], limit: 10 },
+          { dateRanges, dimensions: [{ name: "sessionSourceMedium" }], metrics: [{ name: "sessions" }, { name: "activeUsers" }],
+            orderBys: [{ metric: { metricName: "sessions" }, desc: true }], limit: 10 },
+          { dateRanges, dimensions: [{ name: "eventName" }], metrics: [{ name: "eventCount" }],
+            dimensionFilter: { filter: { fieldName: "eventName", stringFilter: { value: "download_installer" } } } },
+        ] }),
+        gaApi("runReport", { dateRanges, dimensions: [{ name: "country" }], metrics: [{ name: "activeUsers" }],
+          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }], limit: 10 }),
+        gaApi("runRealtimeReport", { metrics: [{ name: "activeUsers" }] }),
+      ]);
+      if (seq !== gaLoadSeq) return; // a newer range was picked while this one loaded
+      const [totals, daily, pages, sources, downloads] = batch.reports.map(gaRows);
+      const t = totals[0]?.mets ?? [0, 0];
+
+      body.innerHTML = `
+        <div class="ga-stats">
+          <div class="stat"><b>${fmtNum(gaRows(realtime)[0]?.mets[0])}</b><span>Active now</span></div>
+          <div class="stat"><b>${fmtNum(t[0])}</b><span>Visitors</span></div>
+          <div class="stat"><b>${fmtNum(t[1])}</b><span>Page views</span></div>
+          <div class="stat"><b>${fmtNum(downloads[0]?.mets[0])}</b><span>Installer clicks</span></div>
+        </div>
+        <div class="ga-chart" id="ga-chart"></div>
+        <div class="ga-cols">
+          <div><h3>Top pages</h3>${gaTable(["Page", "Views", "Visitors"], pages)}</div>
+          <div><h3>Traffic sources</h3>${gaTable(["Source / medium", "Sessions", "Visitors"], sources)}</div>
+        </div>
+        <div class="ga-wide"><h3 class="ga-sub">Countries</h3>${gaTable(["Country", "Visitors"], gaRows(countries))}</div>`;
+      drawDailyChart(document.getElementById("ga-chart"), fillDays(daily, days));
+    } catch (e) {
+      if (seq !== gaLoadSeq) return;
+      if (e.status === 401) {
+        saveGaToken(null);
+        gaConnectPrompt(body, "The Google Analytics grant expired.");
+      } else if (e.status === 403) {
+        body.innerHTML = `<p class="err">${escapeHtml(e.message)}</p><p class="empty">Check that ${escapeHtml(ADMIN_EMAIL)} has Viewer access to GA property ${escapeHtml(GA_PROPERTY_ID)} and that the Google Analytics Data API is enabled in the devhub-a81f7 Cloud project.</p>`;
+      } else {
+        body.innerHTML = `<p class="err">${escapeHtml(String(e.message || e))}</p>`;
+      }
+    }
+  }
+
+  function gaTable(headers, rows) {
+    if (!rows.length) return `<p class="empty">No data for this range yet.</p>`;
+    return `<table><thead><tr>${headers.map((h, i) => `<th class="${i ? "num" : ""}">${escapeHtml(h)}</th>`).join("")}</tr></thead><tbody>` +
+      rows.map((r) => `<tr><td class="clip" title="${escapeHtml(r.dims[0])}">${escapeHtml(r.dims[0] || "(not set)")}</td>` +
+        r.mets.map((m) => `<td class="num">${fmtNum(m)}</td>`).join("") + `</tr>`).join("") +
+      `</tbody></table>`;
+  }
+
+  // GA omits days with no traffic; the chart needs every day in the range.
+  function fillDays(rows, days) {
+    const byDate = new Map(rows.map((r) => [r.dims[0], r.mets]));
+    const out = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+      const [users = 0, views = 0] = byDate.get(key) ?? [];
+      out.push({ date: d, users, views });
+    }
+    return out;
+  }
+
+  // Daily visitors as bars: one series, so the heading names it and there is no legend.
+  // Hover shows the day's numbers; the same numbers are in the table under "Show data".
+  function drawDailyChart(host, data) {
+    const NS = "http://www.w3.org/2000/svg";
+    const fmtDay = (d) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    host.innerHTML = `<h3>Daily visitors</h3>`;
+    const W = host.clientWidth - 36 || 1000, H = 200, padL = 40, padB = 22, padT = 6;
+    const plotW = W - padL, plotH = H - padB - padT, base = padT + plotH;
+    const max = Math.max(1, ...data.map((d) => d.users));
+    const unit = Math.pow(10, Math.floor(Math.log10(max)));
+    const top = Math.ceil(max / unit) * unit;
+    const y = (v) => base - (v / top) * plotH;
+
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", `Daily visitors, ${fmtDay(data[0].date)} to ${fmtDay(data[data.length - 1].date)}`);
+    const el = (name, attrs, text) => {
+      const n = document.createElementNS(NS, name);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      if (text != null) n.textContent = text;
+      svg.appendChild(n);
+      return n;
+    };
+    const yTicks = top >= 2 ? [0, top / 2, top] : [0, top];
+    for (const v of yTicks) {
+      el("line", { class: "grid-line", x1: padL, x2: W, y1: y(v), y2: y(v) });
+      el("text", { class: "axis-label", x: padL - 8, y: y(v) + 4, "text-anchor": "end" }, fmtNum(v));
+    }
+    const slot = plotW / data.length, gap = 2, bw = Math.max(1, slot - gap), r = Math.min(4, bw / 2);
+    const tip = document.createElement("div");
+    tip.className = "ga-tip";
+    const tipVal = document.createElement("b"), tipLbl = document.createElement("span");
+    tip.append(tipVal, tipLbl);
+    data.forEach((d, i) => {
+      const x = padL + i * slot + gap / 2, yTop = y(d.users), h = base - yTop;
+      const bar = el("path", { class: "bar", d: h <= 0 ? "" : h < r
+        ? `M${x},${base}V${yTop}H${x + bw}V${base}Z`
+        : `M${x},${base}V${yTop + r}Q${x},${yTop} ${x + r},${yTop}H${x + bw - r}Q${x + bw},${yTop} ${x + bw},${yTop + r}V${base}Z` });
+      // The hit target spans the whole column, so short or zero bars are still easy to hover.
+      const hit = el("rect", { class: "hit", x: padL + i * slot, y: padT, width: slot, height: plotH });
+      hit.addEventListener("pointerenter", () => {
+        bar.classList.add("on");
+        tipVal.textContent = `${fmtNum(d.users)} visitors`;
+        tipLbl.textContent = `${fmtDay(d.date)} · ${fmtNum(d.views)} page views`;
+        tip.style.left = `${18 + x + bw / 2}px`;
+        const svgTop = svg.getBoundingClientRect().top - host.getBoundingClientRect().top;
+        tip.style.top = `${svgTop + Math.min(yTop, base - 4)}px`;
+        tip.style.display = "block";
+      });
+      hit.addEventListener("pointerleave", () => { bar.classList.remove("on"); tip.style.display = "none"; });
+    });
+    const xTicks = [...new Set([0, Math.floor((data.length - 1) / 2), data.length - 1])];
+    xTicks.forEach((i, k) => el("text", {
+      class: "axis-label", x: padL + i * slot + slot / 2, y: H - 4,
+      "text-anchor": k === 0 ? "start" : k === xTicks.length - 1 ? "end" : "middle",
+    }, fmtDay(data[i].date)));
+    host.append(svg, tip);
+
+    const details = document.createElement("details");
+    details.innerHTML = `<summary>Show data</summary><table><thead><tr><th>Day</th><th class="num">Visitors</th><th class="num">Page views</th></tr></thead><tbody>` +
+      data.slice().reverse().map((d) => `<tr><td>${escapeHtml(fmtDay(d.date))}</td><td class="num">${fmtNum(d.users)}</td><td class="num">${fmtNum(d.views)}</td></tr>`).join("") +
+      `</tbody></table>`;
+    host.appendChild(details);
   }
 
   async function loadDownloads() {
@@ -237,11 +554,22 @@
         }
       }
       document.getElementById("stat-downloads").textContent = total.toLocaleString();
-      body.innerHTML = rows.length
-        ? `<table><thead><tr><th>Release</th><th>Asset</th><th>Downloads</th></tr></thead><tbody>` +
-          rows.map((r) => `<tr><td>${escapeHtml(r.tag)}</td><td>${escapeHtml(r.name)}</td><td>${r.count.toLocaleString()}</td></tr>`).join("") +
-          `</tbody></table>`
-        : `<p class="empty">No releases yet.</p>`;
+      filterTable(body, {
+        rows,
+        empty: "No releases yet.",
+        placeholder: "Search assets…",
+        columns: [
+          { label: "Release", text: (r) => r.tag },
+          { label: "Asset", text: (r) => r.name },
+          { label: "Downloads", num: true, text: (r) => r.count.toLocaleString() },
+        ],
+        selects: [
+          { label: "Release", all: "All releases", value: (r) => r.tag, order: "desc" },
+          { label: "File type", all: "All file types", value: (r) => (r.name.match(/\.[a-z0-9]+$/i)?.[0] ?? "other").toLowerCase() },
+        ],
+        // The footer total follows the filters, so picking ".exe" answers "how many Windows installs".
+        summary: (shown) => `${shown.reduce((n, r) => n + r.count, 0).toLocaleString()} downloads`,
+      });
     } catch (e) {
       body.innerHTML = `<p class="err">${escapeHtml(String(e))}</p>`;
     }
@@ -261,9 +589,31 @@
       return;
     }
     const rows = snap.docs.map((d) => d.data());
-    body.innerHTML = `<table><thead><tr><th>#</th><th>Install ID</th><th>Version</th><th>OS</th><th>First seen</th><th>Last seen</th></tr></thead><tbody>` +
-      rows.map((r, i) => `<tr><td>${i + 1}</td><td><code>${escapeHtml(r.uuid ?? "—")}</code></td><td>${escapeHtml(r.version ?? "—")}</td><td>${escapeHtml(r.os ?? "—")}</td><td>${fmtDate(r.firstSeen)}</td><td>${fmtDate(r.lastSeen)}</td></tr>`).join("") +
-      `</tbody></table>`;
+    const DAY = 24 * 60 * 60 * 1000;
+    const seenWithin = (ms) => (r) => Date.now() - Number(r.lastSeen || 0) <= ms;
+    filterTable(body, {
+      rows,
+      empty: "No installs recorded yet.",
+      placeholder: "Search install IDs…",
+      columns: [
+        { label: "#", html: (r, i) => String(i + 1) },
+        { label: "Install ID", text: (r) => r.uuid ?? "—", html: (r) => `<code>${escapeHtml(r.uuid ?? "—")}</code>` },
+        { label: "Version", text: (r) => r.version ?? "—" },
+        { label: "OS", text: (r) => r.os ?? "—" },
+        { label: "First seen", text: (r) => fmtDate(r.firstSeen) },
+        { label: "Last seen", text: (r) => fmtDate(r.lastSeen) },
+      ],
+      selects: [
+        { label: "Version", all: "All versions", value: (r) => r.version ?? "—", order: "desc" },
+        { label: "OS", all: "All OSes", value: (r) => r.os ?? "—" },
+        { label: "Last seen", all: "Any time", options: [
+          ["Last 24 hours", seenWithin(DAY)],
+          ["Last 7 days", seenWithin(7 * DAY)],
+          ["Last 30 days", seenWithin(30 * DAY)],
+          ["Not in 30 days", (r) => !seenWithin(30 * DAY)(r)],
+        ] },
+      ],
+    });
   }
 
   async function loadOptins() {
@@ -277,9 +627,75 @@
       return;
     }
     const rows = snap.docs.map((d) => d.data());
-    body.innerHTML = `<table><thead><tr><th>#</th><th>Install ID</th><th>Name</th><th>Email</th><th>Accepted</th></tr></thead><tbody>` +
-      rows.map((r, i) => `<tr><td>${i + 1}</td><td><code>${escapeHtml(r.uuid ?? "—")}</code></td><td>${escapeHtml(r.name || "—")}</td><td>${escapeHtml(r.email ?? "—")}</td><td>${fmtDate(r.acceptedAt)}</td></tr>`).join("") +
-      `</tbody></table>`;
+    filterTable(body, {
+      rows,
+      empty: "No opt-ins yet.",
+      placeholder: "Search name, email or install ID…",
+      columns: [
+        { label: "#", html: (r, i) => String(i + 1) },
+        { label: "Install ID", text: (r) => r.uuid ?? "—", html: (r) => `<code>${escapeHtml(r.uuid ?? "—")}</code>` },
+        { label: "Name", text: (r) => r.name || "—" },
+        { label: "Email", text: (r) => r.email ?? "—" },
+        { label: "Accepted", text: (r) => fmtDate(r.acceptedAt) },
+      ],
+      selects: [
+        { label: "Email domain", all: "All email domains", value: (r) => (r.email ?? "").split("@")[1]?.toLowerCase() || "—" },
+      ],
+    });
+  }
+
+  // A table with a filter bar: free-text search over every text column, plus dropdowns that
+  // either list the rows' own values (`value`) or fixed choices with a test (`options`).
+  // Filtering redraws only the table and the count, so the inputs keep focus while typing.
+  function filterTable(body, { rows, columns, selects = [], placeholder = "Search…", empty, summary }) {
+    if (!rows.length) {
+      body.innerHTML = `<p class="empty">${escapeHtml(empty)}</p>`;
+      return;
+    }
+    const choices = selects.map((s) => {
+      if (s.options) return s.options.map(([label, test]) => ({ label, test }));
+      const values = [...new Set(rows.map(s.value))]
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }) * (s.order === "desc" ? -1 : 1));
+      return values.map((v) => ({ label: v, test: (r) => s.value(r) === v }));
+    });
+    body.innerHTML = `<div class="filters">
+        <input type="search" class="f-search" placeholder="${escapeHtml(placeholder)}" aria-label="${escapeHtml(placeholder)}">
+        ${selects.map((s, i) => `<select class="f-select" aria-label="${escapeHtml(s.label)}">
+          <option value="">${escapeHtml(s.all)}</option>
+          ${choices[i].map((c, j) => `<option value="${j}">${escapeHtml(c.label)}</option>`).join("")}
+        </select>`).join("")}
+        <button class="btn btn-sm f-clear" hidden>Clear</button>
+        <span class="f-count"></span>
+      </div><div class="f-table"></div>`;
+    const search = body.querySelector(".f-search");
+    const dropdowns = [...body.querySelectorAll(".f-select")];
+    const clear = body.querySelector(".f-clear");
+    const count = body.querySelector(".f-count");
+    const table = body.querySelector(".f-table");
+    const head = `<thead><tr>${columns.map((c) => `<th class="${c.num ? "num" : ""}">${escapeHtml(c.label)}</th>`).join("")}</tr></thead>`;
+
+    const render = () => {
+      const q = search.value.trim().toLowerCase();
+      const tests = dropdowns.map((d, i) => d.value === "" ? null : choices[i][Number(d.value)].test).filter(Boolean);
+      const shown = rows.filter((r) => tests.every((t) => t(r)) &&
+        (!q || columns.some((c) => c.text && String(c.text(r)).toLowerCase().includes(q))));
+      clear.hidden = !q && !tests.length;
+      count.textContent = (shown.length === rows.length ? `${rows.length.toLocaleString()} rows` :
+        `${shown.length.toLocaleString()} of ${rows.length.toLocaleString()}`) + (summary ? ` · ${summary(shown)}` : "");
+      table.innerHTML = shown.length
+        ? `<table>${head}<tbody>` + shown.map((r, i) => `<tr>${columns.map((c) =>
+            `<td class="${c.num ? "num" : ""}">${c.html ? c.html(r, i) : escapeHtml(c.text(r))}</td>`).join("")}</tr>`).join("") + `</tbody></table>`
+        : `<p class="empty">Nothing matches these filters.</p>`;
+    };
+    search.addEventListener("input", render);
+    dropdowns.forEach((d) => d.addEventListener("change", render));
+    clear.onclick = () => {
+      search.value = "";
+      dropdowns.forEach((d) => { d.value = ""; });
+      render();
+      search.focus();
+    };
+    render();
   }
 </script>
 
