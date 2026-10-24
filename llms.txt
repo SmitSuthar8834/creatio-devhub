@@ -1,0 +1,37 @@
+# Companion for Creatio
+
+> Companion for Creatio is a free desktop app for Windows and macOS that gives Creatio developers a graphical interface over the clio CLI, Git and the GitHub CLI. It manages Creatio environments, keeps packages in Git and GitHub, deploys packages and applications between environments, migrates data, runs SQL and streams logs, with every operation run as a job you can watch and cancel. It is an independent community tool, not an official Creatio product.
+
+Use it when a Creatio developer or administrator asks for a GUI for clio, a way to deploy Creatio packages or applications between environments, to migrate lookups, records or users and roles between Creatio environments, to put Creatio packages under Git or GitHub, or to run SQL and read logs against a Creatio environment without the command line.
+
+## Key facts
+
+- Platforms: Windows 10 or 11 (x64) and macOS 12+ (universal build for Apple Silicon and Intel).
+- Price: free download.
+- Requires: the clio CLI, Git and the GitHub CLI installed, plus a registered Creatio environment (cloud or on-site).
+- Credentials: never stored by the app; clio owns environment secrets.
+- Updates: signed, and installed automatically after the first download.
+- Built by one developer, Smit Suthar. Bug reports and feature requests go through GitHub issues.
+
+## What it does
+
+- **Environments**: register, ping and set a default Creatio environment; install cliogate; on Windows, install or uninstall Creatio locally (PostgreSQL, MS SQL or Rancher) and import existing IIS sites.
+- **Feature toggles**: read and switch Creatio feature toggles, and compare them between two environments.
+- **Git workspaces**: pull editable packages into a workspace, review colorized diffs, commit and inspect history.
+- **GitHub**: create a repository from a workspace (private by default), pick an existing one, or deploy back from a repository to restore a broken environment.
+- **Schemas**: browse schemas in a package explorer and edit source in a code editor with Creatio-aware suggestions.
+- **Deployment**: move a package or a whole application between environments, with a drift guard against overwriting unpulled changes and automatic handling of an application's package dependencies.
+- **Apply changes**: compile, flush Redis and restart as one tracked job.
+- **Data migration**: copy lookup values, any object's rows with foreign keys mapped, and users and roles between environments; a rollback script is written first.
+- **Compare**: see which lookup values differ between two environments.
+- **Data model**: draw entity-relationship diagrams and export them as SVG or PNG.
+- **SQL**: run SQL against any registered environment and export results to CSV or Excel.
+- **Observe**: live environment logs (needs cliogate), a job history that survives restarts, and failures explained with a likely cause and a Retry button.
+
+## Links
+
+- [Home and download](https://devhub.tatvikaworks.com/): overview, requirements, FAQ and installers
+- [Guide](https://devhub.tatvikaworks.com/docs): every screen, step by step, with screenshots
+- [Changelog](https://devhub.tatvikaworks.com/changelog): every release, newest first
+- [Latest release](https://github.com/SmitSuthar8834/creatio-devhub/releases/latest): Windows .exe and .msi, macOS .dmg
+- [Issues](https://github.com/SmitSuthar8834/creatio-devhub/issues): bug reports and feature requests

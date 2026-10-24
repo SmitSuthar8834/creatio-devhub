@@ -6,22 +6,22 @@
 <meta name="theme-color" content="#f7f8fa" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b0c10" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="Companion for Creatio is a Windows and macOS desktop workbench over clio, Git and GitHub. Download the signed installer.">
+<meta name="description" content="Free desktop app for Creatio developers: a GUI over clio, Git and GitHub to manage environments, deploy packages, run SQL and migrate data. Windows, macOS.">
 <link rel="icon" type="image/png" href="./logo-mark.png">
-<title>Companion for Creatio: the desktop workbench for Creatio developers</title>
+<title>Companion for Creatio: Creatio developer workbench &amp; clio GUI</title>
 <link rel="canonical" href="https://devhub.tatvikaworks.com/">
-<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Companion for Creatio">
 <meta property="og:url" content="https://devhub.tatvikaworks.com/">
-<meta property="og:title" content="Companion for Creatio: the desktop workbench for Creatio developers">
+<meta property="og:title" content="Companion for Creatio: Creatio developer workbench &amp; clio GUI">
 <meta property="og:description" content="Ship Creatio work without living in the terminal. Environments, workspaces, SQL, deployment and GitHub in one desktop app.">
 <meta property="og:image" content="https://devhub.tatvikaworks.com/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Companion for Creatio desktop app home screen">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Companion for Creatio: the desktop workbench for Creatio developers">
+<meta name="twitter:title" content="Companion for Creatio: Creatio developer workbench &amp; clio GUI">
 <meta name="twitter:description" content="Ship Creatio work without living in the terminal. Environments, workspaces, SQL, deployment and GitHub in one desktop app.">
 <meta name="twitter:image" content="https://devhub.tatvikaworks.com/og-image.png">
 <link rel="apple-touch-icon" href="./logo-mark.png">
@@ -38,23 +38,145 @@
     },
     {
       "@type": "SoftwareApplication",
+      "@id": "https://devhub.tatvikaworks.com/#app",
       "name": "Companion for Creatio",
-      "description": "A desktop workbench for Creatio developers: environments, Git workspaces, deployment, SQL and GitHub in one window, built over the clio, Git and GitHub CLIs.",
+      "alternateName": [
+        "DevHub",
+        "Creatio DevHub"
+      ],
+      "description": "A free desktop workbench for Creatio developers: a graphical interface over the clio CLI, Git and the GitHub CLI for managing Creatio environments, source-controlling packages, deploying between environments, migrating data, running SQL and watching logs.",
       "applicationCategory": "DeveloperApplication",
+      "applicationSubCategory": "Creatio development tool",
       "operatingSystem": "Windows 10, Windows 11, macOS 12+",
-      "url": "https://devhub.tatvikaworks.com/",
-      "downloadUrl": "https://github.com/SmitSuthar8834/creatio-devhub/releases/latest",
-      "image": "https://devhub.tatvikaworks.com/og-image.png",
-      "screenshot": "https://devhub.tatvikaworks.com/assets/home/app-home-light.webp",
+      "softwareRequirements": "clio CLI, Git, GitHub CLI",
+      "isAccessibleForFree": true,
       "offers": {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD"
       },
+      "url": "https://devhub.tatvikaworks.com/",
+      "downloadUrl": "https://github.com/SmitSuthar8834/creatio-devhub/releases/latest",
+      "releaseNotes": "https://devhub.tatvikaworks.com/changelog",
+      "image": "https://devhub.tatvikaworks.com/og-image.png",
+      "screenshot": "https://devhub.tatvikaworks.com/assets/home/app-home-light.webp",
       "author": {
         "@type": "Person",
         "name": "Smit Suthar"
-      }
+      },
+      "audience": {
+        "@type": "Audience",
+        "audienceType": "Creatio developers and administrators"
+      },
+      "keywords": "Creatio, clio, clio GUI, Creatio developer tools, Creatio package deployment, Creatio data migration, Creatio Git, Creatio GitHub, Creatio SQL, Creatio logs, Creatio feature toggles, Creatio environments",
+      "featureList": [
+        "Register, ping and manage Creatio environments through clio",
+        "Read, switch and compare Creatio feature toggles",
+        "Git workspaces for Creatio packages with diffs, commits and history",
+        "Create GitHub repositories from a workspace and deploy back from a repository",
+        "Schema workspace with a code editor and Creatio-aware suggestions",
+        "Deploy packages and applications between environments with a drift guard and dependency handling",
+        "Compile, flush Redis and restart as one tracked job",
+        "Migrate lookups, object rows and users and roles between environments with a rollback script",
+        "Entity-relationship diagrams exported as SVG or PNG",
+        "Run SQL against any environment and export to CSV or Excel",
+        "Live Creatio logs, job history and explained failures",
+        "Install and uninstall Creatio locally on Windows"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://devhub.tatvikaworks.com/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Companion for Creatio?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Companion for Creatio is a free desktop app for Creatio developers on Windows and macOS. It puts a graphical interface over the clio CLI, Git and the GitHub CLI, so you can manage Creatio environments, keep packages in Git, deploy between environments, migrate data, run SQL and watch logs without typing commands."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is there a GUI for clio?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Companion for Creatio drives clio for you: registering and pinging environments, installing cliogate, pulling and pushing packages, compiling, flushing Redis and restarting. Every operation runs as a job with streamed output that you can watch and safely cancel."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I deploy a Creatio package or application to another environment?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Pick the package or application, the source and the target environment, and deploy. A drift guard blocks pushing over changes you haven't pulled, an application deploy brings along the packages it depends on, and Apply changes then compiles, flushes Redis and restarts as one tracked job."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I migrate data between Creatio environments?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The Migration screen copies lookup values, any object's rows with their foreign keys mapped, and users and roles from one environment to another. You see what will change first, and a rollback script is written before anything is inserted. Compare shows which lookup values and feature toggles differ between two environments."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I put Creatio packages in Git and GitHub?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Create a workspace, pull editable packages from an environment into it, review colorized diffs and commit. You can create a GitHub repository straight from the workspace (private by default), or deploy back from a repository to restore a broken environment."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I run SQL against a Creatio environment?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Run SQL against any registered environment, read the results in a grid and export the full result set to CSV or Excel."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I watch Creatio logs live?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The Logs screen streams an environment's own log as it happens, with filtering and pause. It needs cliogate installed on the environment, which the app can install for you."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can it install Creatio on my own machine?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "On Windows, Install Creatio deploys a Creatio build to your PC through clio, with PostgreSQL, MS SQL or Rancher as the database server, and checks administrator rights, the port, the database and Redis before anything is created. Import from IIS registers the Creatio sites already on your machine."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Companion for Creatio store my Creatio passwords?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Credentials stay in clio, which owns your environment secrets. The app never stores them."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Companion for Creatio free, and is it made by Creatio?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "It is a free download for Windows and macOS. It is an independent community tool built by one developer, and is not affiliated with, endorsed by, or an official product of Creatio."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What do I need to run it?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Windows 10 or 11 (x64) or macOS 12 or newer, with the clio CLI, Git and the GitHub CLI installed, and a registered Creatio environment, cloud or on-site."
+          }
+        }
+      ]
     }
   ]
 }
@@ -180,6 +302,18 @@
   .more { margin-top: 28px; }
   kbd { font: 500 .85em var(--mono); padding: 1px 6px; border-radius: 5px; border: 1px solid var(--line-2); background: var(--sunk); }
 
+  /* FAQ: plain <details>, so every answer is in the HTML for search engines and AI readers */
+  .faq { max-width: 860px; border-top: 1px solid var(--line); }
+  .faq details { border-bottom: 1px solid var(--line); }
+  .faq summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 20px 0; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary h3 { font-size: 17px; font-weight: 600; letter-spacing: -.01em; line-height: 1.35; }
+  .faq summary::after { content: "+"; flex: none; font-size: 24px; line-height: 1; color: var(--muted); transition: transform .15s; }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq summary:hover h3 { color: var(--brand); }
+  .faq p { margin: 0 0 22px; color: var(--muted); max-width: 72ch; }
+
   /* requirements + trust */
   .split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 64px; }
   .checks { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 14px; }
@@ -280,8 +414,8 @@
     <a class="brand" href="#"><img src="./logo-mark.png" alt="">Companion for Creatio</a>
     <nav class="nav" aria-label="Main">
       <a href="#features">Features</a>
-      <a href="docs.html">Guide</a>
-      <a href="changelog.html">Changelog</a>
+      <a href="docs">Guide</a>
+      <a href="changelog">Changelog</a>
       <a href="#specs">Requirements</a>
       <a href="#feedback">Feedback</a>
       <a id="top-dl" class="btn btn-primary" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.14.0/creatio-devhub_0.14.0_x64-setup.exe">
@@ -301,7 +435,7 @@
           <a id="hero-dl" class="btn btn-primary btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.14.0/creatio-devhub_0.14.0_x64-setup.exe">
             <svg class="ic"><use href="#i-dl"/></svg> <span class="hero-dl-label">Download for Windows</span>
           </a>
-          <a class="btn btn-quiet btn-lg" href="docs.html">Read the guide</a>
+          <a class="btn btn-quiet btn-lg" href="docs">Read the guide</a>
         </div>
       </div>
       <div class="shot">
@@ -425,7 +559,7 @@
           <p>The sidebar and Dashboard are gone. <strong>Cora</strong>, an animated robot, sits in the middle of the window with every screen on two orbits around him: everyday work on the inner ring, power tools like SQL, Compare and Migration on the outer one. His speech bubble reports a job's progress, a failure with its diagnosis and a Retry button, and new clio or app versions. Press <kbd>/</kbd> for a command bar that opens any screen or switches environment. Screens open in a panel with Cora docked beside them, and the environment pill under him changes your default environment. If the motion is too much, set his animations to <strong>Calm</strong> in Settings.</p>
         </div>
       </div>
-      <div class="more"><a class="btn btn-quiet" href="changelog.html">Read the full changelog</a></div>
+      <div class="more"><a class="btn btn-quiet" href="changelog">Read the full changelog</a></div>
     </div>
   </section>
 
@@ -447,6 +581,61 @@
           <li><svg class="ic"><use href="#i-check"/></svg><span><b>Every change is a job.</b> Streamed output, one at a time per environment, safe to cancel.</span></li>
           <li><svg class="ic"><use href="#i-check"/></svg><span><b>Signed updates.</b> Each release is verified against the project key before it installs.</span></li>
         </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Questions Creatio developers ask</h2>
+        <p class="lead">Deployment, data migration, Git and GitHub, clio and the rest, answered in a line or two.</p>
+      </div>
+      <div class="faq">
+        <details>
+          <summary><h3>What is Companion for Creatio?</h3></summary>
+          <p>Companion for Creatio is a free desktop app for Creatio developers on Windows and macOS. It puts a graphical interface over the clio CLI, Git and the GitHub CLI, so you can manage Creatio environments, keep packages in Git, deploy between environments, migrate data, run SQL and watch logs without typing commands.</p>
+        </details>
+        <details>
+          <summary><h3>Is there a GUI for clio?</h3></summary>
+          <p>Yes. Companion for Creatio drives clio for you: registering and pinging environments, installing cliogate, pulling and pushing packages, compiling, flushing Redis and restarting. Every operation runs as a job with streamed output that you can watch and safely cancel.</p>
+        </details>
+        <details>
+          <summary><h3>How do I deploy a Creatio package or application to another environment?</h3></summary>
+          <p>Pick the package or application, the source and the target environment, and deploy. A drift guard blocks pushing over changes you haven&#x27;t pulled, an application deploy brings along the packages it depends on, and Apply changes then compiles, flushes Redis and restarts as one tracked job.</p>
+        </details>
+        <details>
+          <summary><h3>How do I migrate data between Creatio environments?</h3></summary>
+          <p>The Migration screen copies lookup values, any object&#x27;s rows with their foreign keys mapped, and users and roles from one environment to another. You see what will change first, and a rollback script is written before anything is inserted. Compare shows which lookup values and feature toggles differ between two environments.</p>
+        </details>
+        <details>
+          <summary><h3>How do I put Creatio packages in Git and GitHub?</h3></summary>
+          <p>Create a workspace, pull editable packages from an environment into it, review colorized diffs and commit. You can create a GitHub repository straight from the workspace (private by default), or deploy back from a repository to restore a broken environment.</p>
+        </details>
+        <details>
+          <summary><h3>Can I run SQL against a Creatio environment?</h3></summary>
+          <p>Yes. Run SQL against any registered environment, read the results in a grid and export the full result set to CSV or Excel.</p>
+        </details>
+        <details>
+          <summary><h3>Can I watch Creatio logs live?</h3></summary>
+          <p>Yes. The Logs screen streams an environment&#x27;s own log as it happens, with filtering and pause. It needs cliogate installed on the environment, which the app can install for you.</p>
+        </details>
+        <details>
+          <summary><h3>Can it install Creatio on my own machine?</h3></summary>
+          <p>On Windows, Install Creatio deploys a Creatio build to your PC through clio, with PostgreSQL, MS SQL or Rancher as the database server, and checks administrator rights, the port, the database and Redis before anything is created. Import from IIS registers the Creatio sites already on your machine.</p>
+        </details>
+        <details>
+          <summary><h3>Does Companion for Creatio store my Creatio passwords?</h3></summary>
+          <p>No. Credentials stay in clio, which owns your environment secrets. The app never stores them.</p>
+        </details>
+        <details>
+          <summary><h3>Is Companion for Creatio free, and is it made by Creatio?</h3></summary>
+          <p>It is a free download for Windows and macOS. It is an independent community tool built by one developer, and is not affiliated with, endorsed by, or an official product of Creatio.</p>
+        </details>
+        <details>
+          <summary><h3>What do I need to run it?</h3></summary>
+          <p>Windows 10 or 11 (x64) or macOS 12 or newer, with the clio CLI, Git and the GitHub CLI installed, and a registered Creatio environment, cloud or on-site.</p>
+        </details>
       </div>
     </div>
   </section>
@@ -514,8 +703,8 @@
 <footer>
   <div class="wrap foot">
     <a class="brand" href="#"><img src="./logo-mark.png" alt="">Companion for Creatio</a>
-    <a href="docs.html">Guide</a>
-    <a href="changelog.html">Changelog</a>
+    <a href="docs">Guide</a>
+    <a href="changelog">Changelog</a>
     <a href="mailto:sutharsmit574@gmail.com">Support</a>
     <div class="made">Developed by <b>Smit Suthar</b>. Found an issue or have feedback? Email <a href="mailto:sutharsmit574@gmail.com?subject=Companion%20for%20Creatio%20issue%20or%20feedback">sutharsmit574@gmail.com</a></div>
     <p class="disclaimer">An independent community tool for developers working with the Creatio platform. Not affiliated with, endorsed by, or an official product of Creatio.</p>

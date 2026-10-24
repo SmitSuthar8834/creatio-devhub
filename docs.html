@@ -5,25 +5,45 @@
 <meta name="color-scheme" content="light dark">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#08080C">
-<meta name="description" content="The complete Companion for Creatio guide — every screen and feature, step by step, with screenshots.">
-<title>Companion for Creatio — Guide &amp; Documentation</title>
+<meta name="description" content="Step-by-step guide to Companion for Creatio: connect Creatio environments, deploy packages, use Git workspaces, run SQL and migrate data, with screenshots.">
+<title>Companion for Creatio guide: Creatio deployment, Git and migration</title>
 <link rel="canonical" href="https://devhub.tatvikaworks.com/docs">
-<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Companion for Creatio">
 <meta property="og:url" content="https://devhub.tatvikaworks.com/docs">
-<meta property="og:title" content="Companion for Creatio — Guide &amp; Documentation">
-<meta property="og:description" content="The complete Companion for Creatio guide — every screen and feature, step by step, with screenshots.">
+<meta property="og:title" content="Companion for Creatio guide: Creatio deployment, Git and migration">
+<meta property="og:description" content="Step-by-step guide to Companion for Creatio: connect Creatio environments, deploy packages, use Git workspaces, run SQL and migrate data, with screenshots.">
 <meta property="og:image" content="https://devhub.tatvikaworks.com/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Companion for Creatio desktop app home screen">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Companion for Creatio — Guide &amp; Documentation">
-<meta name="twitter:description" content="The complete Companion for Creatio guide — every screen and feature, step by step, with screenshots.">
+<meta name="twitter:title" content="Companion for Creatio guide: Creatio deployment, Git and migration">
+<meta name="twitter:description" content="Step-by-step guide to Companion for Creatio: connect Creatio environments, deploy packages, use Git workspaces, run SQL and migrate data, with screenshots.">
 <meta name="twitter:image" content="https://devhub.tatvikaworks.com/og-image.png">
 <link rel="apple-touch-icon" href="./logo-mark.png">
 <script src="./analytics.js" defer></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Companion for Creatio",
+      "item": "https://devhub.tatvikaworks.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guide",
+      "item": "https://devhub.tatvikaworks.com/docs"
+    }
+  ]
+}
+</script>
 <link rel="icon" type="image/png" href="./logo-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -213,14 +233,14 @@
 
 <header class="topbar">
   <div class="topbar-in">
-    <a class="brand" href="index.html">
+    <a class="brand" href="./">
       <span class="brand-mark"><img src="./logo-mark.png" alt="Companion for Creatio logo"></span>
       <span>Companion for Creatio <small>guide &amp; documentation</small></span>
     </a>
     <div class="top-links">
       <button class="btn btn-ghost toc-toggle" id="tocToggle" aria-label="Contents"><svg class="ic"><use href="#i-menu"/></svg> Contents</button>
-      <a href="index.html">Home</a>
-      <a class="btn btn-primary" href="index.html#download"><svg class="ic"><use href="#i-dl"/></svg> Download</a>
+      <a href="./">Home</a>
+      <a class="btn btn-primary" href="./#download"><svg class="ic"><use href="#i-dl"/></svg> Download</a>
     </div>
   </div>
 </header>
@@ -283,7 +303,7 @@
       </div>
 
       <h3><span class="num">1</span>Install Companion for Creatio</h3>
-      <p>Download the signed installer from the <a href="index.html#download" style="color:var(--accent)">home page</a>.
+      <p>Download the signed installer from the <a href="./#download" style="color:var(--accent)">home page</a>.
       On <strong>Windows</strong>, run the <code>.exe</code> (or <code>.msi</code>). On <strong>macOS</strong>, open the
       universal <code>.dmg</code>; the first launch needs <strong>right-click → Open</strong> until the build is notarized.
       Updates are signed and arrive automatically — see <a href="#safety" style="color:var(--accent)">Safety &amp; updates</a>.</p>
@@ -419,9 +439,9 @@
       password shouldn't count against you every time the app opens.</p>
 
       <figure>
-        <div class="shot" data-full="assets/docs/environments.png">
+        <div class="shot" data-full="assets/docs/environments@2x.webp">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Environments</span></div>
-          <img src="assets/docs/environments.png" alt="Environments screen with four instance cards" loading="lazy">
+          <img width="1600" height="1027" src="assets/docs/environments.webp" alt="Environments screen with four instance cards" loading="lazy">
         </div>
         <figcaption><b>Environments.</b> One card per instance, with per-card actions. The <b>default</b> tag marks the active environment used across Companion for Creatio.</figcaption>
       </figure>
@@ -455,25 +475,25 @@
 
       <div class="grid2">
         <figure>
-          <div class="shot" data-full="assets/docs/workspace-detail.png">
+          <div class="shot" data-full="assets/docs/workspace-detail@2x.webp">
             <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Workspace · Changes</span></div>
-            <img src="assets/docs/workspace-detail.png" alt="Workspace detail, Changes tab" loading="lazy">
+            <img width="1600" height="1027" src="assets/docs/workspace-detail.webp" alt="Workspace detail, Changes tab" loading="lazy">
           </div>
           <figcaption><b>Changes &amp; commit.</b> Staged file list, diff viewer, and a commit box — Pull / Push to Creatio up top.</figcaption>
         </figure>
         <figure>
-          <div class="shot" data-full="assets/docs/workspace-history.png">
+          <div class="shot" data-full="assets/docs/workspace-history@2x.webp">
             <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Workspace · History</span></div>
-            <img src="assets/docs/workspace-history.png" alt="Workspace detail, History tab" loading="lazy">
+            <img width="1600" height="1027" src="assets/docs/workspace-history.webp" alt="Workspace detail, History tab" loading="lazy">
           </div>
           <figcaption><b>History &amp; GitHub.</b> Commit log plus repository picker and remote push.</figcaption>
         </figure>
       </div>
 
       <figure>
-        <div class="shot" data-full="assets/docs/workspaces.png">
+        <div class="shot" data-full="assets/docs/workspaces@2x.webp">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Workspaces</span></div>
-          <img src="assets/docs/workspaces.png" alt="Workspaces list" loading="lazy">
+          <img width="1600" height="1027" src="assets/docs/workspaces.webp" alt="Workspaces list" loading="lazy">
         </div>
         <figcaption><b>The workspace list.</b> Each card shows branch, remote status, uncommitted count, and last pull/push.</figcaption>
       </figure>
@@ -501,9 +521,9 @@
       Data comes from a fast local cache; <strong>Refresh</strong> re-reads the environment.</p>
 
       <figure>
-        <div class="shot" data-full="assets/docs/packages.png">
+        <div class="shot" data-full="assets/docs/packages@2x.webp">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Packages</span></div>
-          <img src="assets/docs/packages.png" alt="Packages table with lock states and row actions" loading="lazy">
+          <img width="1600" height="1027" src="assets/docs/packages.webp" alt="Packages table with lock states and row actions" loading="lazy">
         </div>
         <figcaption><b>Packages.</b> Version, maintainer, and lock state per package; Pull, Add to workspace, and a <b>More</b> menu for the rest. Drag a package archive onto the drop zone to install it.</figcaption>
       </figure>
@@ -530,16 +550,16 @@
       <strong>pages</strong> with the base schema each extends.</p>
 
       <figure>
-        <div class="shot" data-full="assets/docs/application-details.png">
+        <div class="shot" data-full="assets/docs/application-details@2x.webp">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Applications · Details</span></div>
-          <img src="assets/docs/application-details.png" alt="Application details dialog" loading="lazy">
+          <img width="1600" height="1056" src="assets/docs/application-details.webp" alt="Application details dialog" loading="lazy">
         </div>
         <figcaption><b>Application details.</b> The descriptor facts, its packages, and its pages — all in one dialog.</figcaption>
       </figure>
       <figure>
-        <div class="shot" data-full="assets/docs/applications.png">
+        <div class="shot" data-full="assets/docs/applications@2x.webp">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Applications</span></div>
-          <img src="assets/docs/applications.png" alt="Applications catalog tiles" loading="lazy">
+          <img width="1600" height="1056" src="assets/docs/applications.webp" alt="Applications catalog tiles" loading="lazy">
         </div>
         <figcaption><b>The catalog.</b> Each tile summarises an application; <b>Deploy to environment…</b> moves the whole thing.</figcaption>
       </figure>
@@ -576,16 +596,16 @@
 
       <div class="grid2">
         <figure>
-          <div class="shot" data-full="assets/docs/compare-setup.png">
+          <div class="shot" data-full="assets/docs/compare-setup@2x.webp">
             <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Compare · setup</span></div>
-            <img src="assets/docs/compare-setup.png" alt="Compare setup with source and target snapshots" loading="lazy">
+            <img width="1600" height="1027" src="assets/docs/compare-setup.webp" alt="Compare setup with source and target snapshots" loading="lazy">
           </div>
           <figcaption><b>Set it up.</b> Pick two captured snapshots and press Compare.</figcaption>
         </figure>
         <figure>
-          <div class="shot" data-full="assets/docs/compare-diff.png">
+          <div class="shot" data-full="assets/docs/compare-diff@2x.webp">
             <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Compare · results</span></div>
-            <img src="assets/docs/compare-diff.png" alt="Compare results with category tabs and diff table" loading="lazy">
+            <img width="1600" height="1027" src="assets/docs/compare-diff.webp" alt="Compare results with category tabs and diff table" loading="lazy">
           </div>
           <figcaption><b>Read the diff.</b> Category tabs, per-side values, and status pills; rows expand to schema level.</figcaption>
         </figure>
@@ -617,9 +637,9 @@
       </div>
 
       <figure>
-        <div class="shot" data-full="assets/docs/datamodel.png">
+        <div class="shot" data-full="assets/docs/datamodel@2x.webp">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Data Model · ERD</span></div>
-          <img src="assets/docs/datamodel.png" alt="Data Model ERD tab with three objects and the foreign key between them" loading="lazy">
+          <img width="1600" height="1027" src="assets/docs/datamodel.webp" alt="Data Model ERD tab with three objects and the foreign key between them" loading="lazy">
         </div>
         <figcaption><b>ERD Diagram.</b> Selected objects, their columns with PK/FK and required markers, and the real foreign keys between them. Zoom, pan, or export as SVG/PNG.</figcaption>
       </figure>
@@ -657,16 +677,16 @@
 
       <div class="grid2">
         <figure>
-          <div class="shot" data-full="assets/docs/migration-lookups.png">
+          <div class="shot" data-full="assets/docs/migration-lookups@2x.webp">
             <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Migration · Lookups</span></div>
-            <img src="assets/docs/migration-lookups.png" alt="Migration lookups tab" loading="lazy">
+            <img width="1600" height="1052" src="assets/docs/migration-lookups.webp" alt="Migration lookups tab" loading="lazy">
           </div>
           <figcaption><b>Lookups.</b> Tick the reference data to copy; Preview SQL or Migrate. A rollback script is written first.</figcaption>
         </figure>
         <figure>
-          <div class="shot" data-full="assets/docs/migration-objects.png">
+          <div class="shot" data-full="assets/docs/migration-objects@2x.webp">
             <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Migration · Objects</span></div>
-            <img src="assets/docs/migration-objects.png" alt="Migration objects tab with dependency hierarchy and columns" loading="lazy">
+            <img width="1600" height="1391" src="assets/docs/migration-objects.webp" alt="Migration objects tab with dependency hierarchy and columns" loading="lazy">
           </div>
           <figcaption><b>Objects.</b> Row counts, columns, and the foreign-key dependency tree for one object, with owner remap.</figcaption>
         </figure>
@@ -702,9 +722,9 @@
       </div>
 
       <figure>
-        <div class="shot" data-full="assets/docs/features.png">
+        <div class="shot" data-full="assets/docs/features@2x.webp">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Features</span></div>
-          <img src="assets/docs/features.png" alt="Features screen listing feature toggles with defaults, overrides and switches" loading="lazy">
+          <img width="1600" height="1027" src="assets/docs/features.webp" alt="Features screen listing feature toggles with defaults, overrides and switches" loading="lazy">
         </div>
         <figcaption><b>Features.</b> Every feature with its default, group overrides on and off, and a switch. <b>Compare with</b> turns it into a difference list.</figcaption>
       </figure>
@@ -754,9 +774,9 @@
       </div>
 
       <figure>
-        <div class="shot" data-full="assets/docs/schemas.png">
+        <div class="shot" data-full="assets/docs/schemas@2x.webp">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Schemas</span></div>
-          <img src="assets/docs/schemas.png" alt="Schemas screen with the package explorer and two schemas open as tabs in the code editor" loading="lazy">
+          <img width="1600" height="1027" src="assets/docs/schemas.webp" alt="Schemas screen with the package explorer and two schemas open as tabs in the code editor" loading="lazy">
         </div>
         <figcaption><b>Schemas.</b> Package explorer on the left, schemas open as tabs, and the editor with Format, Diff and Save.</figcaption>
       </figure>
@@ -784,9 +804,9 @@
       </div>
 
       <figure>
-        <div class="shot" data-full="assets/docs/sql.png">
+        <div class="shot" data-full="assets/docs/sql@2x.webp">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">SQL</span></div>
-          <img src="assets/docs/sql.png" alt="SQL editor with a query and results grid" loading="lazy">
+          <img width="1600" height="1027" src="assets/docs/sql.webp" alt="SQL editor with a query and results grid" loading="lazy">
         </div>
         <figcaption><b>SQL.</b> Editor, Run, CSV/Excel export, saved queries, and a results grid.</figcaption>
       </figure>
@@ -820,9 +840,9 @@
       </div>
 
       <figure>
-        <div class="shot" data-full="assets/docs/logs.png">
+        <div class="shot" data-full="assets/docs/logs@2x.webp">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Logs</span></div>
-          <img src="assets/docs/logs.png" alt="Logs screen streaming Creatio log lines colour-coded by level" loading="lazy">
+          <img width="1600" height="1027" src="assets/docs/logs.webp" alt="Logs screen streaming Creatio log lines colour-coded by level" loading="lazy">
         </div>
         <figcaption><b>Logs.</b> A live stream colour-coded by level, with filter, pause, clear and save, plus the server's CPU and RAM.</figcaption>
       </figure>
@@ -846,9 +866,9 @@
       if it fails.</p>
 
       <figure>
-        <div class="shot" data-full="assets/docs/jobs.png">
+        <div class="shot" data-full="assets/docs/jobs@2x.webp">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Jobs</span></div>
-          <img src="assets/docs/jobs.png" alt="Jobs screen with a running job and its log" loading="lazy">
+          <img width="1600" height="1027" src="assets/docs/jobs.webp" alt="Jobs screen with a running job and its log" loading="lazy">
         </div>
         <figcaption><b>Jobs.</b> Live phase, streaming log, and safe cancellation for every background task.</figcaption>
       </figure>
@@ -873,9 +893,9 @@
       type <em>errors</em> in the command bar.</p>
 
       <figure>
-        <div class="shot" data-full="assets/docs/errors.png">
+        <div class="shot" data-full="assets/docs/errors@2x.webp">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Errors</span></div>
-          <img src="assets/docs/errors.png" alt="Errors screen with categorized failures" loading="lazy">
+          <img width="1600" height="1027" src="assets/docs/errors.webp" alt="Errors screen with categorized failures" loading="lazy">
         </div>
         <figcaption><b>Errors.</b> A durable, filterable log — cause and fix for each failure, kept on this device.</figcaption>
       </figure>
@@ -902,9 +922,9 @@
       </ul>
 
       <figure>
-        <div class="shot" data-full="assets/docs/settings.png">
+        <div class="shot" data-full="assets/docs/settings@2x.webp">
           <div class="shot-bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="grow"></span><span class="path">Settings</span></div>
-          <img src="assets/docs/settings.png" alt="Settings screen: updates, appearance, default environment, identity, tools" loading="lazy">
+          <img width="1600" height="2194" src="assets/docs/settings.webp" alt="Settings screen: updates, appearance, default environment, identity, tools" loading="lazy">
         </div>
         <figcaption><b>Settings.</b> Updates, theme, default environment, GitHub/Git identity, and tool paths — top to bottom.</figcaption>
       </figure>
@@ -942,7 +962,7 @@
 <footer>
   <div class="foot-in">
     <span>Companion for Creatio — the desktop workbench for Creatio developers.</span>
-    <span style="margin-left:auto"><a href="index.html">Home</a> · <a href="index.html#download">Download</a></span>
+    <span style="margin-left:auto"><a href="./">Home</a> · <a href="./#download">Download</a></span>
   </div>
 </footer>
 
