@@ -569,7 +569,7 @@
       <div>
         <h2>Requirements</h2>
         <ul class="checks">
-          <li><svg class="ic"><use href="#i-check"/></svg><span><b>Windows 10 or 11</b> (x64), with a small signed installer.</span></li>
+          <li><svg class="ic"><use href="#i-check"/></svg><span><b>Windows 10 or 11</b> (x64), with a small installer. It isn't code-signed yet, so Windows may ask you to confirm the first run.</span></li>
           <li><svg class="ic"><use href="#i-check"/></svg><span><b>macOS 12 or newer</b>, a universal build for Apple Silicon and Intel. First launch: right-click and Open (not yet notarized).</span></li>
           <li><svg class="ic"><use href="#i-check"/></svg><span>The <b>clio</b> CLI, <b>Git</b> and the <b>GitHub CLI</b> installed. The app drives them.</span></li>
           <li><svg class="ic"><use href="#i-check"/></svg><span>A registered Creatio environment, cloud or on-site.</span></li>
@@ -581,6 +581,7 @@
           <li><svg class="ic"><use href="#i-check"/></svg><span><b>No credentials stored.</b> clio owns your environment secrets.</span></li>
           <li><svg class="ic"><use href="#i-check"/></svg><span><b>Every change is a job.</b> Streamed output, one at a time per environment, safe to cancel.</span></li>
           <li><svg class="ic"><use href="#i-check"/></svg><span><b>Signed updates.</b> Each release is verified against the project key before it installs.</span></li>
+          <li><svg class="ic"><use href="#i-check"/></svg><span><b>Little leaves your machine.</b> An anonymous install ID, the version and the OS. <a href="privacy">What is sent, and what isn't</a>.</span></li>
         </ul>
       </div>
     </div>
@@ -641,6 +642,25 @@
     </div>
   </section>
 
+  <section id="about" class="flow-band">
+    <div class="wrap split">
+      <div>
+        <h2>Who builds it</h2>
+        <p class="lead">Companion for Creatio is built and maintained by <b>Smit Suthar</b>, an independent developer. It isn't a Creatio product, and there's no company behind it yet.</p>
+      </div>
+      <div>
+        <ul class="checks">
+          <li><svg class="ic"><use href="#i-check"/></svg><span><b>One person, accountable.</b> Every release, fix and guide on this site is his work, and he reads every email and issue.</span></li>
+          <li><svg class="ic"><use href="#i-check"/></svg><span><b>Every release on the record.</b> Shipped since July 2026, with each version described in the <a href="changelog">changelog</a>.</span></li>
+        </ul>
+        <div class="dl-links">
+          <a class="btn btn-quiet" href="https://www.linkedin.com/in/smit-suthar-40689713b/" target="_blank" rel="noopener">Smit on LinkedIn</a>
+          <a class="btn btn-quiet" href="mailto:sutharsmit574@gmail.com">Email Smit</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="feedback">
     <div class="wrap help">
       <div>
@@ -669,7 +689,6 @@
       <h2>Get Companion for Creatio</h2>
       <p class="lead">It reuses the clio, Git and GitHub tools you already have.</p>
       <div class="figures">
-        <div class="fig"><b id="dl-count">0</b><span>installer downloads</span></div>
         <div class="fig"><b id="dl-version">v0.14.0</b><span>latest version</span></div>
         <div class="fig"><b id="dl-releases">53</b><span>releases shipped</span></div>
       </div>
@@ -682,7 +701,8 @@
             </a>
             <a class="btn btn-quiet btn-lg" href="https://github.com/SmitSuthar8834/creatio-devhub/releases/download/v0.14.0/creatio-devhub_0.14.0_x64_en-US.msi">Get the .msi</a>
           </div>
-          <div class="dl-note" data-ver="%s, NSIS and MSI, signed, updates itself after install">v0.14.0, NSIS and MSI, signed, updates itself after install</div>
+          <div class="dl-note" data-ver="%s, NSIS and MSI, updates itself after install">v0.14.0, NSIS and MSI, updates itself after install</div>
+          <div class="dl-note">Not code-signed yet: if Windows shows <b>Windows protected your PC</b>, choose <b>More info</b>, then <b>Run anyway</b>. Updates after that are verified against the project key.</div>
         </div>
         <div class="platform">
           <h3>macOS<small>Apple Silicon and Intel</small></h3>
@@ -692,11 +712,11 @@
               <svg class="ic"><use href="#i-dl"/></svg> Download .dmg
             </a>
           </div>
-          <div class="dl-note" id="mac-soon">Universal <code>.dmg</code>, signed. First launch: right-click and Open.</div>
+          <div class="dl-note" id="mac-soon">Universal <code>.dmg</code>, not yet notarized. First launch: right-click and Open.</div>
           <div class="dl-note" id="mac-note" hidden>Not yet notarized: on first launch, right-click (or Control-click) the app in Finder and choose <b>Open</b>. After that it opens normally.</div>
         </div>
       </div>
-      <p class="dl-note" id="stats-note">Download counts update live.</p>
+      <p class="dl-note" id="stats-note">Version and release count update live. Installing the app means you agree to the <a href="terms">terms</a>.</p>
     </div>
   </section>
 </main>
@@ -708,6 +728,8 @@
     <a href="blog/">Blog</a>
     <a href="changelog">Changelog</a>
     <a href="mailto:sutharsmit574@gmail.com">Support</a>
+    <a href="privacy">Privacy</a>
+    <a href="terms">Terms</a>
     <div class="made">Developed by <b>Smit Suthar</b>. Found an issue or have feedback? Email <a href="mailto:sutharsmit574@gmail.com?subject=Companion%20for%20Creatio%20issue%20or%20feedback">sutharsmit574@gmail.com</a></div>
     <p class="disclaimer">An independent community tool for developers working with the Creatio platform. Not affiliated with, endorsed by, or an official product of Creatio.</p>
   </div>
@@ -716,26 +738,12 @@
 <script>
 (function () {
   var repo = 'SmitSuthar8834/creatio-devhub';
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function set(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
   function show(id) { var el = document.getElementById(id); if (el) el.hidden = false; }
   function hide(id) { var el = document.getElementById(id); if (el) el.hidden = true; }
-  function countUp(id, target) {
-    var el = document.getElementById(id); if (!el) return;
-    if (reduce || target <= 0) { el.textContent = target.toLocaleString(); return; }
-    var start = performance.now(), dur = 900;
-    (function step(t) {
-      var p = Math.min((t - start) / dur, 1), e = 1 - Math.pow(1 - p, 3);
-      el.textContent = Math.round(target * e).toLocaleString();
-      if (p < 1) requestAnimationFrame(step);
-    })(start);
-  }
   fetch('https://api.github.com/repos/' + repo + '/releases?per_page=100', { headers: { Accept: 'application/vnd.github+json' } })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (rel) {
-      var dl = 0;
-      rel.forEach(function (x) { (x.assets || []).forEach(function (a) { if (/\.(exe|msi|dmg)$/i.test(a.name)) dl += a.download_count; }); });
-      countUp('dl-count', dl);
       var latest = rel.filter(function (x) { return !x.draft && !x.prerelease; })[0] || rel[0];
       set('dl-releases', String(rel.length));
       if (!latest) return;
@@ -776,11 +784,7 @@
         el.textContent = el.getAttribute('data-ver').replace('%s', latest.tag_name);
       });
     })
-    .catch(function () {
-      set('dl-count', '9+');
-      var n = document.getElementById('stats-note');
-      if (n) n.textContent = 'Live counts load on the hosted site.';
-    });
+    .catch(function () {});
 })();
 </script>
 
