@@ -460,9 +460,9 @@
       </div>
 
       <p>The list shows each workspace with its environment, branch, remote status, and how many files are uncommitted.
-      Two buttons up top: <strong>New workspace</strong> (create one — empty, or seeded from packages) and
-      <strong>Deploy from GitHub</strong> (clone a repo and push it straight into an environment). Click <strong>Open</strong>
-      on a card to enter its detail view.</p>
+      Buttons up top: <strong>Activity</strong> (recent commits across every workspace — see below), <strong>New workspace</strong>
+      (create one — empty, or seeded from packages) and <strong>Deploy from GitHub</strong> (clone a repo and push it straight
+      into an environment). Click <strong>Open</strong> on a card to enter its detail view.</p>
 
       <h3>Inside a workspace</h3>
       <p>The detail view is where day-to-day version control happens. Along the top: <strong>Add package</strong>,
@@ -471,8 +471,28 @@
       <ul class="plain">
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Changes</b> — every modified/added file with its status (<code>M</code>, <code>A</code>). Click one to see its diff on the right. Type a message and <b>Commit</b>.</span></li>
         <li><svg class="ic"><use href="#i-check"/></svg><span><b>Packages</b> — which packages this workspace version-controls.</span></li>
-        <li><svg class="ic"><use href="#i-check"/></svg><span><b>History</b> — the commit log, plus GitHub wiring: pick or change the remote repository, and push your branch.</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>History</b> — the last 200 commits with author, email and exact time (hover), an author filter, and a <b>via Cora</b> badge on commits Cora made. Click a commit to see the files it changed and their diffs. Also the GitHub wiring: pick or change the remote repository, and push your branch.</span></li>
       </ul>
+
+      <h3>Cora reminds you to commit</h3>
+      <p>Cora checks your workspaces every couple of minutes and after each job, so he also notices files you edited outside
+      the app. When he is otherwise idle he speaks up about one workspace at a time:</p>
+      <ul class="plain">
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>Uncommitted changes</b> — <b>Commit now</b> commits everything with a message like <code>Update from dev-01 — 7 files</code>; <b>Review first</b> opens the Changes tab; <b>Later</b> keeps him quiet until more files change. Commit now refuses, and points you to Review first, during a merge, rebase or cherry-pick, with unresolved conflicts, on a detached HEAD, for a folder inside a larger repository, or when the commit would add more than 500 files or downloaded binaries (<code>.application/</code>, <code>.nuget/</code>, <code>bin/</code>, <code>obj/</code>).</span></li>
+        <li><svg class="ic"><use href="#i-check"/></svg><span><b>No Git yet</b> — <b>Initialize new repo</b>, <b>Connect existing GitHub repo</b>, or <b>Not for this one</b> to stop asking about that workspace.</span></li>
+      </ul>
+
+      <h3>Connect an existing GitHub repo</h3>
+      <p>Use this when your team already keeps this work in a GitHub repository (also on the workspace's Changes tab).
+      Pick the repository from your account, or paste its URL and branch. The app links the folder to it without touching
+      your files: they show up as changes against the team's branch, ready to review and commit. Files the repository has
+      and your folder doesn't are added — but never over one of your files. If anything goes wrong, it removes what it
+      added and leaves the folder as it was.</p>
+
+      <h3>Activity</h3>
+      <p>The <b>Activity</b> screen lists recent commits across every workspace — who, what, which workspace and which
+      branch — including teammates' branches as of the last fetch (open a workspace to fetch the latest). Filter by person
+      or workspace, and click a commit to see its files and diffs. A commit shared by several workspaces appears once.</p>
 
       <div class="grid2">
         <figure>
