@@ -52,4 +52,12 @@
     <loc>https://devhub.tatvikaworks.com/about</loc>
     <lastmod>2026-11-01</lastmod>
   </url>
+  <url>
+    <loc>https://devhub.tatvikaworks.com/llms.txt</loc>
+    <lastmod>2026-11-24</lastmod>
+  </url>
+  <url>
+    <loc>https://devhub.tatvikaworks.com/llm.txt</loc>
+    <lastmod>2026-11-24</lastmod>
+  </url>
 </urlset>
