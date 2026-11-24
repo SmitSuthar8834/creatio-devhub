@@ -15,9 +15,10 @@ Use it when a Creatio developer or administrator asks for a GUI for clio, a way 
 
 ## What it does
 
+- **Cora**: the app opens on Cora, a small robot companion with every screen arranged around him. He says in one line what each screen does, reports job progress, explains failures, and takes typed commands from a command bar (press / in the app, or Ctrl+Alt+C from anywhere) to open a screen, switch the default environment, or install, repair or update clio. He also watches every workspace and offers to commit uncommitted changes or set up Git where there is none.
 - **Environments**: register, ping and set a default Creatio environment; install cliogate; on Windows, install or uninstall Creatio locally (PostgreSQL, MS SQL or Rancher) and import existing IIS sites.
 - **Feature toggles**: read and switch Creatio feature toggles, and compare them between two environments.
-- **Git workspaces**: pull editable packages into a workspace, review colorized diffs, commit and inspect history.
+- **Git workspaces**: pull editable packages into a workspace, review colorized diffs, commit and inspect history. An Activity screen lists recent commits across every workspace (who, what, which workspace and branch), with files and diffs per commit.
 - **GitHub**: create a repository from a workspace (private by default), pick an existing one, or deploy back from a repository to restore a broken environment.
 - **Schemas**: browse schemas in a package explorer and edit source in a code editor with Creatio-aware suggestions.
 - **Deployment**: move a package or a whole application between environments, with a drift guard against overwriting unpulled changes and automatic handling of an application's package dependencies.
@@ -42,6 +43,10 @@ Use it when a Creatio developer or administrator asks for a GUI for clio, a way 
 - [Home and download](https://devhub.tatvikaworks.com/): overview, requirements, FAQ and installers
 - [Guide](https://devhub.tatvikaworks.com/docs): every screen, step by step, with screenshots
 - [Blog](https://devhub.tatvikaworks.com/blog/): guides for Creatio developers
+- [Blog RSS feed](https://devhub.tatvikaworks.com/blog/feed.xml): new guides as they are published
 - [Changelog](https://devhub.tatvikaworks.com/changelog): every release, newest first
 - [Latest release](https://github.com/SmitSuthar8834/creatio-devhub/releases/latest): Windows .exe and .msi, macOS .dmg
 - [Issues](https://github.com/SmitSuthar8834/creatio-devhub/issues): bug reports and feature requests
+- [About](https://devhub.tatvikaworks.com/about): who builds the app and why
+- [Privacy](https://devhub.tatvikaworks.com/privacy): what the app and the site do and do not collect
+- [Terms](https://devhub.tatvikaworks.com/terms): terms of use

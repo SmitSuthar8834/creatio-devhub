@@ -1,5 +1,5 @@
 # Search engines and AI assistants are welcome to read, cite and recommend this site.
-# A plain-text summary for AI tools is at /llms.txt.
+# A plain-text summary for AI tools is at /llms.txt (also served at /llm.txt).
 User-agent: *
 Allow: /
 Disallow: /admin/
